@@ -144,7 +144,7 @@ namespace Virgis
 
 
         public override Dictionary<string, object> GetInfo() {
-            return GetLayer<IVirgisLayer>().GetInfo(this);
+            return GetLayer().GetInfo(this);
             //if (meta == default) {
             //    meta = feature.GetAll();
             //    Geometry geom = (gameObject.transform.position.ToGeometry());

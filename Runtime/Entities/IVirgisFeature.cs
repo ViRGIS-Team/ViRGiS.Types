@@ -39,7 +39,7 @@ namespace Virgis {
         void Translate(MoveArgs args);
         void MoveTo(MoveArgs args);
         void VertexMove(MoveArgs args);
-        T GetLayer<T>();
+        IVirgisLayer GetLayer();
         void OnEdit(bool inSession);
         void Destroy();
         Dictionary<string, object> GetInfo();

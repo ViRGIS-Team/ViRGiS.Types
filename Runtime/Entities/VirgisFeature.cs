@@ -209,8 +209,8 @@ namespace Virgis {
             State.instance.Info.Set("");
         }
 
-        public T GetLayer<T>() {
-            return transform.parent.GetComponent<IVirgisEntity>().GetLayer<T>();
+        public IVirgisLayer GetLayer() {
+            return transform.parent.GetComponent<IVirgisEntity>().GetLayer();
         }
 
         public virtual void OnEdit(bool inSession) {
