@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "project_ns",
-        "UniRx"
+        "UniRx",
+        "geometry3Sharp"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

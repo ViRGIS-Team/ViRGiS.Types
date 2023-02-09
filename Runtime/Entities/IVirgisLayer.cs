@@ -64,14 +64,14 @@ namespace Virgis
             set;
         }
 
-        IVirgisFeature AddFeature<T>(T geometry);
+        VirgisFeature AddFeature<T>(T geometry);
         bool Load(string file);
         Task Init(RecordSet layer);
         Task SubInit(RecordSet layer);
         Task Draw();
         void CheckPoint();
-        Task<RecordSet> Save();
-        IVirgisFeature GetFeature(Guid id);
+        Task<RecordSet> Save(bool flag);
+        VirgisFeature GetFeature(Guid id);
         GameObject GetFeatureShape();
         RecordSet GetMetadata();
         void SetMetadata(RecordSet meta);

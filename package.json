@@ -13,6 +13,9 @@
         }
       ],
     "dependencies": {
+      "com.virgis.geometry3sharp": "2.0.0",
+      "com.virgis.geojson.net": "1.2.17",
+      "com.nol1fe.delaunator": "1.0.10"
     },
     "keywords": [
         "geometry",

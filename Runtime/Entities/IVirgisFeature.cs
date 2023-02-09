@@ -34,7 +34,7 @@ namespace Virgis {
         void Selected(SelectionType button);
         void UnSelected(SelectionType button);
         Guid GetId();
-        IVirgisFeature GetClosest(Vector3 coords, Guid[] exclude);
+        VirgisFeature GetClosest(Vector3 coords, Guid[] exclude);
         void MoveAxis(MoveArgs args);
         void Translate(MoveArgs args);
         void MoveTo(MoveArgs args);
@@ -42,6 +42,9 @@ namespace Virgis {
         T GetLayer<T>();
         void OnEdit(bool inSession);
         void Destroy();
+        Dictionary<string, object> GetInfo();
+        void SetInfo(Dictionary<string, object> meta);
+        Dictionary<string, object> GetInfo(VirgisFeature feat);
     }
 
     /// <summary>
@@ -51,13 +54,11 @@ namespace Virgis {
     {
         void SetMaterial(Material mainMat, Material selectedMat);
         //void MoveTo(Vector3 newPos);
-        IVirgisFeature AddVertex(Vector3 position);
-        void RemoveVertex(IVirgisFeature vertex);
+        VirgisFeature AddVertex(Vector3 position);
+        void RemoveVertex(VirgisFeature vertex);
         T GetGeometry<T>();
 
         void Hover(Vector3 hit);
         void UnHover();
-        public Dictionary<string, object> GetInfo();
-        public void SetInfo(Dictionary<string, object> meta);
     }
 }
