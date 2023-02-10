@@ -25,7 +25,6 @@ SOFTWARE. */
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using Project;
 using g3;
 using UnityEngine.UI;
 using System.Linq;
@@ -43,7 +42,7 @@ namespace Virgis
 
         private bool m_Lr = false; // is this line a Linear Ring - i.e. used to define a polygon
         public List<VertexLookup> VertexTable = new List<VertexLookup>();
-        private Dictionary<string, Unit> m_symbology;
+        private Dictionary<string, UnitPrototype> m_symbology;
         private GameObject m_handlePrefab;
         private Material m_lineMain;
         private Material m_lineSelected;
@@ -124,7 +123,7 @@ namespace Virgis
         /// <param name="symbology">The symbo,logy to be applied to the line</param>
         /// <param name="handlePrefab"> The prefab to be used for the handle</param>
         /// <param name="labelPrefab"> the prefab to used for the label</param>
-        public void Draw(DCurve3 geom, Dictionary<string, Unit> symbology,  GameObject handlePrefab, GameObject labelPrefab, Material mainMat, Material selectedMat, Material lineMain, Material lineSelected, bool isring = false)
+        public void Draw(DCurve3 geom, Dictionary<string, UnitPrototype> symbology,  GameObject handlePrefab, GameObject labelPrefab, Material mainMat, Material selectedMat, Material lineMain, Material lineSelected, bool isring = false)
         {
             Curve = geom;
             m_Lr = isring;

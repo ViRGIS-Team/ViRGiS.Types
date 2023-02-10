@@ -22,17 +22,16 @@ SOFTWARE. */
 
 using UniRx;
 using System;
-using Project;
 
 namespace Virgis {
 
     public class ProjectChange {
 
-        private GisProject _project;
+        private GisProjectPrototype _project;
 
-        private readonly Subject<GisProject> _projectEvent = new Subject<GisProject>();
+        private readonly Subject<GisProjectPrototype> _projectEvent = new Subject<GisProjectPrototype>();
 
-        public void Set(GisProject project) {
+        public void Set(GisProjectPrototype project) {
             _project = project;
         }
 
@@ -40,11 +39,11 @@ namespace Virgis {
             _projectEvent.OnNext(_project);
         }
 
-        public GisProject Get() {
+        public GisProjectPrototype Get() {
             return _project;
         }
 
-        public IObservable<GisProject> Event {
+        public IObservable<GisProjectPrototype> Event {
             get {
                 return _projectEvent.AsObservable();
             }

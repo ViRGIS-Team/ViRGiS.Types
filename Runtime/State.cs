@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using Project;
 using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
@@ -114,7 +113,7 @@ namespace Virgis {
         /// <summary>
         /// Use this to change or get the project
         /// </summary>
-        GisProject project {
+        GisProjectPrototype project {
             get {
                 return Project.Get();
             } 
@@ -175,6 +174,12 @@ namespace Virgis {
         /// Stop an edit session and discard the reulst
         /// </summary>
         void StopDiscardEditSession();
+
+        /// <summary>
+        /// Courtesy function to return a configuration object
+        /// </summary>
+        /// <returns></returns>
+        object ConfigObject();
 
         /// <summary>
         /// Courtesy function to allow the creation of logic to set configuration items
@@ -268,7 +273,7 @@ namespace Virgis {
         }
 
         public BehaviorSubject<bool> ConfigEvent { get; private set; } = new BehaviorSubject<bool>(false);
-        
+
         protected EditSession _editSession
         {
             get; set;
@@ -277,7 +282,7 @@ namespace Virgis {
 
         public virtual void Init() { }
 
-        public GisProject project
+        public GisProjectPrototype project
         {
             get
             {
@@ -305,14 +310,9 @@ namespace Virgis {
             get => _layers;
         }
 
-        public void addLayer(IVirgisLayer layer)
+        public virtual void addLayer(IVirgisLayer layer)
         {
-            _layers.Add(layer);
-            if (_layers.Count == 1)
-                _editSession.editableLayer = _layers[0];
-            if (_layers.Count == 2 && _layers[0].GetMetadata().DataType == RecordSetDataType.MapBox)
-                _editSession.editableLayer = _layers[1];
-            LayerUpdate.AddLayer(layer);
+            throw new NotImplementedException();
         }
 
         public void clearLayers()
@@ -349,6 +349,11 @@ namespace Virgis {
         public void StopDiscardEditSession()
         {
             _editSession.StopAndDiscard();
+        }
+
+        public virtual object ConfigObject()
+        {
+            throw new NotImplementedException();
         }
 
         public virtual void SetConfig(string key, object value)

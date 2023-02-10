@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using Project;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -66,15 +65,15 @@ namespace Virgis
 
         VirgisFeature AddFeature<T>(T geometry);
         bool Load(string file);
-        Task Init(RecordSet layer);
-        Task SubInit(RecordSet layer);
+        Task Init(RecordSetPrototype layer);
+        Task SubInit(RecordSetPrototype layer);
         Task Draw();
         void CheckPoint();
-        Task<RecordSet> Save(bool flag);
+        Task<RecordSetPrototype> Save(bool flag);
         VirgisFeature GetFeature(Guid id);
         GameObject GetFeatureShape();
-        RecordSet GetMetadata();
-        void SetMetadata(RecordSet meta);
+        RecordSetPrototype GetMetadata();
+        void SetMetadata(RecordSetPrototype meta);
         void SetVisible(bool visible);
         bool IsVisible();
         void SetEditable(bool inSession);

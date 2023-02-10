@@ -22,7 +22,6 @@ SOFTWARE. */
 
 using UniRx;
 using System;
-using Project;
 
 namespace Virgis {
 

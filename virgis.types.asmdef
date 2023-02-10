@@ -2,9 +2,9 @@
     "name": "virgis.types",
     "rootNamespace": "",
     "references": [
-        "project_ns",
         "UniRx",
-        "geometry3Sharp"
+        "geometry3Sharp",
+        "GeoJSON.NET"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
