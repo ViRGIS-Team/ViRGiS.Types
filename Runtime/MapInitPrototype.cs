@@ -179,7 +179,7 @@ namespace Virgis {
 
         public void CheckPoint()
         {
-            throw new NotImplementedException();
+            //do nothing
         }
 
         public VirgisFeature GetFeature(Guid id)
