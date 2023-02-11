@@ -44,6 +44,7 @@ namespace Virgis {
                 _buttonEvent.OnNext(this);
             }
         }
+
         public bool isRhTrigger {
             get {
                 return m_isRhTrigger;
@@ -106,7 +107,5 @@ namespace Virgis {
                 return _buttonEvent.AsObservable();
             }
         }
-
     }
-
 }

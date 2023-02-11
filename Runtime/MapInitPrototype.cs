@@ -37,7 +37,6 @@ namespace Virgis {
     public abstract class MapInitializePrototype : MonoBehaviour, IVirgisLayer
     {
         public State appState;
-        protected State m_appState;
 
         protected string m_loadOnStartup;
 
@@ -76,9 +75,8 @@ namespace Virgis {
 
         protected void Start()
         {
-            State appState = State.instance;
-            m_subs.Add(appState.editSession.StartEvent.Subscribe(_onEditStart));
-            m_subs.Add(appState.editSession.EndEvent.Subscribe(_onEditStop));
+            m_subs.Add(State.instance.editSession.StartEvent.Subscribe(_onEditStart));
+            m_subs.Add(State.instance.editSession.EndEvent.Subscribe(_onEditStop));
         }
 
         protected virtual bool _load(string file) {
@@ -104,7 +102,7 @@ namespace Virgis {
         /// </summary>
         public virtual void Draw()
         {
-            foreach (IVirgisLayer layer in m_appState.layers)
+            foreach (IVirgisLayer layer in appState.layers)
             {
                 try {
                     layer.Draw();

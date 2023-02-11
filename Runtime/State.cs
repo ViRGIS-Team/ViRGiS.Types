@@ -32,7 +32,7 @@ namespace Virgis {
     //
     // Singleton pattern taken from https://learn.unity.com/tutorial/level-generation
     public interface IState  {
-        static IState instance = null;
+        static IState instance;
         Vector3 lastHitPosition { get; set; }
         List<Coroutine> tasks { get; set; }
         int editScale { get; set; } 
@@ -208,7 +208,17 @@ namespace Virgis {
     public class State : MonoBehaviour, IState
     {
 
-        public static State instance = null;
+        private static State m_inst = null;
+        public static State instance
+        {
+            get
+            {
+                if (m_inst == null) { Debug.Log("no instance"); }
+                return m_inst;
+            }
+
+            protected set { m_inst = value; }
+        }
         public Vector3 lastHitPosition
         {
             get; set;
@@ -368,7 +378,14 @@ namespace Virgis {
 
         public virtual float SetScale(float zoom)
         {
-            throw new NotImplementedException();
+            if (zoom != 0)
+            {
+                instance.map.transform.localScale = Vector3.one / zoom;
+                float scale = instance.map.transform.InverseTransformVector(Vector3.right).magnitude;
+                Zoom.OnNext(scale);
+                return scale;
+            }
+            return 0;
         }
     }
 }
