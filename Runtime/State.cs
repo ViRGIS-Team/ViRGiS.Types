@@ -203,6 +203,8 @@ namespace Virgis {
         /// <returns> a number representing the scale set</returns>
         float SetScale(float zoom);
 
+        bool LoadProject(string path);
+
     }
 
     public class State : MonoBehaviour, IState
@@ -386,6 +388,11 @@ namespace Virgis {
                 return scale;
             }
             return 0;
+        }
+
+        public virtual bool LoadProject(string path)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

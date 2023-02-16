@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Netcode;
 using UniRx;
 
 namespace Virgis {
@@ -34,9 +35,8 @@ namespace Virgis {
     /// 
     /// It is run once at Startup
     /// </summary>
-    public abstract class MapInitializePrototype : MonoBehaviour, IVirgisLayer
+    public abstract class MapInitializePrototype : NetworkBehaviour, IVirgisLayer
     {
-        public State appState;
 
         protected string m_loadOnStartup;
 
@@ -102,7 +102,7 @@ namespace Virgis {
         /// </summary>
         public virtual void Draw()
         {
-            foreach (IVirgisLayer layer in appState.layers)
+            foreach (IVirgisLayer layer in State.instance.layers)
             {
                 try {
                     layer.Draw();

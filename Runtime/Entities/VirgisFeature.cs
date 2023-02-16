@@ -24,11 +24,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Unity.Netcode;
 
 namespace Virgis {
 
 
-    public abstract class VirgisFeature : MonoBehaviour, IVirgisFeature
+    public abstract class VirgisFeature : NetworkBehaviour, IVirgisFeature
     {
         protected Material mainMat; // color of the component
         protected Material selectedMat; // color of the component when selected

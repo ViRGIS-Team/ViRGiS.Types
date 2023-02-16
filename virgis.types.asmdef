@@ -4,7 +4,8 @@
     "references": [
         "UniRx",
         "geometry3Sharp",
-        "GeoJSON.NET"
+        "GeoJSON.NET",
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

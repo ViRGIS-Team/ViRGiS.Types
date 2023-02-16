@@ -141,12 +141,14 @@ namespace Virgis
                         }
                         catch (Exception e)
                         {
+                            _ = e;
                             p2d.Reverse();
                             poly.AddHole(p2d, true, true);
                         }
                     }
                     catch (Exception e)
                     {
+                        _ = e;
                         // skip this hole
                     }
                 }
