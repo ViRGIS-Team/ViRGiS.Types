@@ -339,6 +339,7 @@ namespace Virgis
         private Datapoint _createVertex(Vector3 vertex, int i) {
             GameObject handle = Instantiate(m_handlePrefab, vertex, Quaternion.identity, transform );
             Datapoint com = handle.GetComponent<Datapoint>();
+            com.Spawn(transform);
             VertexTable.Add(new VertexLookup() { Id = com.GetId(), Vertex = i, isVertex = true, Com = com });
             com.SetMaterial(mainMat, selectedMat);
             handle.transform.localScale = m_symbology["point"].Transform.Scale;
@@ -348,6 +349,7 @@ namespace Virgis
         private LineSegment _createSegment(Vector3 start, Vector3 end, int i, bool close) {
             GameObject lineSegment = Instantiate(CylinderObject, start, Quaternion.identity, transform);
             LineSegment com = lineSegment.GetComponent<LineSegment>();
+            com.Spawn(transform);
             com.Draw(start, end, i, i + 1, m_symbology["line"].Transform.Scale.magnitude);
             com.SetMaterial(m_lineMain, m_lineSelected);
             if (close)

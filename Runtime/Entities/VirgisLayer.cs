@@ -41,9 +41,8 @@ namespace Virgis {
 
         public string sourceName { get; set; }
 
-        public List<IVirgisLayer> subLayers {
-            get; protected set;
-        }
+        public List<IVirgisLayer> subLayers
+        { get; } = new List<IVirgisLayer>();
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -76,7 +75,6 @@ namespace Virgis {
             changed = true;
             isContainer = false;
             isWriteable = false;
-            subLayers= new List<IVirgisLayer>();
         }
 
         protected void Start() {
@@ -298,7 +296,6 @@ namespace Virgis {
         /// <param name="layer">Data tyoe that inherits form RecordSet</param>
         public void SetMetadata(RecordSetPrototype layer) {
             _layer = layer;
-            if (m_loader != null) m_loader.SetMetadata(layer);
         }
 
         /// <summary>

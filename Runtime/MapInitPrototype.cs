@@ -35,7 +35,7 @@ namespace Virgis {
     /// 
     /// It is run once at Startup
     /// </summary>
-    public abstract class MapInitializePrototype : NetworkBehaviour, IVirgisLayer
+    public abstract class MapInitializePrototype : MonoBehaviour, IVirgisLayer
     {
 
         protected string m_loadOnStartup;

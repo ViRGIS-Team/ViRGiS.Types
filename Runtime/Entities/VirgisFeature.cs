@@ -53,6 +53,20 @@ namespace Virgis {
             Destroy(gameObject);
         }
 
+        public bool Spawn(Transform parent)
+        {
+            NetworkObject no = gameObject.GetComponent<NetworkObject>();
+            try
+            {
+                no.Spawn();
+            }
+            catch (Exception e)
+            {
+                _ = e;
+                return false;
+            }
+            return no.TrySetParent(parent);
+        }
 
         /// <summary>
         /// Use to set the material of the feature

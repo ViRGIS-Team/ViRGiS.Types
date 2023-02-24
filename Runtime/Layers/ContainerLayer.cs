@@ -30,7 +30,6 @@ namespace Virgis {
         protected new void Awake() {
             base.Awake();
             isContainer = true;
-            subLayers = new List<IVirgisLayer>();
         }
 
         public async override Task Init(RecordSetPrototype layerData)

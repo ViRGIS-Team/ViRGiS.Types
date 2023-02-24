@@ -86,6 +86,7 @@ namespace Virgis
             lines = polygon;
 
             Shape = Instantiate(shapePrefab, transform);
+            Shape.GetComponent<VirgisFeature>().Spawn(transform);
             MeshRenderer mr = Shape.GetComponent<MeshRenderer>();
             mr.material = mat;
 
