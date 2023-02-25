@@ -56,7 +56,6 @@ namespace Virgis {
         public bool Spawn(Transform parent)
         {
             NetworkObject no = gameObject.GetComponent<NetworkObject>();
-            if (!no.TrySetParent(parent)) return false;
             try
             {
                 no.Spawn();
@@ -66,7 +65,7 @@ namespace Virgis {
                 _ = e;
                 return false;
             }
-            return true;
+            return no.TrySetParent(parent);
         }
 
         /// <summary>
