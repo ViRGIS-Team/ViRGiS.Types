@@ -79,7 +79,7 @@ namespace Virgis
         /// <param name="perimeter">LineString defining the perimter of the polygon</param>
         /// <param name="mat"> Material to be used</param>
         /// <returns></returns>
-        public GameObject Draw(List<Dataline> polygon, Material mat, float tiling_size = 10) {
+        public GameObject Draw(List<Dataline> polygon, float tiling_size = 10) {
 
             m_tiling_size = tiling_size;
             
@@ -88,12 +88,12 @@ namespace Virgis
             Shape = Instantiate(shapePrefab, transform);
             Shape.GetComponent<VirgisFeature>().Spawn(transform);
             MeshRenderer mr = Shape.GetComponent<MeshRenderer>();
-            mr.material = mat;
+            mr.material = GetLayer().GetMaterial(4);
 
             // call the generic polygon draw function in DataShape
             _redraw();
 
-            mat.SetVector("_Tiling", new Vector2(scaleX / tiling_size, scaleY / tiling_size));
+            mr.material.SetVector("_Tiling", new Vector2(scaleX / tiling_size, scaleY / tiling_size));
             return gameObject;
         }
 

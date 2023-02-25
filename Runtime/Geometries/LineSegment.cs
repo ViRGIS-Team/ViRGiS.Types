@@ -40,6 +40,11 @@ namespace Virgis
         public int vEnd; // Vertex ID of the end of the line
         private bool selected; //used to hold if this is a valid selection for this line segment
 
+        public void Start()
+        {
+            SetMaterial(2);
+        }
+
         /// <summary>
         /// Called to draw the line Segment 
         /// </summary>
@@ -73,16 +78,6 @@ namespace Virgis
             {
                 transform.parent.SendMessageUpwards("UnSelected", button, SendMessageOptions.DontRequireReceiver);
                 selected = false;
-            }
-        }
-
-
-        public override void SetMaterial(Material mainMat, Material selectedMat) {
-            this.mainMat = mainMat;
-            this.selectedMat = selectedMat;
-            thisRenderer = GetComponentInChildren<Renderer>();
-            if (thisRenderer) {
-                thisRenderer.material = mainMat;
             }
         }
 

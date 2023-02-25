@@ -58,5 +58,25 @@ namespace Virgis
             Dataline[] dataFeatures = gameObject.GetComponentsInChildren<Dataline>();
             dataFeatures.ToList<Dataline>().Find(item => args.id == item.GetId()).MoveAxisAction(args);
         }
+
+        protected override Material MapMaterial(Color color, int idx)
+        {
+            Material m;
+            switch (idx)
+            {
+                case var _ when idx < 2:
+                    m = Instantiate(PointBaseMaterial);
+                    break;
+                case var _ when idx < 4:
+                    m = Instantiate(LineBaseMaterial);
+                    break;
+                default:
+                    m = Instantiate(LineBaseMaterial);
+                    break;
+            }
+            m.SetColor("_BaseColor", color);
+            return m;
+        }
+
     }
 }

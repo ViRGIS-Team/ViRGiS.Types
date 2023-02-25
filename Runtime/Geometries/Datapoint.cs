@@ -38,6 +38,7 @@ namespace Virgis
 
 
         private void Start() {
+            SetMaterial(0);
             if (transform.childCount > 0)
                 label = transform.GetChild(0);
         }
@@ -87,11 +88,9 @@ namespace Virgis
             }
         }
 
- 
-        public override void SetMaterial(Material mainMat, Material selectedMat)
+        public override void SetMaterial(int idx)
         {
-            this.mainMat = mainMat;
-            this.selectedMat = selectedMat;
+            base.SetMaterial(idx);
             thisRenderer = GetComponent<Renderer>();
             if (thisRenderer)
             {

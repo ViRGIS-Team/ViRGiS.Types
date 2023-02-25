@@ -51,5 +51,12 @@ namespace Virgis {
                 Destroy(vertex.gameObject);
             }
         }
+
+        protected override Material MapMaterial(Color color, int idx)
+        {
+            Material m = Instantiate(BaseMaterial);
+            m.SetColor("_BaseColor", color);
+            return m;
+        }
     }
 }

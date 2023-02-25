@@ -306,5 +306,15 @@ namespace Virgis
         {
             throw new NotImplementedException();
         }
+
+        public void SetMaterial(Color color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Material GetMaterial(int idx)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

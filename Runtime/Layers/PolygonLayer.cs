@@ -20,12 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.UI;
-using g3;
-using System.Linq;
 
 namespace Virgis
 {
@@ -61,6 +56,25 @@ namespace Virgis
         public override void MoveAxis(MoveArgs args)
         {
             changed = true;
+        }
+
+        protected override Material MapMaterial(Color color, int idx)
+        {
+            Material m;
+            switch (idx)
+            {
+                case var _ when idx < 2:
+                    m = Instantiate(PointBaseMaterial);
+                    break;
+                case var _ when idx < 4:
+                    m = Instantiate(LineBaseMaterial);
+                    break;
+                default:
+                    m = Instantiate(BodyBaseMaterial);
+                    break;
+            }
+            m.SetColor("_BaseColor", color);
+            return m;
         }
     }
 }

@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using Unity.Netcode;
 using UniRx;
 
 namespace Virgis {
@@ -288,6 +287,16 @@ namespace Virgis {
         }
 
         public Dictionary<string, object> GetInfo(VirgisFeature feat)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetMaterial(Color color)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Material GetMaterial(int idx)
         {
             throw new NotImplementedException();
         }

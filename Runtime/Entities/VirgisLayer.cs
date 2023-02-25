@@ -67,7 +67,10 @@ namespace Virgis {
         protected IVirgisLoader m_loader;
         private bool m_changed;
 
-        private readonly List<IDisposable> m_subs = new List<IDisposable>();
+        private readonly List<IDisposable> m_subs = new();
+        protected readonly List<Material> m_mat = new();
+        protected NetworkList<Color> m_cols;
+
 
         protected void Awake() {
             m_id = Guid.NewGuid();
@@ -75,6 +78,7 @@ namespace Virgis {
             changed = true;
             isContainer = false;
             isWriteable = false;
+            m_cols = new();
         }
 
         protected void Start() {
@@ -429,6 +433,30 @@ namespace Virgis {
 
         public void SetInfo(Dictionary<string, object> meta) {
             throw new NotImplementedException();
+        }
+
+        public virtual void SetMaterial(Color color)
+        {
+            m_cols.Add(color);
+        }
+
+        public Material GetMaterial(int idx)
+        {
+            if (m_mat.Count != m_cols.Count)
+            { 
+                m_mat.Clear();
+                for (int i = 0; i < m_cols.Count; i++)
+                {
+                    m_mat.Add(MapMaterial(m_cols[i], i));
+                }
+            }
+            if (idx <m_mat.Count) return m_mat[idx];
+            throw new Exception("Material index error");
+        }
+
+        protected virtual Material MapMaterial(Color color, int idx)
+        {
+            return default;
         }
     }
 }

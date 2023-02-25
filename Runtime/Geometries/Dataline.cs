@@ -123,16 +123,12 @@ namespace Virgis
         /// <param name="symbology">The symbo,logy to be applied to the line</param>
         /// <param name="handlePrefab"> The prefab to be used for the handle</param>
         /// <param name="labelPrefab"> the prefab to used for the label</param>
-        public void Draw(DCurve3 geom, Dictionary<string, UnitPrototype> symbology,  GameObject handlePrefab, GameObject labelPrefab, Material mainMat, Material selectedMat, Material lineMain, Material lineSelected, bool isring = false)
+        public void Draw(DCurve3 geom, Dictionary<string, UnitPrototype> symbology,  GameObject handlePrefab, GameObject labelPrefab, bool isring = false)
         {
             Curve = geom;
             m_Lr = isring;
             m_symbology = symbology;
             m_handlePrefab = handlePrefab;
-            this.mainMat = mainMat;
-            this.selectedMat = selectedMat;
-            m_lineMain = lineMain;
-            m_lineSelected = lineSelected;
 
             Vector3[] line = Curve.ToVector3().ToArray();
 
@@ -341,7 +337,6 @@ namespace Virgis
             Datapoint com = handle.GetComponent<Datapoint>();
             com.Spawn(transform);
             VertexTable.Add(new VertexLookup() { Id = com.GetId(), Vertex = i, isVertex = true, Com = com });
-            com.SetMaterial(mainMat, selectedMat);
             handle.transform.localScale = m_symbology["point"].Transform.Scale;
             return com;
         }
@@ -351,7 +346,6 @@ namespace Virgis
             LineSegment com = lineSegment.GetComponent<LineSegment>();
             com.Spawn(transform);
             com.Draw(start, end, i, i + 1, m_symbology["line"].Transform.Scale.magnitude);
-            com.SetMaterial(m_lineMain, m_lineSelected);
             if (close)
                 com.vEnd = 0;
             VertexTable.Find(item => item.Vertex == i).Line = com;

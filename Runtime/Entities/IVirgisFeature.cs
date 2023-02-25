@@ -52,7 +52,7 @@ namespace Virgis {
     /// </summary>
     public interface IVirgisFeature : IVirgisEntity
     {
-        void SetMaterial(Material mainMat, Material selectedMat);
+        void SetMaterial(int idx);
         //void MoveTo(Vector3 newPos);
         VirgisFeature AddVertex(Vector3 position);
         void RemoveVertex(VirgisFeature vertex);

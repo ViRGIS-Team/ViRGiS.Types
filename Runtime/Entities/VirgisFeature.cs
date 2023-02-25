@@ -56,6 +56,7 @@ namespace Virgis {
         public bool Spawn(Transform parent)
         {
             NetworkObject no = gameObject.GetComponent<NetworkObject>();
+            if (!no.TrySetParent(parent)) return false;
             try
             {
                 no.Spawn();
@@ -65,17 +66,16 @@ namespace Virgis {
                 _ = e;
                 return false;
             }
-            return no.TrySetParent(parent);
+            return true;
         }
 
         /// <summary>
         /// Use to set the material of the feature
         /// </summary>
-        /// <param name="mainMat"> Usual material</param>
-        /// /// <param name="selectedMat"> Material to be used when feature is selected</param>
-        public virtual void SetMaterial(Material mainMat, Material selectedMat) {
-            this.mainMat = mainMat;
-            this.selectedMat = selectedMat;
+        public virtual void SetMaterial(int idx) {
+            IVirgisLayer layer = GetLayer();
+            mainMat = layer?.GetMaterial(idx);
+            selectedMat = layer?.GetMaterial(idx + 1);
         }
 
         /// <summary>
