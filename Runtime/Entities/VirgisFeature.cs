@@ -224,7 +224,7 @@ namespace Virgis {
         }
 
         public IVirgisLayer GetLayer() {
-            return transform.parent.GetComponent<IVirgisEntity>().GetLayer();
+            return transform.parent.GetComponent<IVirgisEntity>()?.GetLayer();
         }
 
         public virtual void OnEdit(bool inSession) {
