@@ -22,6 +22,7 @@ SOFTWARE. */
 
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Netcode;
 using g3;
 using System.Linq;
 using System;
@@ -36,11 +37,18 @@ namespace Virgis
 
         public GameObject shapePrefab;
         protected GameObject Shape; // gameObject to be used for the shape
-        protected List<VertexLookup> VertexTable = new List<VertexLookup>();
+        protected List<VertexLookup> VertexTable = new();
         protected List<Dataline> lines;
         protected List<DCurve3> Polygon;
         protected float scaleX;
         protected float scaleY;
+
+        protected SerializeableMesh umesh = new();
+
+        public void Awake()
+        {
+            umesh.OnValueChanged += SetMesh;
+        }
 
         public override void Selected(SelectionType button) {
             if (button == SelectionType.SELECTALL) {
@@ -71,24 +79,21 @@ namespace Virgis
                     foreach (VertexLookup v in ring.VertexTable) {
                         VertexTable.Add(v);
                     }
-                    DCurve3 curve = new DCurve3();
+                    DCurve3 curve = new();
                     curve.Vector3(ring.GetVertexPositions(), true);
                     Polygon.Add(curve);
                 }
             }
 
-            MeshFilter mf = Shape.GetComponent<MeshFilter>();
-            MeshCollider[] mc = Shape.GetComponents<MeshCollider>();
-            mf.mesh = null;
-            Mesh mesh = new Mesh();
-            Mesh imesh = new Mesh();
-            mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            imesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            Frame3f frame = new Frame3f();
+            Mesh mesh = new()
+            {
+                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
+            };
+            Frame3f frame = new();
             Vector3[] vertices;
             GeneralPolygon2d polygon2d;
             Delaunator delaunator;
-            List<int> triangles = new List<int>();
+            List<int> triangles = new();
 
             try {
 
@@ -121,9 +126,9 @@ namespace Virgis
                 }
 
                 // 
-                // eaxtract the triangles from the delaunay triangulation 
+                // extract the triangles from the delaunay triangulation 
                 //
-                IEnumerable<ITriangle> tris =   delaunator.GetTriangles();
+                IEnumerable<ITriangle> tris = delaunator.GetTriangles();
                 for (int i = 0; i < tris.Count(); i++) {
 
                     ITriangle tri = tris.ElementAt(i);
@@ -133,7 +138,7 @@ namespace Virgis
                         triangles.Add(delaunator.Triangles[index]);
                         triangles.Add(delaunator.Triangles[index + 1]);
                         triangles.Add(delaunator.Triangles[index + 2]);
-                    } 
+                    }
                 }
             } catch (Exception e) {
                 throw new Exception("feature is not a valid Polygon : " + e.ToString());
@@ -149,9 +154,22 @@ namespace Virgis
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
-            imesh.vertices = mesh.vertices;
-            imesh.triangles = triangles.Reverse<int>().ToArray();
-            imesh.uv = mesh.uv;
+            umesh.Set(mesh);
+        }
+
+        private void SetMesh(Mesh previousMesh, Mesh nextMesh) {
+            MeshFilter mf = Shape.GetComponent<MeshFilter>();
+            MeshCollider[] mc = Shape.GetComponents<MeshCollider>();
+            mf.mesh = null;
+            Mesh mesh = nextMesh;
+            Mesh imesh = new()
+            {
+                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32,
+
+                vertices = mesh.vertices,
+                triangles = mesh.triangles.Reverse<int>().ToArray(),
+                uv = mesh.uv
+            };
 
             imesh.RecalculateBounds();
             imesh.RecalculateNormals();
@@ -184,7 +202,7 @@ namespace Virgis
         /// <param name="vertices"></param>
         /// <returns></returns>
         protected Vector2[] BuildUVs(Vector3[] vertices) {
-            List<Vector2> ret = new List<Vector2>();
+            List<Vector2> ret = new();
             List<Vector3d> vertices3d = vertices.ToList<Vector3>().ConvertAll(item => (Vector3d)item);
 
             //
