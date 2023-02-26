@@ -93,7 +93,7 @@ namespace Virgis
             // call the generic polygon draw function in DataShape
             _redraw();
 
-            mr.material.SetVector("_Tiling", new Vector2(scaleX / tiling_size, scaleY / tiling_size));
+            //mr.material.SetVector("_Tiling", new Vector2(scaleX / tiling_size, scaleY / tiling_size));
             return gameObject;
         }
 

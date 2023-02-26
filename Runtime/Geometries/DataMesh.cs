@@ -31,6 +31,13 @@ public class DataMesh : VirgisFeature
 {
     private DMesh3 m_mesh;
 
+    public SerializeableMesh umesh = new();
+
+    public void Awake()
+    {
+        umesh.OnValueChanged += SetMesh;
+    }
+
     public Transform Draw(DMesh3 mesh, Material mat) {
         this.m_mesh = mesh;
         MeshFilter mf = GetComponent<MeshFilter>();
@@ -48,6 +55,36 @@ public class DataMesh : VirgisFeature
         imesh.triangles = t;
         mc[1].sharedMesh = imesh;
         return transform;
+    }
+
+    private void SetMesh(Mesh nextMesh)
+    {
+        MeshFilter mf = GetComponent<MeshFilter>();
+        MeshCollider[] mc = GetComponents<MeshCollider>();
+        mf.mesh = null;
+        Mesh mesh = nextMesh;
+        Mesh imesh = new()
+        {
+            indexFormat = UnityEngine.Rendering.IndexFormat.UInt32,
+
+            vertices = mesh.vertices,
+            triangles = mesh.triangles.Reverse<int>().ToArray(),
+            uv = mesh.uv
+        };
+
+        imesh.RecalculateBounds();
+        imesh.RecalculateNormals();
+
+        mf.mesh = mesh;
+        try
+        {
+            mc[0].sharedMesh = mesh;
+            mc[1].sharedMesh = imesh;
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e.ToString());
+        }
     }
 
     public DMesh3 GetMesh() {

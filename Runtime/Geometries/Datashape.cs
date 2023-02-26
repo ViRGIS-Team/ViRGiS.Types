@@ -43,13 +43,6 @@ namespace Virgis
         protected float scaleX;
         protected float scaleY;
 
-        protected SerializeableMesh umesh = new();
-
-        public void Awake()
-        {
-            umesh.OnValueChanged += SetMesh;
-        }
-
         public override void Selected(SelectionType button) {
             if (button == SelectionType.SELECTALL) {
                 gameObject.BroadcastMessage("Selected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
@@ -154,33 +147,7 @@ namespace Virgis
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
-            umesh.Set(mesh);
-        }
-
-        private void SetMesh( Mesh nextMesh) {
-            MeshFilter mf = Shape.GetComponent<MeshFilter>();
-            MeshCollider[] mc = Shape.GetComponents<MeshCollider>();
-            mf.mesh = null;
-            Mesh mesh = nextMesh;
-            Mesh imesh = new()
-            {
-                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32,
-
-                vertices = mesh.vertices,
-                triangles = mesh.triangles.Reverse<int>().ToArray(),
-                uv = mesh.uv
-            };
-
-            imesh.RecalculateBounds();
-            imesh.RecalculateNormals();
-
-            mf.mesh = mesh;
-            try {
-                mc[0].sharedMesh = mesh;
-                mc[1].sharedMesh = imesh;
-            } catch (Exception e) {
-                Debug.Log(e.ToString());
-            }
+            Shape.GetComponent<DataMesh>().umesh.Set(mesh);
         }
 
         public override VirgisFeature AddVertex(Vector3 position) {
