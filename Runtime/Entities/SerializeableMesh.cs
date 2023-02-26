@@ -96,7 +96,8 @@ namespace Virgis
             tmesh.SetColors(colors);
             tmesh.SetUVs(0,uvs);
             tmesh.SetTriangles(tris, 0);
-            Set(tmesh);
+            mesh = tmesh;
+            OnValueChanged?.Invoke(mesh);
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
