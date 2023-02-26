@@ -38,23 +38,10 @@ public class DataMesh : VirgisFeature
         umesh.OnValueChanged += SetMesh;
     }
 
-    public Transform Draw(DMesh3 mesh, Material mat) {
-        this.m_mesh = mesh;
-        MeshFilter mf = GetComponent<MeshFilter>();
-        MeshCollider[] mc = GetComponents<MeshCollider>();
+    public void Start()
+    {
         MeshRenderer mr = GetComponent<MeshRenderer>();
-        mr.material = mat;
-        mf.mesh = mesh.ToMesh();
-        mc[0].sharedMesh = mf.mesh;
-        Mesh imesh = new Mesh();
-        imesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        imesh.vertices = mf.mesh.vertices;
-        imesh.uv = mf.mesh.uv;
-        int[] t = mf.mesh.triangles;
-        Array.Reverse(t);
-        imesh.triangles = t;
-        mc[1].sharedMesh = imesh;
-        return transform;
+        mr.material = GetLayer().GetMaterial(4);
     }
 
     private void SetMesh(Mesh nextMesh)

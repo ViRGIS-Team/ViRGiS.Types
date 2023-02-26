@@ -87,8 +87,6 @@ namespace Virgis
 
             Shape = Instantiate(shapePrefab, transform);
             Shape.GetComponent<VirgisFeature>().Spawn(transform);
-            MeshRenderer mr = Shape.GetComponent<MeshRenderer>();
-            mr.material = GetLayer().GetMaterial(4);
 
             // call the generic polygon draw function in DataShape
             _redraw();
