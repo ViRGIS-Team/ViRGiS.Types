@@ -38,7 +38,11 @@ namespace Virgis
         /// <param name="writer">The stream to write the state to</param>
         public override void WriteField(FastBufferWriter writer)
         {
-            if (mesh == null) return;
+            if (mesh == null)
+            {
+                writer.WriteValueSafe<int>(0);
+                return;
+            }
             // Serialize the data we need to synchronize
             writer.WriteValueSafe(mesh.vertexCount);
             int[] tris = mesh.triangles;
@@ -59,6 +63,7 @@ namespace Virgis
             // De-Serialize the data being synchronized
             mesh = new();
             reader.ReadValueSafe(out int vertexCount);
+            if (vertexCount == 0) return;
             reader.ReadValueSafe(out int triCount);
             List<Vector3> vertices = new();
             List<Color> colors = new();
