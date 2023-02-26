@@ -157,7 +157,7 @@ namespace Virgis
             umesh.Set(mesh);
         }
 
-        private void SetMesh(Mesh previousMesh, Mesh nextMesh) {
+        private void SetMesh( Mesh nextMesh) {
             MeshFilter mf = Shape.GetComponent<MeshFilter>();
             MeshCollider[] mc = Shape.GetComponents<MeshCollider>();
             mf.mesh = null;

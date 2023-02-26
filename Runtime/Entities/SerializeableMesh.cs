@@ -13,9 +13,8 @@ namespace Virgis
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
-        /// <param name="previousValue">The value before the change</param>
         /// <param name="newValue">The new value</param>
-        public delegate void OnValueChangedDelegate(Mesh previousValue, Mesh newValue);
+        public delegate void OnValueChangedDelegate( Mesh newValue);
         /// <summary>
         /// The callback to be invoked when the value gets changed
         /// </summary>
@@ -29,9 +28,8 @@ namespace Virgis
         public void Set(Mesh value)
         {
             SetDirty(true);
-            Mesh previousValue = mesh;
             mesh = value;
-            OnValueChanged?.Invoke(previousValue, mesh);
+            OnValueChanged?.Invoke( mesh);
         }
 
         /// <summary>
@@ -40,6 +38,7 @@ namespace Virgis
         /// <param name="writer">The stream to write the state to</param>
         public override void WriteField(FastBufferWriter writer)
         {
+            if (mesh == null) return;
             // Serialize the data we need to synchronize
             writer.WriteValueSafe(mesh.vertexCount);
             int[] tris = mesh.triangles;
