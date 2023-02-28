@@ -85,8 +85,8 @@ namespace Virgis {
             State appState = State.instance;
             m_subs.Add(appState.editSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(appState.editSession.EndEvent.Subscribe(_onEditStop));
+            State.instance.addLayer(this);
         }
-
 
         protected new void OnDestroy() {
             m_subs.ForEach(item => item.Dispose());
@@ -124,7 +124,6 @@ namespace Virgis {
             await SubInit(layer);
             await Draw();
             Debug.Log($"Loaded Layer : {layer.DisplayName}");
-            State.instance.addLayer(this);
         }
 
         /// <summary>
