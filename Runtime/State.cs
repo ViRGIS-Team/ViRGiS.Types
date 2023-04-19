@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using System;
+using UnityEngine.Profiling;
 
 namespace Virgis {
 
@@ -324,7 +325,8 @@ namespace Virgis {
 
         public virtual void addLayer(IVirgisLayer layer)
         {
-            throw new NotImplementedException();
+            _layers.Add(layer);
+            LayerUpdate.AddLayer(layer);
         }
 
         public void clearLayers()

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7595023357234774852}
   - component: {fileID: 1691723989444701443}
   - component: {fileID: 68049993809271853}
+  - component: {fileID: 3691977804266817505}
   m_Layer: 11
   m_Name: Point Cloud
   m_TagString: Untagged
@@ -154,3 +155,15 @@ MonoBehaviour:
   ScaleThreshold: 0.01
   InLocalSpace: 1
   Interpolate: 0
+--- !u!114 &3691977804266817505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590308289072081736}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22d5f267a4208f346b403c51e6ecee67, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
