@@ -307,7 +307,7 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public void SetMaterial(Color color)
+        public virtual void SetMaterial(Color color)
         {
             throw new NotImplementedException();
         }

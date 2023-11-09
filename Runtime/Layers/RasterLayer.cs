@@ -31,10 +31,8 @@ namespace Virgis
     {
         // The prefab for the data points to be instantiated
 
-        public GameObject handle;
         public GameObject pointCloud;
         public List<GameObject> meshes;
-        public Material HandleMaterial;
 
         private VisualEffect m_vfx;
 

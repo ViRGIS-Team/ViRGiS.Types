@@ -41,7 +41,7 @@ public class DataMesh : VirgisFeature
     public void Start()
     {
         MeshRenderer mr = GetComponent<MeshRenderer>();
-        mr.material = GetLayer().GetMaterial(4);
+        mr.material = GetLayer().GetMaterial(0);
     }
 
     private void SetMesh(Mesh nextMesh)
