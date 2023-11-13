@@ -28,6 +28,7 @@ using System.Linq;
 using System;
 using andywiecko.BurstTriangulator;
 using Unity.Mathematics;
+using Newtonsoft.Json;
 
 
 namespace Virgis
@@ -88,7 +89,7 @@ namespace Virgis
             Vector3[] vertices;
             GeneralPolygon2d polygon2d;
             Triangulator triangulator;
-            List<int> triangles = new();
+            int[] triangles;
 
             try {
 
@@ -103,12 +104,9 @@ namespace Virgis
 
                 for (int i = 0; i < edge_count ; i++) {
                     edges[2 * i] = i;
-                    edges[2 * i + 1] = i + 1;
+                    edges[2 * i + 1] = i != edge_count - 1 ? i + 1 : 0;
                 }
 
-                //
-                // calculate the dalaunay triangulation of the 2d polygon
-                //
                 triangulator = new Triangulator(Allocator.Persistent) {
                     Input = { 
                         Positions = new NativeArray<float2>(polygon2d.AllVerticesItr().ToPoints(), Allocator.Persistent),
@@ -116,7 +114,7 @@ namespace Virgis
                     },
                     Settings = {
                         RestoreBoundary = true,
-                        ConstrainEdges = false
+                        ConstrainEdges = true
                     }
                 };
 
@@ -143,7 +141,7 @@ namespace Virgis
                 // 
                 // extract the triangles from the delaunay triangulation 
                 //
-                triangles = triangulator.Output.Triangles.ToList();
+                triangles = triangulator.Output.Triangles.AsArray().ToArray();
 
             } catch (Exception e) {
                 throw new Exception("feature is not a valid Polygon : " + e.ToString());
@@ -152,8 +150,9 @@ namespace Virgis
             //
             // build the mesh entity
             //
+
             mesh.vertices = vertices;
-            mesh.triangles = triangles.ToArray();
+            mesh.triangles = triangles;
             mesh.uv = BuildUVs(vertices);
 
             mesh.RecalculateBounds();
