@@ -5,7 +5,10 @@
         "UniRx",
         "geometry3Sharp",
         "GeoJSON.NET",
-        "Unity.Netcode.Runtime"
+        "Unity.Netcode.Runtime",
+        "andywiecko.BurstTriangulator",
+        "Unity.Mathematics",
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,6 +1,6 @@
 /* MIT License
 
-Copyright (c) 2020 - 21 Runette Software
+Copyright (c) 2020 - 23 Runette Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,11 +21,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 using g3;
 using System.Linq;
 using System;
-using DelaunatorSharp;
+using andywiecko.BurstTriangulator;
+using Unity.Mathematics;
+
 
 namespace Virgis
 {
@@ -58,7 +61,7 @@ namespace Virgis
         }
 
         public override void MoveTo(MoveArgs args) {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -84,7 +87,7 @@ namespace Virgis
             Frame3f frame = new();
             Vector3[] vertices;
             GeneralPolygon2d polygon2d;
-            Delaunator delaunator;
+            Triangulator triangulator;
             List<int> triangles = new();
 
             try {
@@ -94,19 +97,39 @@ namespace Virgis
                 //
                 polygon2d = Polygon.ToPolygon(ref frame);
 
+                int edge_count = polygon2d.Outer.VertexCount;
+
+                NativeArray<int> edges = new NativeArray<int>(edge_count * 2, Allocator.Persistent);
+
+                for (int i = 0; i < edge_count ; i++) {
+                    edges[2 * i] = i;
+                    edges[2 * i + 1] = i + 1;
+                }
+
                 //
                 // calculate the dalaunay triangulation of the 2d polygon
                 //
-                delaunator = new Delaunator(polygon2d.AllVerticesItr().ToPoints());
+                triangulator = new Triangulator(Allocator.Persistent) {
+                    Input = { 
+                        Positions = new NativeArray<float2>(polygon2d.AllVerticesItr().ToPoints(), Allocator.Persistent),
+                        ConstraintEdges = edges
+                    },
+                    Settings = {
+                        RestoreBoundary = true,
+                        ConstrainEdges = false
+                    }
+                };
 
-                IEnumerable<Vector2d> vlist = delaunator.Points.ToVectors2d();
-                vertices = new Vector3[vlist.Count()];
+                triangulator.Run();
+
+                NativeList<float2> vlist = triangulator.Output.Positions;
+                vertices = new Vector3[vlist.Length];
 
                 //
                 // for each vertex in the dalaunay triangulatin - map back to a 3d point and also populate the vertex table
                 //
-                for (int i = 0; i < vlist.Count(); i++) {
-                    Vector2d v = vlist.ElementAt(i);
+                for (int i = 0; i < vlist.Length; i++) {
+                    Vector2d v = vlist.ElementAt(i).ToVector2d();
                     try {
                         Vector3d v1 = Polygon.AllVertexItr().Find(item => v.Distance(frame.ToPlaneUV((Vector3f)item, 2)) < 0.001);
                         vertices[i] = Shape.transform.InverseTransformPoint((Vector3)v1);
@@ -120,18 +143,8 @@ namespace Virgis
                 // 
                 // extract the triangles from the delaunay triangulation 
                 //
-                IEnumerable<ITriangle> tris = delaunator.GetTriangles();
-                for (int i = 0; i < tris.Count(); i++) {
+                triangles = triangulator.Output.Triangles.ToList();
 
-                    ITriangle tri = tris.ElementAt(i);
-
-                    if (polygon2d.Contains(tri.CetIncenter())) {
-                        int index = 3 * i;
-                        triangles.Add(delaunator.Triangles[index]);
-                        triangles.Add(delaunator.Triangles[index + 1]);
-                        triangles.Add(delaunator.Triangles[index + 2]);
-                    }
-                }
             } catch (Exception e) {
                 throw new Exception("feature is not a valid Polygon : " + e.ToString());
             }

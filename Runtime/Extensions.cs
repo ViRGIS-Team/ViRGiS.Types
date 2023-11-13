@@ -1,5 +1,25 @@
+/* MIT License
 
-using DelaunatorSharp;
+Copyright (c) 2020 - 23 Runette Software
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice (and subsidiary notices) shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE. */
+
 using g3;
 using System;
 using System.Collections;
@@ -8,6 +28,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Jobs;
 using UnityEngine;
+using Unity.Mathematics;
+using Unity.Collections;
 
 namespace Virgis
 {
@@ -204,24 +226,12 @@ namespace Virgis
 
     public static class DelaunatorExtensions
     {
-        public static IPoint[] ToPoints(this IEnumerable<Vector2d> vertices) => vertices.Select(vertex => new Point(vertex.x, vertex.y)).OfType<IPoint>().ToArray();
+        public static float2[] ToPoints(this IEnumerable<Vector2d> vertices) => vertices.Select(vertex => new float2((float)vertex.x, (float)vertex.y)).ToArray();
 
-        public static Vector2d[] ToVectors2d(this IEnumerable<IPoint> points) => points.Select(point => point.ToVector2d()).ToArray();
+        public static Vector2d[] ToVectors2d(this NativeArray<float2> points) => points.Select(point => point.ToVector2d()).ToArray();
 
-        public static Vector2d ToVector2d(this IPoint point) => new Vector2d((float)point.X, (float)point.Y);
+        public static Vector2d ToVector2d(this float2 point) => new Vector2d(point.x, point.y);
 
-        public static Vector2d CetIncenter(this ITriangle tri)
-        {
-            Vector2d A = tri.Points.ElementAt<IPoint>(0).ToVector2d();
-            Vector2d B = tri.Points.ElementAt<IPoint>(1).ToVector2d();
-            Vector2d C = tri.Points.ElementAt<IPoint>(2).ToVector2d();
-            double a = (B - A).Length;
-            double b = (C - B).Length;
-            double c = (A - C).Length;
-            double x = (a * A.x + b * B.x + c * C.x) / (a + b + c);
-            double y = (a * A.y + b * B.y + c * C.y) / (a + b + c);
-            return new Vector2d(x, y);
-        }
 
     }
 

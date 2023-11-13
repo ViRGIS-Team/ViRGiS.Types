@@ -15,7 +15,8 @@
     "dependencies": {
       "com.virgis.geometry3sharp": "2.0.0",
       "com.virgis.geojson.net": "1.2.17",
-      "com.nol1fe.delaunator": "1.0.10"
+      "com.nol1fe.delaunator": "1.0.10",
+      "com.andywiecko.burst.triangulator": "2.3.0"
     },
     "keywords": [
         "geometry",
