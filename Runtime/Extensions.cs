@@ -131,6 +131,51 @@ namespace Virgis
     public static class PolygonExtensions
     {
 
+        public static IEnumerable<(int, int)> EdgeItr(this Polygon2d poly) {
+			for ( int i = 0; i < poly.VertexCount; ++i )
+				yield return  ( i, i != poly.VertexCount - 1 ? i+1 : 0 );
+		}
+
+        public static IEnumerable<(int, int)> AllEdgesItr(this GeneralPolygon2d poly)
+		{
+			int j = poly.Outer.VertexCount;
+            for (int i = 0; i < j; i++)
+				yield return (i, i != j - 1 ? i + 1 : 0);
+			foreach (var hole in poly.Holes) {
+				for (int i = 0; i <  hole.VertexCount; i++)
+					yield return (j + i, i != hole.VertexCount - 1 ? j + i + 1 : j);
+                j += hole.VertexCount;
+			}
+		}
+
+        public static NativeArray<int> ToEdges(this GeneralPolygon2d poly) {
+            int edge_count = poly.VertexCount;
+
+            NativeArray<int> edges = new(edge_count * 2, Allocator.Persistent);
+
+            int idx = 0;
+            foreach( (int,int) edge in poly.AllEdgesItr() ) {
+                edges[idx] = edge.Item1;
+                idx++;
+                edges[idx] = edge.Item2;
+                idx++;
+            }
+            return edges;
+        }
+
+        public static NativeArray<float2> ToHoleSeeds(this GeneralPolygon2d poly) {
+            List<Vector2d> seeds = new();
+            foreach(Polygon2d hole in poly.Holes) {
+                Vector2d seed = hole.Bounds.Center;
+                if (hole.Contains(seed))
+                    seeds.Add(seed);
+                else throw new Exception("Cannot find Hole Seed");
+            }
+            return new NativeArray<float2>(seeds.ToPoints(), Allocator.Persistent);
+        } 
+
+
+
         public static GeneralPolygon2d ToPolygon(this List<DCurve3> list, ref Frame3f frame)
         {
             OrthogonalPlaneFit3 orth = new OrthogonalPlaneFit3(list[0].Vertices);
@@ -231,6 +276,7 @@ namespace Virgis
         public static Vector2d[] ToVectors2d(this NativeArray<float2> points) => points.Select(point => point.ToVector2d()).ToArray();
 
         public static Vector2d ToVector2d(this float2 point) => new Vector2d(point.x, point.y);
+        public static float2 ToFloat2(this Vector2d point) => new( (float) point.x, (float)point.y);
 
 
     }

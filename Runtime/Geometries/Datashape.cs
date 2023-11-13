@@ -98,19 +98,11 @@ namespace Virgis
                 //
                 polygon2d = Polygon.ToPolygon(ref frame);
 
-                int edge_count = polygon2d.Outer.VertexCount;
-
-                NativeArray<int> edges = new NativeArray<int>(edge_count * 2, Allocator.Persistent);
-
-                for (int i = 0; i < edge_count ; i++) {
-                    edges[2 * i] = i;
-                    edges[2 * i + 1] = i != edge_count - 1 ? i + 1 : 0;
-                }
-
                 triangulator = new Triangulator(Allocator.Persistent) {
                     Input = { 
                         Positions = new NativeArray<float2>(polygon2d.AllVerticesItr().ToPoints(), Allocator.Persistent),
-                        ConstraintEdges = edges
+                        ConstraintEdges = polygon2d.ToEdges(),
+                        HoleSeeds = polygon2d.ToHoleSeeds()
                     },
                     Settings = {
                         RestoreBoundary = true,
@@ -159,6 +151,11 @@ namespace Virgis
             mesh.RecalculateNormals();
 
             Shape.GetComponent<DataMesh>().umesh.Set(mesh);
+
+            triangulator.Input.Positions.Dispose();
+            triangulator.Input.ConstraintEdges.Dispose();
+            triangulator.Input.HoleSeeds.Dispose();
+            triangulator.Dispose();
         }
 
         public override VirgisFeature AddVertex(Vector3 position) {
