@@ -28,7 +28,6 @@ using System.Linq;
 using System;
 using andywiecko.BurstTriangulator;
 using Unity.Mathematics;
-using Newtonsoft.Json;
 
 
 namespace Virgis

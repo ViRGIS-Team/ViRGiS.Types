@@ -28,11 +28,9 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 
-public class EditableMesh : VirgisFeature
+public class EditableMesh : DataMesh
 {   
     private bool m_BlockMove = false; // is entity in a block-move state
-    private DMesh3 m_dmesh; // This is the mesh expressed as a DMesh3 in local
-                            // space coordinates 
     private DMesh3 m_oldDmesh; // holds the previous mesh during editing
     private int m_selectedVertex;
     private GameObject m_sphere;
@@ -49,7 +47,7 @@ public class EditableMesh : VirgisFeature
         if (m_selectOn)
             UnSelected(SelectionType.SELECT);
         m_selectOn = true;
-        m_oldDmesh = new DMesh3(m_dmesh);
+        m_oldDmesh = new DMesh3(m_mesh);
         transform.parent.SendMessage("Selected", button, SendMessageOptions.DontRequireReceiver);
         if (button == SelectionType.SELECTALL) {
             m_BlockMove = true;
@@ -63,8 +61,8 @@ public class EditableMesh : VirgisFeature
             Vector3d V0 = new Vector3d();
             Vector3d V1 = new Vector3d();
             Vector3d V2 = new Vector3d();
-            m_dmesh.GetTriVertices(m_currentHitTri.Value, ref V0, ref V1, ref V2);
-            Index3i tri = m_dmesh.GetTriangle(m_currentHitTri.Value);
+            m_mesh.GetTriVertices(m_currentHitTri.Value, ref V0, ref V1, ref V2);
+            Index3i tri = m_mesh.GetTriangle(m_currentHitTri.Value);
             Vector3d currentBari = MathUtil.BarycentricCoords(m_currentHit, V0, V1, V2);
             if (currentBari.x > currentBari.y && currentBari.x > currentBari.z)
                 m_selectedVertex = tri.a;
@@ -90,7 +88,7 @@ public class EditableMesh : VirgisFeature
         Mesh mesh = mf.sharedMesh;
         mc[0].sharedMesh = mesh;
         mc[1].sharedMesh = ReverseMesh(mesh);
-        m_aabb = new DMeshAABBTree3(m_dmesh, true);
+        m_aabb = new DMeshAABBTree3(m_mesh, true);
         n = -1;
     }
 
@@ -121,7 +119,7 @@ public class EditableMesh : VirgisFeature
                             m_nRing.Clear();
                             foreach (int v in working) {
                                 if (!inside.Contains(v))
-                                    foreach (int vring in m_dmesh.VtxVerticesItr(v)) {
+                                    foreach (int vring in m_mesh.VtxVerticesItr(v)) {
                                         if (!inside.Contains(vring))
                                             m_nRing.Add(vring);
                                     }
@@ -134,23 +132,23 @@ public class EditableMesh : VirgisFeature
                     // set the constraint that the selected vertex is moved to position
                     // set the contraint that the n-ring remains stationary
                     //
-                    LaplacianMeshDeformer deform = new LaplacianMeshDeformer(m_dmesh);
+                    LaplacianMeshDeformer deform = new LaplacianMeshDeformer(m_mesh);
                     deform.SetConstraint(m_selectedVertex, target, 1, true);
                     foreach (int v in m_nRing) {
-                        deform.SetConstraint(v, m_dmesh.GetVertex(v), 10, false);
+                        deform.SetConstraint(v, m_mesh.GetVertex(v), 10, false);
                     }
                     deform.SolveAndUpdateMesh();
                 } else {
-                    m_dmesh.SetVertex(m_selectedVertex, target);
+                    m_mesh.SetVertex(m_selectedVertex, target);
                 }
                 //
                 // reset the Unity mesh
                 // 
                 if (m_sphere != null)
-                    m_sphere.transform.localPosition = (Vector3) m_dmesh.GetVertex(m_selectedVertex);
+                    m_sphere.transform.localPosition = (Vector3) m_mesh.GetVertex(m_selectedVertex);
                 List<Vector3> vtxs = new List<Vector3>();
-                foreach (int v in m_dmesh.VertexIndices())
-                    vtxs.Add((Vector3)m_dmesh.GetVertex(v));
+                foreach (int v in m_mesh.VertexIndices())
+                    vtxs.Add((Vector3)m_mesh.GetVertex(v));
                 mesh.vertices = vtxs.ToArray();
                 mesh.RecalculateBounds();
                 mesh.RecalculateNormals();
@@ -192,21 +190,16 @@ public class EditableMesh : VirgisFeature
     /// <param name="Wf">Wirframe material to be used when the mesh is being edited</param>
     /// <returns></returns>
     public Transform Draw(DMesh3 dmeshin, Material mat, Material Wf) {
+        Spawn(transform.parent);
         mainMat = mat;
         selectedMat = Wf;
-        m_dmesh = dmeshin.Compactify();
-        m_aabb = new DMeshAABBTree3(m_dmesh, true);
+        m_mesh = dmeshin.Compactify();
+        m_aabb = new DMeshAABBTree3(m_mesh, true);
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
         mr = GetComponent<MeshRenderer>();
         mr.material = mainMat;
-        Mesh umesh = m_dmesh.ToMesh();
-        umesh.RecalculateBounds();
-        umesh.RecalculateNormals();
-        umesh.RecalculateTangents();
-        mf.mesh = umesh;
-        mc[0].sharedMesh = mf.sharedMesh;
-        mc[1].sharedMesh = ReverseMesh(mf.sharedMesh);
+        umesh.Set(m_mesh.ToMesh());
         return transform;
     }
 
@@ -222,14 +215,9 @@ public class EditableMesh : VirgisFeature
         return imesh;
     }
 
-    public DMesh3 GetMesh() {
-        MeshFilter mf = GetComponent<MeshFilter>();
-        return mf.mesh.ToDmesh(transform);
-    }
-
     public override Dictionary<string, object> GetInfo() {
-        if (m_dmesh != null)
-            return m_dmesh.FindMetadata("properties") as Dictionary<string, object>;
+        if (m_mesh != null)
+            return m_mesh.FindMetadata("properties") as Dictionary<string, object>;
         else
             return transform.parent.GetComponent<IVirgisFeature>().GetInfo();
     }
@@ -254,35 +242,35 @@ public class EditableMesh : VirgisFeature
     public override VirgisFeature AddVertex(Vector3 position) {
         Vector3d localPosition = (Vector3d) transform.InverseTransformPoint(position);
         int currentHitTri;
-        m_aabb = new DMeshAABBTree3(m_dmesh, true);
+        m_aabb = new DMeshAABBTree3(m_mesh, true);
         currentHitTri = m_aabb.FindNearestTriangle(localPosition);
         m_aabb.Build();
         Vector3d V0 = new Vector3d();
         Vector3d V1 = new Vector3d();
         Vector3d V2 = new Vector3d();
-        m_dmesh.GetTriVertices(currentHitTri, ref V0, ref V1, ref V2);
-        Index3i tri = m_dmesh.GetTriangle(currentHitTri);
+        m_mesh.GetTriVertices(currentHitTri, ref V0, ref V1, ref V2);
+        Index3i tri = m_mesh.GetTriangle(currentHitTri);
         Vector3d currentBari = MathUtil.BarycentricCoords(localPosition, V0, V1, V2);
         int edgeId = 0;
         if (currentBari.x > currentBari.y && currentBari.x > currentBari.z) 
             if (currentBari.y < currentBari.z) 
-                edgeId = m_dmesh.FindEdgeFromTri(tri.a, tri.c, currentHitTri);
+                edgeId = m_mesh.FindEdgeFromTri(tri.a, tri.c, currentHitTri);
             else
-                edgeId = m_dmesh.FindEdgeFromTri(tri.a, tri.b, currentHitTri);
+                edgeId = m_mesh.FindEdgeFromTri(tri.a, tri.b, currentHitTri);
         if (currentBari.y > currentBari.x && currentBari.y > currentBari.z)
             if (currentBari.x < currentBari.z)
-                edgeId = m_dmesh.FindEdgeFromTri(tri.b, tri.c, currentHitTri);
+                edgeId = m_mesh.FindEdgeFromTri(tri.b, tri.c, currentHitTri);
             else
-                edgeId = m_dmesh.FindEdgeFromTri(tri.b, tri.a, currentHitTri);
+                edgeId = m_mesh.FindEdgeFromTri(tri.b, tri.a, currentHitTri);
         if (currentBari.z > currentBari.y && currentBari.z > currentBari.x)
             if (currentBari.y < currentBari.x)
-                edgeId = m_dmesh.FindEdgeFromTri(tri.c, tri.a, currentHitTri);
+                edgeId = m_mesh.FindEdgeFromTri(tri.c, tri.a, currentHitTri);
             else
-                edgeId = m_dmesh.FindEdgeFromTri(tri.c, tri.b, currentHitTri);
+                edgeId = m_mesh.FindEdgeFromTri(tri.c, tri.b, currentHitTri);
         DMesh3.EdgeSplitInfo result = new DMesh3.EdgeSplitInfo();
-        m_dmesh.SplitEdge(edgeId, out result);
-        m_dmesh.SetVertex(result.vNew, localPosition);
-        Mesh tempMesh = m_dmesh.ToMesh();
+        m_mesh.SplitEdge(edgeId, out result);
+        m_mesh.SetVertex(result.vNew, localPosition);
+        Mesh tempMesh = m_mesh.ToMesh();
         tempMesh.RecalculateBounds();
         tempMesh.RecalculateNormals();
         MeshFilter mf = GetComponent<MeshFilter>();
@@ -296,15 +284,15 @@ public class EditableMesh : VirgisFeature
     /// </summary>
     public void Delete() {
         MeshFilter mf = GetComponent<MeshFilter>();
-        m_dmesh.RemoveVertex(m_selectedVertex);
+        m_mesh.RemoveVertex(m_selectedVertex);
         if (m_oldDmesh.IsClosed()) {
-            MeshAutoRepair mr = new MeshAutoRepair(m_dmesh);
+            MeshAutoRepair mr = new MeshAutoRepair(m_mesh);
             mr.Apply();
-            m_dmesh = mr.Mesh;
+            m_mesh = mr.Mesh;
         } else {
-            m_dmesh.CompactInPlace();
+            m_mesh.CompactInPlace();
         }
-        Mesh tempMesh = m_dmesh.ToMesh();
+        Mesh tempMesh = m_mesh.ToMesh();
         tempMesh.RecalculateBounds();
         tempMesh.RecalculateNormals();
         mf.mesh = tempMesh;

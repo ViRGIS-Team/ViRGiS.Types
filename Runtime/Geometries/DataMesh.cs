@@ -1,6 +1,6 @@
 ﻿/* MIT License
 
-Copyright (c) 2020 - 21 Runette Software
+Copyright (c) 2020 - 23 Runette Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ using System.Linq;
 
 public class DataMesh : VirgisFeature
 {
-    private DMesh3 m_mesh;
+    protected DMesh3 m_mesh;
 
     public SerializeableMesh umesh = new();
 
