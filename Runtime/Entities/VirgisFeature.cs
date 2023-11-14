@@ -37,6 +37,7 @@ namespace Virgis {
         protected Vector3 m_firstHitPosition = Vector3.zero;
         protected bool m_nullifyHitPos = true;
         protected bool m_blockMove = false; // is entity in a block-move state
+        protected readonly List<IDisposable> m_subs = new();
 
         private Guid _id; // internal ID for this component - used when it is part of a larger structure
         public Transform label; //  Go of the label or billboard
@@ -47,6 +48,16 @@ namespace Virgis {
         void Awake()
         {
             _id = Guid.NewGuid();
+        }
+
+        protected new void OnDestroy()
+        {
+            m_subs.ForEach(item => item.Dispose());
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Destroy(transform.GetChild(i).gameObject);
+            }
+            base.OnDestroy();
         }
 
         public void Destroy() {
