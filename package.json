@@ -4,18 +4,9 @@
     "displayName": "ViRGiS Basic Types",
     "description": "ViRGiS is a GIS platform for VR. See https://www.vrgis.org for more details.",
     "unity": "2020.3",
-    "scopedRegistries": [
-        {
-          "name": "package.openupm.com",
-          "url": "https://package.openupm.com",
-          "scopes": [
-          ]
-        }
-      ],
     "dependencies": {
-      "com.virgis.geometry3sharp": "2.0.0",
+      "com.virgis.geometry": "3.0.0",
       "com.virgis.geojson.net": "1.2.17",
-      "com.nol1fe.delaunator": "1.0.10",
       "com.andywiecko.burst.triangulator": "2.3.0"
     },
     "keywords": [
