@@ -75,11 +75,15 @@ namespace Virgis
             int[] tris = new int[triCount];
             reader.ReadValueSafe(out tris);
             Mesh tmesh = new();
+            if (vertexCount > 64000 || triCount > 64000)
+                tmesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             tmesh.SetVertices(vertices);
             tmesh.SetNormals(normals);
             tmesh.SetColors(colors);
             tmesh.SetUVs(0,uvs);
             tmesh.SetTriangles(tris, 0);
+            tmesh.RecalculateTangents();
+            tmesh.RecalculateBounds();
             mesh = tmesh;
             OnValueChanged?.Invoke(mesh);
         }
