@@ -70,6 +70,7 @@ namespace Virgis {
         private readonly List<IDisposable> m_subs = new();
         protected readonly List<Material> m_mat = new();
         protected NetworkList<Color> m_cols;
+        protected NetworkList<SerializableProperty> m_props;
 
 
         protected void Awake() {
@@ -438,9 +439,18 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public virtual void SetMaterial(Color color)
+        public virtual void SetMaterial(Color color, Dictionary<string, float> properties = null)
         {
             m_cols.Add(color);
+            int idx = m_cols.Count - 1;
+            if (properties!= null)
+            {
+                foreach (KeyValuePair<string, float> entry in properties)
+                {
+                    SerializableProperty p = new() { Name = entry.Key, Value = entry.Value, Owner = idx };
+                    m_props.Add(p);
+                }
+            }
         }
 
         public Material GetMaterial(int idx)
