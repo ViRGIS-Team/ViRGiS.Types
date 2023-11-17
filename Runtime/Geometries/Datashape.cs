@@ -21,13 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using System.Collections.Generic;
-using Unity.Collections;
 using UnityEngine;
 using g3;
 using System.Linq;
 using System;
-using andywiecko.BurstTriangulator;
-using Unity.Mathematics;
+
 
 
 namespace Virgis
@@ -67,94 +65,61 @@ namespace Virgis
         /// <summary>
         /// Makes the actual mesh
         /// </summary>
-        protected void _redraw() {
-            if (lines.Count > 0) {
+        protected void _redraw()
+        {
+            if (lines.Count > 0)
+            {
                 Polygon = new List<DCurve3>();
-                foreach (Dataline ring in lines) {
-                    foreach (VertexLookup v in ring.VertexTable) {
+                foreach (Dataline ring in lines)
+                {
+                    foreach (VertexLookup v in ring.VertexTable)
+                    {
                         VertexTable.Add(v);
                     }
-                    DCurve3 curve = new();
-                    curve.Vector3(ring.GetVertexPositions(), true);
+                    DCurve3 curve = new(ring.GetVertexPositions(), true);
                     Polygon.Add(curve);
                 }
             }
+
+
+            //
+            // Map 3d Polygon to the bext fit 2d polygon and also return the frame used for the mapping
+            //
+            Frame3f frame;
+            IEnumerable<Vector3d> VerticesItr;
+            GeneralPolygon2d polygon2d = new(Polygon, out frame, out VerticesItr );
 
             Mesh mesh = new()
             {
                 indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
             };
-            Frame3f frame = new();
-            Vector3[] vertices;
-            GeneralPolygon2d polygon2d;
-            Triangulator triangulator;
-            int[] triangles;
 
-            try {
+            Index3i[] triangles = polygon2d.GetMesh();
 
-                //
-                // Map 3d Polygon to the bext fit 2d polygon and also return the frame used for the mapping
-                //
-                polygon2d = Polygon.ToPolygon(ref frame);
+            //
+            // for each vertex in the dalaunay triangulatin - map back to a 3d point and also populate the vertex table
+            //
 
-                triangulator = new Triangulator(Allocator.Persistent) {
-                    Input = { 
-                        Positions = new NativeArray<float2>(polygon2d.AllVerticesItr().ToPoints(), Allocator.Persistent),
-                        ConstraintEdges = polygon2d.ToEdges(),
-                        HoleSeeds = polygon2d.ToHoleSeeds()
-                    },
-                    Settings = {
-                        RestoreBoundary = true,
-                        ConstrainEdges = true
-                    }
-                };
+            List<Vector3> vertices = VerticesItr.Select(vertex => Shape.transform.InverseTransformPoint((Vector3)vertex)).ToList<Vector3>();
 
-                triangulator.Run();
+            List<int> tris = new();
 
-                NativeList<float2> vlist = triangulator.Output.Positions;
-                vertices = new Vector3[vlist.Length];
-
-                //
-                // for each vertex in the dalaunay triangulatin - map back to a 3d point and also populate the vertex table
-                //
-                for (int i = 0; i < vlist.Length; i++) {
-                    Vector2d v = vlist.ElementAt(i).ToVector2d();
-                    try {
-                        Vector3d v1 = Polygon.AllVertexItr().Find(item => v.Distance(frame.ToPlaneUV((Vector3f)item, 2)) < 0.001);
-                        vertices[i] = Shape.transform.InverseTransformPoint((Vector3)v1);
-                        VertexLookup vl = VertexTable.Find(item => v1.Distance(item.Com.transform.position) < 0.001);
-                        if (vl != null) vl.pVertex = i;
-                    } catch {
-                        Debug.Log("Mesh Error");
-                    }
-                }
-
-                // 
-                // extract the triangles from the delaunay triangulation 
-                //
-                triangles = triangulator.Output.Triangles.AsArray().ToArray();
-
-            } catch (Exception e) {
-                throw new Exception("feature is not a valid Polygon : " + e.ToString());
+            foreach (Index3i tri in triangles)
+            {
+                tris.Add(tri.a);
+                tris.Add(tri.b);
+                tris.Add(tri.c);
             }
 
-            //
-            // build the mesh entity
-            //
-
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
-            mesh.uv = BuildUVs(vertices);
+            mesh.vertices = vertices.ToArray();
+            mesh.triangles = tris.ToArray();
+            mesh.uv = BuildUVs(mesh.vertices);
 
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
             Shape.GetComponent<DataMesh>().umesh.Set(mesh);
 
-            triangulator.Input.Positions.Dispose();
-            triangulator.Input.ConstraintEdges.Dispose();
-            triangulator.Input.HoleSeeds.Dispose();
-            triangulator.Dispose();
         }
 
         public override VirgisFeature AddVertex(Vector3 position) {

@@ -44,15 +44,15 @@ public class DataMesh : VirgisFeature
         mr.material = GetLayer().GetMaterial(0);
     }
 
-    private void SetMesh(Mesh nextMesh)
+    protected void SetMesh(Mesh nextMesh)
     {
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
-        mf.mesh = null;
         Mesh mesh = nextMesh;
+        mf.mesh = mesh;
         Mesh imesh = new()
         {
-            indexFormat = UnityEngine.Rendering.IndexFormat.UInt32,
+            indexFormat = mesh.indexFormat,
 
             vertices = mesh.vertices,
             triangles = mesh.triangles.Reverse<int>().ToArray(),
@@ -62,7 +62,6 @@ public class DataMesh : VirgisFeature
         imesh.RecalculateBounds();
         imesh.RecalculateNormals();
 
-        mf.mesh = mesh;
         try
         {
             mc[0].sharedMesh = mesh;

@@ -83,11 +83,6 @@ public class EditableMesh : DataMesh
         transform.parent.SendMessage("UnSelected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
         m_BlockMove = false;
         Destroy(m_sphere);
-        MeshCollider[] mc = GetComponents<MeshCollider>();
-        MeshFilter mf = GetComponent<MeshFilter>();
-        Mesh mesh = mf.sharedMesh;
-        mc[0].sharedMesh = mesh;
-        mc[1].sharedMesh = ReverseMesh(mesh);
         m_aabb = new DMeshAABBTree3(m_mesh, true);
         n = -1;
     }
@@ -193,26 +188,14 @@ public class EditableMesh : DataMesh
         Spawn(transform.parent);
         mainMat = mat;
         selectedMat = Wf;
-        m_mesh = dmeshin.Compactify();
+        m_mesh = new(dmeshin);
         m_aabb = new DMeshAABBTree3(m_mesh, true);
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
         mr = GetComponent<MeshRenderer>();
         mr.material = mainMat;
-        umesh.Set(m_mesh.ToMesh());
+        umesh.Set((Mesh)m_mesh);
         return transform;
-    }
-
-    private Mesh ReverseMesh(Mesh mesh) {
-        Mesh imesh = new Mesh();
-        imesh.MarkDynamic();
-        imesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        imesh.vertices = mesh.vertices;
-        imesh.uv = mesh.uv;
-        int[] t = mesh.triangles;
-        Array.Reverse(t);
-        imesh.triangles = t;
-        return imesh;
     }
 
     public override Dictionary<string, object> GetInfo() {
@@ -270,7 +253,7 @@ public class EditableMesh : DataMesh
         DMesh3.EdgeSplitInfo result = new DMesh3.EdgeSplitInfo();
         m_mesh.SplitEdge(edgeId, out result);
         m_mesh.SetVertex(result.vNew, localPosition);
-        Mesh tempMesh = m_mesh.ToMesh();
+        Mesh tempMesh = (Mesh)m_mesh;
         tempMesh.RecalculateBounds();
         tempMesh.RecalculateNormals();
         MeshFilter mf = GetComponent<MeshFilter>();
@@ -292,7 +275,7 @@ public class EditableMesh : DataMesh
         } else {
             m_mesh.CompactInPlace();
         }
-        Mesh tempMesh = m_mesh.ToMesh();
+        Mesh tempMesh = (Mesh)m_mesh;
         tempMesh.RecalculateBounds();
         tempMesh.RecalculateNormals();
         mf.mesh = tempMesh;

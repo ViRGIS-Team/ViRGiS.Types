@@ -74,37 +74,6 @@ namespace Virgis
             reader.ReadValueSafe(out uvs);
             int[] tris = new int[triCount];
             reader.ReadValueSafe(out tris);
-
-            //List<Vector3> vertices = new();
-            //List<Color> colors = new();
-            //List<Vector2> uvs = new();
-            //List<Vector3> normals = new();
-            //List<int> tris = new();
-            //for (int i = 0; i< vertexCount; i++)
-            //{
-            //    reader.ReadValueSafe(out Vector3 vertex);
-            //    vertices.Add(vertex);
-            //}
-            //for (int i = 0; i < vertexCount; i++)
-            //{
-            //    reader.ReadValueSafe(out Vector3 normal);
-            //    normals.Add(normal);
-            //}
-            //for (int i = 0; i < vertexCount; i++)
-            //{
-            //    reader.ReadValueSafe(out Color color);
-            //    colors.Add(color);
-            //}
-            //for (int i = 0; i < vertexCount; i++)
-            //{
-            //    reader.ReadValueSafe(out Vector2 uv);
-            //    uvs.Add(uv);
-            //}
-            //for (int i = 0; i < triCount; i++)
-            //{
-            //    reader.ReadValueSafe(out int tri);
-            //    tris.Add(tri);
-            //}
             Mesh tmesh = new();
             tmesh.SetVertices(vertices);
             tmesh.SetNormals(normals);

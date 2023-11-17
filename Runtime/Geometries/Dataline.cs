@@ -46,7 +46,7 @@ namespace Virgis
         private GameObject m_handlePrefab;
         private Material m_lineMain;
         private Material m_lineSelected;
-        public DCurve3 Curve = new DCurve3();
+        public DCurve3 Curve;
 
         /// <summary>
         /// Every frame - realign the billboard
@@ -67,10 +67,10 @@ namespace Virgis
                     if (vLookup.Line && vLookup.Line.vEnd == vdata.Vertex)
                         vLookup.Line.MoveEnd(data.pos);
                 }
-                Curve.Vector3(GetVertexPositions(), m_Lr);
+                Curve = new(GetVertexPositions(), m_Lr);
                 if (label) label.position = _labelPosition();
             }
-            Curve.Vector3(GetVertexPositions(), m_Lr);
+            Curve = new(GetVertexPositions(), m_Lr);
         }
 
         public override void MoveAxis(MoveArgs args) {
@@ -146,7 +146,7 @@ namespace Virgis
                 }
                 i++;
             }
-            Curve.Vector3(GetVertexPositions(), m_Lr);
+            Curve = new(GetVertexPositions(), m_Lr);
 
             //Set the label
             if (labelPrefab != null)
@@ -283,7 +283,7 @@ namespace Virgis
             _createSegment(position, VertexTable.Find(item => item.Vertex == end).Com.transform.position, start, end == 0);
             transform.parent.SendMessage("AddVertex", position, SendMessageOptions.DontRequireReceiver);
             vertex.UnSelected(SelectionType.SELECT);
-            Curve.Vector3(GetVertexPositions(), m_Lr);
+            Curve = new(GetVertexPositions(), m_Lr);
             return vertex;
         }
 
