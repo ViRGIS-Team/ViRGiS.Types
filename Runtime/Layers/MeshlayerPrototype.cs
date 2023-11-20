@@ -77,6 +77,10 @@ namespace Virgis
                 case 1:
                     m = Instantiate(WireframeMaterial);
                     break;
+                case 2:
+                    m = Instantiate(ImageMaterial);
+                    m.SetTexture("_BaseMap", texture.tex);
+                    break;
                 default:
                     m = Instantiate(MeshMaterial);
                     break;
@@ -85,4 +89,3 @@ namespace Virgis
         }
     }
 }
-

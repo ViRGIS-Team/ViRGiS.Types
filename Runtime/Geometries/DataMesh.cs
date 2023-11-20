@@ -31,11 +31,16 @@ public class DataMesh : VirgisFeature
 {
     protected DMesh3 m_mesh;
 
-    public SerializeableMesh umesh = new();
+    public SerializableMesh umesh = new();
 
     public void Awake()
     {
         umesh.OnValueChanged += SetMesh;
+    }
+
+    public new void OnDestroy() {
+        umesh.Dispose();
+        base.OnDestroy();
     }
 
     public void Start()
@@ -55,7 +60,7 @@ public class DataMesh : VirgisFeature
             indexFormat = mesh.indexFormat,
 
             vertices = mesh.vertices,
-            triangles = mesh.triangles.Reverse<int>().ToArray(),
+            triangles = mesh.triangles.Reverse().ToArray(),
             uv = mesh.uv
         };
 
@@ -72,6 +77,16 @@ public class DataMesh : VirgisFeature
             Debug.Log(e.ToString());
         }
     }
+
+    public override void SetMaterial(int idx)
+        {
+            base.SetMaterial(idx);
+            Renderer thisRenderer = GetComponent<Renderer>();
+            if (thisRenderer)
+            {
+                thisRenderer.material = mainMat;
+            }
+        }
 
     public DMesh3 GetMesh() {
         return m_mesh;

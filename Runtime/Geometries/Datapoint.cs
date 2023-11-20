@@ -30,7 +30,7 @@ using System;
 namespace Virgis
 {
     /// <summary>
-    /// Controls an instance of a data pointor handle
+    /// Controls an instance of a data point handle
     /// </summary>
     public class Datapoint : VirgisFeature
     {

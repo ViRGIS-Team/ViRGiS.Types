@@ -184,16 +184,10 @@ public class EditableMesh : DataMesh
     /// <param name="mat">Material to be used for mesh normally</param>
     /// <param name="Wf">Wirframe material to be used when the mesh is being edited</param>
     /// <returns></returns>
-    public Transform Draw(DMesh3 dmeshin, Material mat, Material Wf) {
+    public Transform Draw(DMesh3 dmeshin) {
         Spawn(transform.parent);
-        mainMat = mat;
-        selectedMat = Wf;
         m_mesh = new(dmeshin);
         m_aabb = new DMeshAABBTree3(m_mesh, true);
-        MeshFilter mf = GetComponent<MeshFilter>();
-        MeshCollider[] mc = GetComponents<MeshCollider>();
-        mr = GetComponent<MeshRenderer>();
-        mr.material = mainMat;
         umesh.Set((Mesh)m_mesh);
         return transform;
     }

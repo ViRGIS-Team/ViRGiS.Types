@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Virgis
 {
     [Serializable]
-    public class SerializeableMesh : NetworkVariableBase
+    public class SerializableMesh : NetworkVariableBase
     {
         public Mesh mesh;
 

@@ -71,6 +71,7 @@ namespace Virgis {
         protected readonly List<Material> m_mat = new();
         protected NetworkList<Color> m_cols;
         protected NetworkList<SerializableProperty> m_props;
+        public SerializableTexture texture;
 
 
         protected void Awake() {
@@ -80,6 +81,8 @@ namespace Virgis {
             isContainer = false;
             isWriteable = false;
             m_cols = new();
+            m_props = new();
+            texture = new();
         }
 
         protected void Start() {
@@ -439,6 +442,12 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
+        public virtual void SetMaterial(Color color, Texture2D tex, Dictionary<string, float> properties = null)
+        {
+            SetMaterial(color, properties);
+            texture.tex = tex;
+        }
+
         public virtual void SetMaterial(Color color, Dictionary<string, float> properties = null)
         {
             m_cols.Add(color);
@@ -461,10 +470,15 @@ namespace Virgis {
                 for (int i = 0; i < m_cols.Count; i++)
                 {
                     m_mat.Add(MapMaterial(m_cols[i], i));
+                    foreach(SerializableProperty prop in m_props) {
+                        if (prop.Owner == i) {
+                            m_mat[i].SetFloat(prop.Name.ToString(),prop.Value);
+                        }
+                    }
                 }
             }
             if (idx <m_mat.Count) return m_mat[idx];
-            throw new Exception("Material index error");
+            throw new Exception($"Material index error - {GetMetadata().DisplayName}");
         }
 
         protected virtual Material MapMaterial(Color color, int idx)

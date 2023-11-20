@@ -51,9 +51,7 @@ namespace Virgis
             }
 
             Shape = Instantiate(shapePrefab, transform);
-            MeshRenderer mr = Shape.GetComponent<MeshRenderer>();
-            mr.material = mat;
-
+            
             // call the generic polygon draw function from DataShape
             _redraw();
             return gameObject;
