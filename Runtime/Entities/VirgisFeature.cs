@@ -50,7 +50,7 @@ namespace Virgis {
             _id = Guid.NewGuid();
         }
 
-        protected new void OnDestroy()
+        void OnDestroy()
         {
             m_subs.ForEach(item => item.Dispose());
             for (int i = 0; i < transform.childCount; i++)
@@ -60,7 +60,13 @@ namespace Virgis {
             base.OnDestroy();
         }
 
-        public void Destroy() {
+        public void Destroy()
+        {
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Destroy(transform.GetChild(i).gameObject);
+            }
+
             Destroy(gameObject);
         }
 

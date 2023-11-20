@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using System;
-using UnityEngine.Profiling;
+using System.Collections;
 
 namespace Virgis {
 
@@ -35,7 +35,7 @@ namespace Virgis {
     public interface IState  {
         static IState instance;
         Vector3 lastHitPosition { get; set; }
-        List<Coroutine> tasks { get; set; }
+        List<IEnumerator> tasks { get; set; }
         int editScale { get; set; } 
         int currentView { get; set; }
 
@@ -206,6 +206,8 @@ namespace Virgis {
 
         bool LoadProject(string path);
 
+        void UnloadProject();
+
     }
 
     public class State : MonoBehaviour, IState
@@ -226,7 +228,7 @@ namespace Virgis {
         {
             get; set;
         }
-        public List<Coroutine> tasks
+        public List<IEnumerator> tasks
         {
             get; set;
         }
@@ -395,6 +397,11 @@ namespace Virgis {
         public virtual bool LoadProject(string path)
         {
             throw new System.NotImplementedException();
+        }
+
+        public virtual void UnloadProject()
+        {
+            throw new NotImplementedException();
         }
     }
 }
