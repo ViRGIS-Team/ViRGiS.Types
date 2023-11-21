@@ -25,6 +25,7 @@ using UnityEngine;
 using UniRx;
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 
 namespace Virgis {
 
@@ -210,7 +211,7 @@ namespace Virgis {
 
     }
 
-    public class State : MonoBehaviour, IState
+    public abstract class State : MonoBehaviour, IState
     {
 
         private static State m_inst = null;
@@ -394,14 +395,10 @@ namespace Virgis {
             return 0;
         }
 
-        public virtual bool LoadProject(string path)
-        {
-            throw new System.NotImplementedException();
-        }
+        public abstract bool LoadProject(string path);
 
-        public virtual void UnloadProject()
-        {
-            throw new NotImplementedException();
-        }
+        public abstract void UnloadProject();
+
+        public abstract Task Exit();
     }
 }

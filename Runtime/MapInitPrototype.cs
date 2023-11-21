@@ -78,9 +78,7 @@ namespace Virgis {
             m_subs.Add(State.instance.editSession.EndEvent.Subscribe(_onEditStop));
         }
 
-        protected virtual bool _load(string file) {
-            throw new NotImplementedException();
-        }
+        protected abstract bool _load(string file);
 
         public abstract bool Load(string file);
 
@@ -90,36 +88,28 @@ namespace Virgis {
         public abstract void OnLoad();
 
 
-        public virtual void Add(MoveArgs args)
-        {
-            throw new System.NotImplementedException();
-        }
+        public abstract void Add(MoveArgs args);
 
 
         /// <summary>
         /// This cll initiates the drawing of the virtual space and calls `Draw ` on each layer in turn.
         /// </summary>
-        public virtual void Draw()
+        public async virtual Task Draw()
         {
             foreach (IVirgisLayer layer in State.instance.layers)
             {
                 try {
-                    layer.Draw();
+                    await layer.Draw();
                 } catch(Exception e) {
                     Debug.LogError($"Project Layer {layer.sourceName} hasfailed to draw :" + e.ToString());
                 }
             }
+            return;
         }
 
-        protected virtual Task _draw()
-        {
-            throw new System.NotImplementedException();
-        }
+        protected abstract Task _draw();
 
-        protected virtual void _checkpoint()
-        {
-            throw new System.NotImplementedException();
-        }
+        protected abstract void _checkpoint();
 
         /// <summary>
         /// this call initiates the saving of the whole project and calls `Save` on each layer in turn
@@ -128,10 +118,7 @@ namespace Virgis {
         /// <returns></returns>
         public abstract Task<RecordSetPrototype> Save(bool all = true);
 
-        protected virtual Task _save()
-        {
-            throw new System.NotImplementedException();
-        }
+        protected abstract Task _save();
 
 
         protected virtual void _onEditStart(bool ignore)
@@ -142,13 +129,13 @@ namespace Virgis {
         /// <summary>
         /// Called when an edit session ends
         /// </summary>
-        /// <param name="saved">true if stop and save, false if stop and discard</param>
-        protected async virtual void _onEditStop(bool saved)
+        /// <param name="save">true if stop and save, false if stop and discard</param>
+        protected async virtual void _onEditStop(bool save)
         {
-            if (!saved) {
-                Draw();
+            if (!save) {
+                await Draw();
             }
-            await Save(saved);
+            await Save(save);
     }
 
         public virtual GameObject GetFeatureShape()
@@ -156,27 +143,14 @@ namespace Virgis {
             return null;
         }
 
-        public VirgisFeature AddFeature<T>(T geometry)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract VirgisFeature AddFeature<T>(T geometry);
 
-        public Task Init(RecordSetPrototype layer)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Task Init(RecordSetPrototype layer);
 
-        public Task SubInit(RecordSetPrototype layer)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract Task SubInit(RecordSetPrototype layer);
 
-        Task IVirgisLayer.Draw()
-        {
-            throw new NotImplementedException();
-        }
 
-        public void CheckPoint()
+        public virtual void CheckPoint()
         {
             //do nothing
         }
