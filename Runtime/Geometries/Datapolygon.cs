@@ -91,7 +91,7 @@ namespace Virgis
             
             lines = polygon;
 
-            Shape = Instantiate(shapePrefab, transform);
+            Shape = Instantiate(shapePrefab, transform, false);
             Shape.GetComponent<VirgisFeature>().Spawn(transform);
 
             // call the generic polygon draw function in DataShape
