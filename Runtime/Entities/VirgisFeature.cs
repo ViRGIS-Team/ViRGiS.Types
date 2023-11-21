@@ -50,15 +50,15 @@ namespace Virgis {
             _id = Guid.NewGuid();
         }
 
-        // public override void OnDestroy()
-        // {
-        //     m_subs.ForEach(item => item.Dispose());
-        //     for (int i = 0; i < transform.childCount; i++)
-        //     {
-        //         Destroy(transform.GetChild(i).gameObject);
-        //     }
-        //     base.OnDestroy();
-        // }
+        public override void OnDestroy()
+        {
+            m_subs.ForEach(item => item.Dispose());
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Destroy(transform.GetChild(i).gameObject);
+            }
+            base.OnDestroy();
+        }
 
         public void Destroy()
         {

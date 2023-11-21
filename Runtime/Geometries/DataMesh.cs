@@ -39,6 +39,7 @@ public class DataMesh : VirgisFeature
     }
 
     public new void OnDestroy() {
+        umesh.OnValueChanged -= SetMesh;
         umesh.Dispose();
         base.OnDestroy();
     }
