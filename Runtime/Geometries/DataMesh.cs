@@ -31,10 +31,11 @@ public class DataMesh : VirgisFeature
 {
     protected DMesh3 m_mesh;
 
-    public SerializableMesh umesh = new();
+    public SerializableMesh umesh;
 
     public void Awake()
     {
+        umesh = new();
         umesh.OnValueChanged += SetMesh;
     }
 
