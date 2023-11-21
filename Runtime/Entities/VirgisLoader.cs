@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections;
 
 namespace Virgis
 {
@@ -167,7 +168,12 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public virtual Task Init(RecordSetPrototype layer)
+        public virtual IEnumerator Init(RecordSetPrototype layer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task AsyncInit(RecordSetPrototype layer)
         {
             throw new NotImplementedException();
         }

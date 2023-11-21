@@ -36,7 +36,6 @@ namespace Virgis {
     public interface IState  {
         static IState instance;
         Vector3 lastHitPosition { get; set; }
-        List<IEnumerator> tasks { get; set; }
         int editScale { get; set; } 
         int currentView { get; set; }
 
@@ -226,10 +225,6 @@ namespace Virgis {
             protected set { m_inst = value; }
         }
         public Vector3 lastHitPosition
-        {
-            get; set;
-        }
-        public List<IEnumerator> tasks
         {
             get; set;
         }

@@ -41,9 +41,9 @@ namespace Virgis
             featureType = FeatureType.RASTER;
         }
 
-        public async override Task Init(RecordSetPrototype layer)
+        public async override Task AsyncInit(RecordSetPrototype layer)
         {
-            await base.Init(layer);
+            await base.AsyncInit(layer);
             m_vfx = gameObject.GetComponentInChildren<VisualEffect>();
         }
 

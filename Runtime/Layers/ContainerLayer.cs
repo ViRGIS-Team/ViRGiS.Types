@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Virgis {
@@ -32,25 +33,26 @@ namespace Virgis {
             isContainer = true;
         }
 
-        public async override Task Init(RecordSetPrototype layerData)
+        public async override Task SubInit(RecordSetPrototype layerData)
         {
-            foreach (IVirgisLayer layer in subLayers)
+            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>())
             {
-                await layer.Init(layerData);
+                layer.Init(layerData);
+                await layer.Awaiter();
             }
-            await base.Init(layerData);
+            await base.SubInit(layerData);
             return;
         }
 
         public override void CheckPoint() {
-            foreach (IVirgisLayer layer in subLayers) {
+            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
                 layer.CheckPoint();
             }
             base.CheckPoint();
         }
 
         public override async Task Draw() {
-            foreach (IVirgisLayer layer in subLayers) {
+            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
                 await layer.Draw();
             }
             await base.Draw();
@@ -58,11 +60,19 @@ namespace Virgis {
         }
 
         public override async Task<RecordSetPrototype> Save(bool flag = false) {
-            foreach (IVirgisLayer layer in subLayers) {
-                await (layer as VirgisLayer).Save();
+            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
+                await layer.Save();
             }
             await base.Save();
             return GetMetadata();
+        }
+
+        public new void OnDestroy()
+        {
+            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
+                Destroy(layer);
+            }
+            base.OnDestroy();
         }
     }
 }

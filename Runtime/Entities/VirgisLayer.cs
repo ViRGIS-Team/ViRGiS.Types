@@ -28,6 +28,7 @@ using System.Threading.Tasks;
 using UniRx;
 using UnityEngine;
 using Unity.Netcode;
+using System.Collections;
 
 namespace Virgis {
 
@@ -65,6 +66,9 @@ namespace Virgis {
         protected Guid m_id;
         protected bool m_editable;
         protected IVirgisLoader m_loader;
+
+        protected Task m_loaderTask;
+        protected IEnumerator m_loaderItr;
         private bool m_changed;
 
         private readonly List<IDisposable> m_subs = new();
@@ -93,6 +97,12 @@ namespace Virgis {
         }
 
         protected new void OnDestroy() {
+            // kill any active loader process
+            if (m_loaderTask != null) {
+                StopCoroutine(m_loaderItr);
+                m_loaderTask.Dispose();
+            }
+            // kill all f the child entities
             m_subs.ForEach(item => item.Dispose());
             for (int i = 0; i <transform.childCount; i++ )
             {
@@ -117,6 +127,18 @@ namespace Virgis {
             return no.TrySetParent(parent);
         }
 
+        public void DeSpawn() {
+             NetworkObject no = gameObject.GetComponent<NetworkObject>();
+            try
+            {
+                no.Despawn();
+            }
+            catch (Exception e)
+            {
+                _ = e;
+            }
+        }
+
         public virtual bool Load(string file) {
             throw new NotImplementedException();
         }
@@ -128,10 +150,20 @@ namespace Virgis {
         /// </summary>
         /// <param name="layer"> The RecordSet object that defines this layer</param>
         /// 
-        public virtual async Task Init(RecordSetPrototype layer) {
+        public virtual IEnumerator Init(RecordSetPrototype layer) {
+            m_loaderTask = AsyncInit(layer);
+            m_loaderItr = m_loaderTask.AsIEnumerator();
+            return m_loaderItr;
+        }
+
+        public async virtual Task AsyncInit(RecordSetPrototype layer) {
             await SubInit(layer);
             await Draw();
             Debug.Log($"Loaded Layer : {layer.DisplayName}");
+        }
+
+        public Task Awaiter(){
+            return m_loaderTask;
         }
 
         /// <summary>
@@ -139,7 +171,7 @@ namespace Virgis {
         /// </summary>
         /// <param name="layer"> The RecordSet object that defines this layer</param>
         /// 
-        public async Task SubInit(RecordSetPrototype layer) {
+        public async virtual Task SubInit(RecordSetPrototype layer) {
             try {
                 m_loader = GetComponent<IVirgisLoader>();
                 SetMetadata(layer);

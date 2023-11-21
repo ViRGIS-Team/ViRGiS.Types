@@ -50,15 +50,15 @@ namespace Virgis {
             _id = Guid.NewGuid();
         }
 
-        void OnDestroy()
-        {
-            m_subs.ForEach(item => item.Dispose());
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Destroy(transform.GetChild(i).gameObject);
-            }
-            base.OnDestroy();
-        }
+        // public override void OnDestroy()
+        // {
+        //     m_subs.ForEach(item => item.Dispose());
+        //     for (int i = 0; i < transform.childCount; i++)
+        //     {
+        //         Destroy(transform.GetChild(i).gameObject);
+        //     }
+        //     base.OnDestroy();
+        // }
 
         public void Destroy()
         {
@@ -66,7 +66,7 @@ namespace Virgis {
             {
                 Destroy(transform.GetChild(i).gameObject);
             }
-
+            DeSpawn();
             Destroy(gameObject);
         }
 
@@ -83,6 +83,18 @@ namespace Virgis {
                 return false;
             }
             return no.TrySetParent(parent);
+        }
+
+        public void DeSpawn() {
+             NetworkObject no = gameObject.GetComponent<NetworkObject>();
+            try
+            {
+                no.Despawn();
+            }
+            catch (Exception e)
+            {
+                _ = e;
+            }
         }
 
         /// <summary>

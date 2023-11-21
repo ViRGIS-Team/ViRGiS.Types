@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -65,7 +66,8 @@ namespace Virgis
 
         VirgisFeature AddFeature<T>(T geometry);
         bool Load(string file);
-        Task Init(RecordSetPrototype layer);
+        IEnumerator Init(RecordSetPrototype layer);
+        Task AsyncInit(RecordSetPrototype layer);
         Task SubInit(RecordSetPrototype layer);
         Task Draw();
         void CheckPoint();

@@ -1,6 +1,6 @@
 /* MIT License
 
-Copyright (c) 2020 - 21 Runette Software
+Copyright (c) 2020 - 23 Runette Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using g3;
 
 namespace Virgis
 {
@@ -33,6 +34,11 @@ namespace Virgis
     public class Datapolygon : Datashape {
 
         private float m_tiling_size;
+
+        public override void OnDestroy()
+        {
+            base.OnDestroy();
+        }
 
         public override void VertexMove(MoveArgs data) {
             if (!m_blockMove) {

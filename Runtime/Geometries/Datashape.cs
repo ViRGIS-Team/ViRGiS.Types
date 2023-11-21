@@ -38,8 +38,8 @@ namespace Virgis
         public GameObject shapePrefab;
         protected GameObject Shape; // gameObject to be used for the shape
         protected List<VertexLookup> VertexTable = new();
-        protected List<Dataline> lines;
-        protected List<DCurve3> Polygon;
+        protected List<Dataline> lines = new();
+        protected List<DCurve3> Polygon = new();
         protected float scaleX;
         protected float scaleY;
 

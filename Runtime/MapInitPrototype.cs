@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UniRx;
+using System.Collections;
 
 namespace Virgis {
 
@@ -145,7 +146,15 @@ namespace Virgis {
 
         public abstract VirgisFeature AddFeature<T>(T geometry);
 
-        public abstract Task Init(RecordSetPrototype layer);
+        public virtual IEnumerator Init(RecordSetPrototype layer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual Task AsyncInit(RecordSetPrototype layer)
+        {
+            throw new NotImplementedException();
+        }
 
         public abstract Task SubInit(RecordSetPrototype layer);
 
