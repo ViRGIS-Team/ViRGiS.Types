@@ -106,7 +106,7 @@ namespace Virgis {
             m_subs.ForEach(item => item.Dispose());
             for (int i = 0; i <transform.childCount; i++ )
             {
-                NetworkObject.Destroy(transform.GetChild(i));
+                NetworkObject.Destroy(transform.GetChild(i).gameObject);
             }
             base.OnDestroy();
         }

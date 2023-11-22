@@ -72,5 +72,7 @@ namespace Virgis
         {
             return vertices.Length == other.vertices.Length;
         }
+
+        public bool IsMesh { get { return vertices != null && vertices.Length > 0; } }
     }
 }

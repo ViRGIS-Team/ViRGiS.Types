@@ -38,6 +38,7 @@ public class DataMesh : VirgisFeature
     public override void OnNetworkSpawn()
     {
         umesh.OnValueChanged += SetMesh;
+        if (umesh.Value.IsMesh) SetMesh(new SerializableMesh(), umesh.Value);
     }
 
     public override void OnNetworkDespawn()
@@ -54,6 +55,7 @@ public class DataMesh : VirgisFeature
     
     private void SetMesh(SerializableMesh previousValue, SerializableMesh newValue)
     {
+        if( newValue == previousValue || !newValue.IsMesh) return;
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
         Mesh mesh = newValue;
