@@ -188,7 +188,7 @@ public class EditableMesh : DataMesh
         Spawn(transform.parent);
         m_mesh = new(dmeshin);
         m_aabb = new DMeshAABBTree3(m_mesh, true);
-        umesh.Set((Mesh)m_mesh);
+        umesh.Value = (Mesh)m_mesh;
         return transform;
     }
 

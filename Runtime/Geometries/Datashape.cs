@@ -118,7 +118,7 @@ namespace Virgis
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
-            Shape.GetComponent<DataMesh>().umesh.Set(mesh);
+            Shape.GetComponent<DataMesh>().umesh.Value =mesh;
 
         }
 

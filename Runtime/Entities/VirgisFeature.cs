@@ -55,19 +55,14 @@ namespace Virgis {
             m_subs.ForEach(item => item.Dispose());
             for (int i = 0; i < transform.childCount; i++)
             {
-                Destroy(transform.GetChild(i).gameObject);
+                NetworkObject.Destroy(transform.GetChild(i));
             }
             base.OnDestroy();
         }
 
         public void Destroy()
         {
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Destroy(transform.GetChild(i).gameObject);
-            }
-            DeSpawn();
-            Destroy(gameObject);
+            NetworkObject.Destroy(gameObject);
         }
 
         public bool Spawn(Transform parent)

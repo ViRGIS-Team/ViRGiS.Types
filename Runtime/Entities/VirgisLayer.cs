@@ -37,7 +37,7 @@ namespace Virgis {
     /// </summary>
     public abstract class VirgisLayer : NetworkBehaviour, IVirgisLayer {
 
-        public RecordSetPrototype _layer;
+        public NetworkVariable<RecordSetPrototype> _layer;
         public FeatureType featureType { get; protected set; }
 
         public string sourceName { get; set; }
@@ -106,7 +106,7 @@ namespace Virgis {
             m_subs.ForEach(item => item.Dispose());
             for (int i = 0; i <transform.childCount; i++ )
             {
-                Destroy(transform.GetChild(i).gameObject);
+                NetworkObject.Destroy(transform.GetChild(i));
             }
             base.OnDestroy();
         }
@@ -330,7 +330,7 @@ namespace Virgis {
         /// </summary>
         /// <returns></returns>
         public RecordSetPrototype GetMetadata() {
-            return _layer;
+            return _layer.Value;
         }
 
         /// <summary>
@@ -338,7 +338,7 @@ namespace Virgis {
         /// </summary>
         /// <param name="layer">Data tyoe that inherits form RecordSet</param>
         public void SetMetadata(RecordSetPrototype layer) {
-            _layer = layer;
+            _layer.Value = layer;
         }
 
         /// <summary>
@@ -357,8 +357,8 @@ namespace Virgis {
         /// </summary>
         /// <param name="visible"></param>
         public virtual void SetVisible(bool visible) {
-            if (_layer.Visible != visible) {
-                _layer.Visible = visible;
+            if (GetMetadata().Visible != visible) {
+                _layer.Value.Visible = visible;
                 gameObject.SetActive(visible);
                 _set_visible();
             }
@@ -372,7 +372,7 @@ namespace Virgis {
         /// </summary>
         /// <returns>Boolean</returns>
         public bool IsVisible() {
-            return _layer.Visible;
+            return GetMetadata().Visible;
         }
 
         /// <summary>

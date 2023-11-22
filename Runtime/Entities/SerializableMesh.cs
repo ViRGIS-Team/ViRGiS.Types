@@ -1,101 +1,76 @@
 using System;
+using System.Linq;
+using g3;
 using Unity.Netcode;
 using UnityEngine;
 
 namespace Virgis
 {
-    [Serializable]
-    public class SerializableMesh : NetworkVariableBase
+    public class SerializableMesh : INetworkSerializable, IEquatable<SerializableMesh>
     {
-        public Mesh mesh;
+        private Vector3[] vertices;
 
-        /// <summary>
-        /// Delegate type for value changed event
-        /// </summary>
-        /// <param name="newValue">The new value</param>
-        public delegate void OnValueChangedDelegate( Mesh newValue);
-        /// <summary>
-        /// The callback to be invoked when the value gets changed
-        /// </summary>
-        public OnValueChangedDelegate OnValueChanged;
+        private Color32[] colors;
+        private Vector2[] uvs;
+        private int[] tris;
 
-        /// <summary>
-        /// Sets the <see cref="Value"/>, marks the <see cref="NetworkVariable{T}"/> dirty, and invokes the <see cref="OnValueChanged"/> callback
-        /// if there are subscribers to that event.
-        /// </summary>
-        /// <param name="value">the new value of type `T` to be set/></param>
-        public void Set(Mesh value)
+        // INetworkSerializable
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            SetDirty(true);
-            mesh = value;
-            OnValueChanged?.Invoke( mesh);
-        }
-
-        /// <summary>
-        /// Writes the complete state of the variable to the writer
-        /// </summary>
-        /// <param name="writer">The stream to write the state to</param>
-        public override void WriteField(FastBufferWriter writer)
-        {
-            if (mesh == null)
-            {
-                writer.WriteValueSafe<int>(0);
-                return;
+            if (serializer.IsReader) {
+                // De-Serialize the data being synchronized
+                var reader = serializer.GetFastBufferReader();
+                reader.ReadValueSafe(out int vertexCount);
+                if (vertexCount == 0) return;
+                reader.ReadValueSafe(out int triCount);
+                vertices = new Vector3[vertexCount];
+                reader.ReadValueSafe(out vertices);
+                colors = new Color32[vertexCount];
+                reader.ReadValueSafe(out colors);
+                uvs = new Vector2[vertexCount];
+                reader.ReadValueSafe(out uvs);
+                tris = new int[triCount];
+                reader.ReadValueSafe(out tris);
+            } else {
+                var writer = serializer.GetFastBufferWriter();
+                writer.WriteValueSafe(vertices.Length);
+                writer.WriteValueSafe(tris.Length);
+                writer.WriteValueSafe(vertices);
+                writer.WriteValueSafe(colors);
+                writer.WriteValueSafe(uvs);
+                writer.WriteValueSafe(tris);
             }
-            // Serialize the data we need to synchronize
-            writer.WriteValueSafe(mesh.vertexCount);
-            int[] tris = mesh.triangles;
-            writer.WriteValueSafe(tris.Length);
-            writer.WriteValueSafe(mesh.vertices);
-            writer.WriteValueSafe(mesh.normals);
-            writer.WriteValueSafe(mesh.colors);
-            writer.WriteValueSafe(mesh.uv);
-            writer.WriteValueSafe(tris);
         }
 
-        /// <summary>
-        /// Reads the complete state from the reader and applies it
-        /// </summary>
-        /// <param name="reader">The stream to read the state from</param>
-        public override void ReadField(FastBufferReader reader)
-        {
-            // De-Serialize the data being synchronized
-            mesh = new();
-            reader.ReadValueSafe(out int vertexCount);
-            if (vertexCount == 0) return;
-            reader.ReadValueSafe(out int triCount);
-            Vector3[] vertices = new Vector3[vertexCount];
-            reader.ReadValueSafe(out vertices);
-            Vector3[] normals = new Vector3[vertexCount];
-            reader.ReadValueSafe(out normals);
-            Color[] colors = new Color[vertexCount];
-            reader.ReadValueSafe(out colors);
-            Vector2[] uvs = new Vector2[vertexCount];
-            reader.ReadValueSafe(out uvs);
-            int[] tris = new int[triCount];
-            reader.ReadValueSafe(out tris);
+        public static implicit operator Mesh(SerializableMesh mesh) {
+            // create a new mesh and broadcast that
             Mesh tmesh = new();
-            if (vertexCount > 64000 || triCount > 64000)
+            if (mesh.vertices.Length > 64000 || mesh.tris.Length > 64000)
                 tmesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-            tmesh.SetVertices(vertices);
-            tmesh.SetNormals(normals);
-            tmesh.SetColors(colors);
-            tmesh.SetUVs(0,uvs);
-            tmesh.SetTriangles(tris, 0);
+            tmesh.SetVertices(mesh.vertices);
+            tmesh.SetColors(mesh.colors);
+            tmesh.SetUVs(0,mesh.uvs);
+            tmesh.SetTriangles(mesh.tris, 0);
+            tmesh.RecalculateNormals();
             tmesh.RecalculateTangents();
             tmesh.RecalculateBounds();
-            mesh = tmesh;
-            OnValueChanged?.Invoke(mesh);
+            return tmesh;
         }
 
-        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
-        {
-            // Don'thing for this example
+        public static implicit operator SerializableMesh(Mesh mesh){
+            SerializableMesh smesh = new()
+            {
+                vertices = mesh.vertices,
+                colors = mesh.colors32,
+                uvs = mesh.uv,
+                tris = mesh.triangles
+            };
+            return smesh;
         }
-
-        public override void WriteDelta(FastBufferWriter writer)
+    
+        public bool Equals(SerializableMesh other)
         {
-            // Don'thing for this example
+            return vertices.Length == other.vertices.Length;
         }
     }
 }

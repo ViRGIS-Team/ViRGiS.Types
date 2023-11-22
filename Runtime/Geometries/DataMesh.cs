@@ -26,23 +26,23 @@ using Virgis;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using Unity.Netcode;
 
 public class DataMesh : VirgisFeature
 {
     protected DMesh3 m_mesh;
 
-    public SerializableMesh umesh;
+    public NetworkVariable<SerializableMesh> umesh = new();
 
-    public void Awake()
+
+    public override void OnNetworkSpawn()
     {
-        umesh = new();
         umesh.OnValueChanged += SetMesh;
     }
 
-    public new void OnDestroy() {
+    public override void OnNetworkDespawn()
+    {
         umesh.OnValueChanged -= SetMesh;
-        umesh.Dispose();
-        base.OnDestroy();
     }
 
     public void Start()
@@ -51,11 +51,12 @@ public class DataMesh : VirgisFeature
         mr.material = GetLayer().GetMaterial(0);
     }
 
-    protected void SetMesh(Mesh nextMesh)
+    
+    private void SetMesh(SerializableMesh previousValue, SerializableMesh newValue)
     {
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
-        Mesh mesh = nextMesh;
+        Mesh mesh = newValue;
         mf.mesh = mesh;
         Mesh imesh = new()
         {
