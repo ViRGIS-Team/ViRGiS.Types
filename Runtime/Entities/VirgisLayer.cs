@@ -91,8 +91,8 @@ namespace Virgis {
 
         protected void Start() {
             State appState = State.instance;
-            m_subs.Add(appState.editSession.StartEvent.Subscribe(_onEditStart));
-            m_subs.Add(appState.editSession.EndEvent.Subscribe(_onEditStop));
+            m_subs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
+            m_subs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
             State.instance.AddLayer(this);
         }
 

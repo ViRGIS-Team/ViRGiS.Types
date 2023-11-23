@@ -49,15 +49,15 @@ namespace Virgis {
             _appState = State.instance;
             _markerShapeMap = new Dictionary<Guid, GameObject>();
             _markerShape = defaultMarkerShape;
-            _appState.editSession.StartEvent.Subscribe(OnStartEditSession);
-            _appState.editSession.EndEvent.Subscribe(OnEndEditSession);
-            _appState.editSession.ChangeLayerEvent.Subscribe(OnEditableLayerChanged);
+            _appState.EditSession.StartEvent.Subscribe(OnStartEditSession);
+            _appState.EditSession.EndEvent.Subscribe(OnEndEditSession);
+            _appState.EditSession.ChangeLayerEvent.Subscribe(OnEditableLayerChanged);
             _waitingForSecondPress = false;
             _newFeature = null;
         }
 
         void Update() {
-            if (_appState.editSession.IsActive() && (_newFeature != null)) {
+            if (_appState.EditSession.IsActive() && (_newFeature != null)) {
                 MoveArgs args = new MoveArgs();
                 args.pos = _markerShape.transform.position;
                 //_lastVertex.ForEach(dp => dp.MoveTo(args));
@@ -65,7 +65,7 @@ namespace Virgis {
         }
 
         public void LeftTriggerPressed(bool activate) {
-            if (_appState.editSession.IsActive()) {
+            if (_appState.EditSession.IsActive()) {
                 if (_waitingForSecondPress) {
                     StopCoroutine(_timer);
                     _waitingForSecondPress = false;
@@ -82,7 +82,7 @@ namespace Virgis {
         }
 
         private void OnStartEditSession(bool ignore) {
-            IVirgisLayer editableLayer = _appState.editSession.editableLayer;
+            IVirgisLayer editableLayer = _appState.EditSession.editableLayer;
             _markerShape = SelectMarkerShape(editableLayer);
             _markerShape.SetActive(true);
         }
@@ -98,8 +98,8 @@ namespace Virgis {
         }
 
         private void OnTriggerSinglePress(Vector3 posWhenSinglePress) {
-            if (_appState.editSession.IsActive()) {
-                IVirgisLayer editableLayer = _appState.editSession.editableLayer;
+            if (_appState.EditSession.IsActive()) {
+                IVirgisLayer editableLayer = _appState.EditSession.editableLayer;
                 FeatureType dataType= editableLayer.featureType;
                 //Datapoint[] vertexes;
                 switch (dataType) {
@@ -142,8 +142,8 @@ namespace Virgis {
         }
 
         private void OnTriggerDoublePress() {
-            if (_appState.editSession.IsActive()) {
-                IVirgisLayer editableLayer = _appState.editSession.editableLayer;
+            if (_appState.EditSession.IsActive()) {
+                IVirgisLayer editableLayer = _appState.EditSession.editableLayer;
                 FeatureType dataType = editableLayer.featureType;
                 switch (dataType) {
                     case FeatureType.LINE:

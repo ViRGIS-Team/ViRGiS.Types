@@ -75,8 +75,8 @@ namespace Virgis {
 
         protected void Start()
         {
-            m_subs.Add(State.instance.editSession.StartEvent.Subscribe(_onEditStart));
-            m_subs.Add(State.instance.editSession.EndEvent.Subscribe(_onEditStop));
+            m_subs.Add(State.instance.EditSession.StartEvent.Subscribe(_onEditStart));
+            m_subs.Add(State.instance.EditSession.EndEvent.Subscribe(_onEditStop));
         }
 
         protected abstract bool _load(string file);
@@ -97,7 +97,7 @@ namespace Virgis {
         /// </summary>
         public async virtual Task Draw()
         {
-            foreach (IVirgisLayer layer in State.instance.layers)
+            foreach (IVirgisLayer layer in State.instance.Layers)
             {
                 try {
                     await layer.Draw();
