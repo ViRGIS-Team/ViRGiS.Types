@@ -27,15 +27,26 @@ namespace Virgis {
 
     public class LayerChange {
 
-        private readonly Subject<IVirgisLayer> _layerEvent = new Subject<IVirgisLayer>();
+        private readonly Subject<IVirgisLayer> _AddEvent = new Subject<IVirgisLayer>();
+        private readonly Subject<IVirgisLayer> _DelEvent = new Subject<IVirgisLayer>();
 
         public void AddLayer(IVirgisLayer layer) {
-            _layerEvent.OnNext(layer);
+            _AddEvent.OnNext(layer);
         }
 
-        public IObservable<IVirgisLayer> Event {
+        public void DelLayer(IVirgisLayer layer) {
+            _DelEvent.OnNext(layer);
+        }
+
+        public IObservable<IVirgisLayer> AddEvents {
             get {
-                return _layerEvent.AsObservable();
+                return _AddEvent.AsObservable();
+            }
+        }
+
+        public IObservable<IVirgisLayer> DelEvents {
+            get {
+                return _DelEvent.AsObservable();
             }
         }
 

@@ -134,12 +134,12 @@ namespace Virgis {
         /// Add a layer to the model
         /// </summary>
         /// <param name="layer"></param>
-        void addLayer(IVirgisLayer layer);
+        void AddLayer(IVirgisLayer layer);
 
         /// <summary>
-        /// remove all layers from the model
+        /// remove a layer from the model
         /// </summary>
-        public void clearLayers();
+        void DelLayer(IVirgisLayer layer);
 
         /// <summary>
         /// Get and set the main camera
@@ -321,15 +321,16 @@ namespace Virgis {
             get => _layers;
         }
 
-        public virtual void addLayer(IVirgisLayer layer)
+        public virtual void AddLayer(IVirgisLayer layer)
         {
             _layers.Add(layer);
             LayerUpdate.AddLayer(layer);
         }
 
-        public void clearLayers()
+        public virtual void DelLayer(IVirgisLayer layer)
         {
-            _layers.Clear();
+            _layers.Remove(layer);
+            LayerUpdate.DelLayer(layer);
         }
 
         public Camera mainCamera
