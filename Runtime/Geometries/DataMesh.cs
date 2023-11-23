@@ -38,7 +38,7 @@ public class DataMesh : VirgisFeature
     public override void OnNetworkSpawn()
     {
         umesh.OnValueChanged += SetMesh;
-        if (umesh.Value.IsMesh) SetMesh(new SerializableMesh(), umesh.Value);
+        if (umesh.Value != null && umesh.Value.IsMesh) SetMesh(new SerializableMesh(), umesh.Value);
     }
 
     public override void OnNetworkDespawn()

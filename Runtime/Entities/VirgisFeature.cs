@@ -53,16 +53,18 @@ namespace Virgis {
         public override void OnDestroy()
         {
             m_subs.ForEach(item => item.Dispose());
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                NetworkObject.Destroy(transform.GetChild(i).gameObject);
-            }
             base.OnDestroy();
         }
 
         public void Destroy()
         {
-            NetworkObject.Destroy(gameObject);
+            for (int i = transform.childCount -1; i>=0;  i--)
+            {
+                if(transform.GetChild(i).TryGetComponent(out VirgisFeature com )){
+                    com.Destroy();
+                    DeSpawn(com.transform);
+                }
+            }
         }
 
         public bool Spawn(Transform parent)
@@ -80,8 +82,9 @@ namespace Virgis {
             return no.TrySetParent(parent);
         }
 
-        public void DeSpawn() {
-             NetworkObject no = gameObject.GetComponent<NetworkObject>();
+        public void DeSpawn(Transform t = null) {
+            if (t==null) t = transform;
+            NetworkObject no = t.GetComponent<NetworkObject>();
             try
             {
                 no.Despawn();
