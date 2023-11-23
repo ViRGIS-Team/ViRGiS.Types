@@ -111,6 +111,12 @@ namespace Virgis {
             base.OnDestroy();
         }
 
+        /// <summary>
+        /// Only Run this on a Server
+        /// Burns the entire object tree of which this is the trunk
+        /// starting from the leaves first. Only safe way to destroy 
+        /// the ViRGiS tree on a networked version
+        /// </summary>
         public void Destroy()
         {
             for (int i = transform.childCount -1; i>=0;  i--)
