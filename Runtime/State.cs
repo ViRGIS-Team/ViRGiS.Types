@@ -24,8 +24,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UniRx;
 using System;
-using System.Collections;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Virgis {
 
@@ -109,7 +109,7 @@ namespace Virgis {
         /// <summary>
         /// Event for if the Map is current in an edit session
         /// </summary>
-        EditSession editSession { get; }
+        EditSession EditSession { get; }
 
         /// <summary>
         /// Use this to change or get the project
@@ -126,7 +126,7 @@ namespace Virgis {
         /// <summary>
         /// List of all of the layers of the model
         /// </summary>
-        List<IVirgisLayer> layers {
+        List<VirgisLayer> Layers {
             get;
         }
 
@@ -134,12 +134,12 @@ namespace Virgis {
         /// Add a layer to the model
         /// </summary>
         /// <param name="layer"></param>
-        void AddLayer(IVirgisLayer layer);
+        void AddLayer(VirgisLayer layer);
 
         /// <summary>
         /// remove a layer from the model
         /// </summary>
-        void DelLayer(IVirgisLayer layer);
+        void DelLayer(VirgisLayer layer);
 
         /// <summary>
         /// Get and set the main camera
@@ -289,7 +289,6 @@ namespace Virgis {
         {
             get; set;
         }
-        protected List<IVirgisLayer> _layers;
 
         public virtual void Init() { }
 
@@ -305,7 +304,7 @@ namespace Virgis {
             }
         }
 
-        public EditSession editSession
+        public EditSession EditSession
         {
             get => _editSession;
         }
@@ -316,20 +315,29 @@ namespace Virgis {
             get; set;
         }
 
-        public List<IVirgisLayer> layers
+        public List<VirgisLayer> Layers
         {
-            get => _layers;
+            get
+            {
+                if (map != null)
+                {
+                    var list = map.GetComponentsInChildren<VirgisLayer>().ToList();
+                    return list;
+                }
+                else
+                {
+                    return new List<VirgisLayer>();
+                };
+            }
         }
 
-        public virtual void AddLayer(IVirgisLayer layer)
+        public virtual void AddLayer(VirgisLayer layer)
         {
-            _layers.Add(layer);
             LayerUpdate.AddLayer(layer);
         }
 
-        public virtual void DelLayer(IVirgisLayer layer)
+        public virtual void DelLayer(VirgisLayer layer)
         {
-            _layers.Remove(layer);
             LayerUpdate.DelLayer(layer);
         }
 

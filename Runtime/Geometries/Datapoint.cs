@@ -62,7 +62,7 @@ namespace Virgis
             thisRenderer.material = mainMat;
             if (button != SelectionType.BROADCAST){
                 MoveArgs args = new MoveArgs();
-                switch (State.instance.editSession.mode){
+                switch (State.instance.EditSession.mode){
                     case EditSession.EditMode.None:
                         break;
                     case EditSession.EditMode.SnapAnchor:
