@@ -5,8 +5,16 @@ using System.Collections.Generic;
 
 namespace Virgis
 {
-    public class GisProjectPrototype : TestableObject
+    public abstract class GisProjectPrototype : TestableObject
     {
+
+        protected abstract string TYPE { get;}
+        protected abstract string VERSION { get;}
+
+        public  string GetVersion()
+        {
+            return $"{TYPE}:{VERSION}";
+        }
 
         [JsonProperty(PropertyName = "version", Required = Required.Always)]
         public string ProjectVersion;
@@ -38,5 +46,8 @@ namespace Virgis
 
         [JsonProperty(PropertyName = "grid-scale", Required = Required.Always)]
         public float GridScale;
+
+        [JsonProperty(PropertyName = "recordsets", Required = Required.Always)]
+        public List<RecordSetPrototype> RecordSets;
     }
 }

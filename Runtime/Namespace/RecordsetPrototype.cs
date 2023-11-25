@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using System.ComponentModel;
 using GeoJSON.Net.Geometry;
 using Unity.Netcode;
-using Unity.Collections;
+using System.Collections.Generic;
 using System;
 using System.Text;
 
@@ -22,6 +22,17 @@ namespace Virgis
         [JsonProperty(PropertyName = "visible", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(true)]
         public bool Visible;
+                /// <summary>
+        /// Dictionary of symbology units for this layer
+        /// </summary>
+        [JsonProperty(PropertyName = "units")]
+        public Dictionary<string, UnitPrototype> Units;
+
+        /// <summary>
+        /// List of Data Units for this layer
+        /// </summary>
+        [JsonProperty(PropertyName = "data_units")]
+        public List<DataUnitPrototype> DataUnits;
 
         public bool Equals(RecordSetPrototype other)
         {
