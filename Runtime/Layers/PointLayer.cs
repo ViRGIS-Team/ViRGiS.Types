@@ -52,7 +52,7 @@ namespace Virgis {
             }
         }
 
-        protected override Material MapMaterial(Color color, int idx)
+        protected override Material MapMaterial(Color color, string idx)
         {
             Material m = Instantiate(BaseMaterial);
             m.SetColor("_BaseColor", color);

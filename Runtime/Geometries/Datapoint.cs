@@ -38,7 +38,8 @@ namespace Virgis
 
 
         private void Start() {
-            SetMaterial(0);
+            mainMat = GetMaterial("point");
+            selectedMat = GetMaterial("point_sel");
             if (transform.childCount > 0)
                 label = transform.GetChild(0);
         }
@@ -87,17 +88,6 @@ namespace Virgis
                 }
             }
         }
-
-        public override void SetMaterial(int idx)
-        {
-            base.SetMaterial(idx);
-            thisRenderer = GetComponent<Renderer>();
-            if (thisRenderer)
-            {
-                thisRenderer.material = mainMat;
-            }
-        }
-
 
         public override void MoveTo(MoveArgs args) {
             if (args.translate != Vector3.zero) {

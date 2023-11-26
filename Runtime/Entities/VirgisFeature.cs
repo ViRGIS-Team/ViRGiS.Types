@@ -104,10 +104,9 @@ namespace Virgis {
         /// <summary>
         /// Use to set the material of the feature
         /// </summary>
-        public virtual void SetMaterial(int idx) {
+        public virtual Material GetMaterial(string idx) {
             IVirgisLayer layer = GetLayer();
-            mainMat = layer?.GetMaterial(idx);
-            selectedMat = layer?.GetMaterial(idx + 1);
+            return layer?.GetMaterial(idx);
         }
 
         /// <summary>

@@ -58,16 +58,22 @@ namespace Virgis
             changed = true;
         }
 
-        protected override Material MapMaterial(Color color, int idx)
+        protected override Material MapMaterial(Color color, string idx)
         {
             Material m;
             switch (idx)
             {
-                case var _ when idx < 2:
+                case "point":
+                case "point_sel":
                     m = Instantiate(PointBaseMaterial);
                     break;
-                case var _ when idx < 4:
+                case "line":
+                case "line_sel":
                     m = Instantiate(LineBaseMaterial);
+                    break;
+                case "body":
+                case "body_sel":
+                    m = Instantiate(BodyBaseMaterial);
                     break;
                 default:
                     m = Instantiate(BodyBaseMaterial);

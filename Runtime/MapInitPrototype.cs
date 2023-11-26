@@ -274,12 +274,12 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public void SetMaterial(Color color, Dictionary<string, float> properties = null)
+        public void SetMaterial(string idx, Color color, Dictionary<string, float> properties = null)
         {
             throw new NotImplementedException();
         }
 
-        public Material GetMaterial(int idx)
+        public Material GetMaterial(string idx)
         {
             throw new NotImplementedException();
         }

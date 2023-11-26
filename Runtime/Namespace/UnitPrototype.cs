@@ -34,13 +34,13 @@ namespace Virgis
         /// </summary>
         [JsonProperty(PropertyName = "color", Required = Required.Always)]
         [JsonConverter(typeof(VectorConverter<SerializableColor>))]
-        public SerializableColor Color;
+        public SerializableColor Color = new();
 
         /// <summary>
         /// The transfor to be applied to the unit of symnbology
         /// </summary>
         [JsonProperty(PropertyName = "transform", Required = Required.Always)]
-        public JsonTransform Transform;
+        public JsonTransform Transform = new();
         /// <summary>
         /// The name of a field in the metadata to be used a label for the data entity
         /// </summary>

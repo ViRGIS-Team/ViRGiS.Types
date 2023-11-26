@@ -44,7 +44,11 @@ namespace Virgis
             z = rZ;
         }
 
-        public SerializableVector3() { }
+        public SerializableVector3() {
+            x=0;
+            y=0;
+            z=0;
+         }
 
         /// <summary>
         /// Build from Json and swap the Y and Z axes
@@ -139,7 +143,12 @@ namespace Virgis
             w = rW;
         }
 
-        public SerializableQuaternion() { }
+        public SerializableQuaternion() { 
+            x = Quaternion.identity.x;
+            y = Quaternion.identity.y;
+            z = Quaternion.identity.z;
+            w = Quaternion.identity.w;
+        }
 
         /// <summary>
         /// Build from Json and swap the Y and Z axes
@@ -206,7 +215,12 @@ namespace Virgis
             a = ra;
         }
 
-        public SerializableColor() { }
+        public SerializableColor() {
+            r=1;
+            g=1;
+            b=1;
+            a=1;
+         }
 
 
         /// <summary>

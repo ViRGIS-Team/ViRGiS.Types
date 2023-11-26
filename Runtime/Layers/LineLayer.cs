@@ -59,15 +59,17 @@ namespace Virgis
             dataFeatures.ToList<Dataline>().Find(item => args.id == item.GetId()).MoveAxisAction(args);
         }
 
-        protected override Material MapMaterial(Color color, int idx)
+        protected override Material MapMaterial(Color color, string idx)
         {
             Material m;
             switch (idx)
             {
-                case var _ when idx < 2:
+                case "point":
+                case "point_sel":
                     m = Instantiate(PointBaseMaterial);
                     break;
-                case var _ when idx < 4:
+                case "line":
+                case "line_sel":
                     m = Instantiate(LineBaseMaterial);
                     break;
                 default:
@@ -77,6 +79,5 @@ namespace Virgis
             m.SetColor("_BaseColor", color);
             return m;
         }
-
     }
 }

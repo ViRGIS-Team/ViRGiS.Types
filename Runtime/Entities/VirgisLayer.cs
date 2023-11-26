@@ -72,9 +72,8 @@ namespace Virgis {
         private bool m_changed;
 
         private readonly List<IDisposable> m_subs = new();
-        protected readonly List<Material> m_mat = new();
-        protected NetworkList<Color> m_cols;
-        protected NetworkList<SerializableProperty> m_props;
+        protected readonly Dictionary<string, Material> m_mat = new();
+        protected NetworkList<SerializableColorHash> m_cols;
         public SerializableTexture texture;
 
 
@@ -85,15 +84,36 @@ namespace Virgis {
             isContainer = false;
             isWriteable = false;
             m_cols = new();
-            m_props = new();
             texture = new();
         }
 
-        protected void Start() {
+        void Start() {
             State appState = State.instance;
             m_subs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
             State.instance.AddLayer(this);
+        }
+
+        public override void OnNetworkSpawn() {
+            m_cols.OnListChanged += ColHashChange;
+        }
+
+        private void ColHashChange(NetworkListEvent<SerializableColorHash> changeEvent)
+        {
+            string name = changeEvent.Value.Name.ToString();
+            Color color = changeEvent.Value.Color;
+            Material mat = MapMaterial(color, name);
+            if (changeEvent.Value.Property1.Key.ToString() != "")
+                mat.SetFloat(changeEvent.Value.Property1.Key.ToString(),changeEvent.Value.Property1.Value);
+            if (changeEvent.Value.Property2.Key.ToString() != "")
+                mat.SetFloat(changeEvent.Value.Property2.Key.ToString(),changeEvent.Value.Property2.Value);
+            if (changeEvent.Value.Property3.Key.ToString() != "")
+                mat.SetFloat(changeEvent.Value.Property3.Key.ToString(),changeEvent.Value.Property3.Value);
+            m_mat.Add(name, mat);
+        }
+
+        public override void OnNetworkDespawn() {
+            m_cols.OnListChanged += ColHashChange;
         }
 
         protected new void OnDestroy() {
@@ -491,46 +511,38 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public virtual void SetMaterial(Color color, Texture2D tex, Dictionary<string, float> properties = null)
+        public virtual void SetMaterial(string idx, Color color, Texture2D tex, Dictionary<string, float> properties = null)
         {
-            SetMaterial(color, properties);
+            SetMaterial(idx, color, properties);
             texture.tex = tex;
         }
 
-        public virtual void SetMaterial(Color color, Dictionary<string, float> properties = null)
+        public virtual void SetMaterial(string idx, Color color, Dictionary<string, float> properties = null)
         {
-            m_cols.Add(color);
-            int idx = m_cols.Count - 1;
-            if (properties!= null)
+            SerializableColorHash hash = new(){Name = idx, Color=color};
+            if (properties!= null && properties.Count > 0) 
             {
-                foreach (KeyValuePair<string, float> entry in properties)
-                {
-                    SerializableProperty p = new() { Name = entry.Key, Value = entry.Value, Owner = idx };
-                    m_props.Add(p);
-                }
+                int count = properties.Count;
+                var p = properties.AsEnumerable();
+                hash.Property1 = new() { Key = p.ElementAt(0).Key, Value = p.ElementAt(0).Value };
+                if (count > 1)
+                    hash.Property2 = new() { Key = p.ElementAt(1).Key, Value = p.ElementAt(1).Value };
+                if (count > 2)
+                    hash.Property3 = new() { Key = p.ElementAt(2).Key, Value = p.ElementAt(2).Value };
             }
+            m_cols.Add(hash);
         }
 
-        public Material GetMaterial(int idx)
+        public Material GetMaterial(string idx)
         {
-            if (m_mat.Count != m_cols.Count)
-            { 
-                m_mat.Clear();
-                for (int i = 0; i < m_cols.Count; i++)
-                {
-                    m_mat.Add(MapMaterial(m_cols[i], i));
-                    foreach(SerializableProperty prop in m_props) {
-                        if (prop.Owner == i) {
-                            m_mat[i].SetFloat(prop.Name.ToString(),prop.Value);
-                        }
-                    }
-                }
+            try {
+                return m_mat[idx];
+            } catch (Exception e) {
+                throw new Exception($"Material index error - {GetMetadata().DisplayName} - {e}");
             }
-            if (idx <m_mat.Count) return m_mat[idx];
-            throw new Exception($"Material index error - {GetMetadata().DisplayName}");
         }
 
-        protected virtual Material MapMaterial(Color color, int idx)
+        protected virtual Material MapMaterial(Color color, string name)
         {
             return default;
         }

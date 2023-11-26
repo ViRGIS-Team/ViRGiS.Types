@@ -49,7 +49,7 @@ public class DataMesh : VirgisFeature
     public void Start()
     {
         MeshRenderer mr = GetComponent<MeshRenderer>();
-        mr.material = GetLayer().GetMaterial(0);
+        mr.material = GetLayer().GetMaterial("body");
     }
 
     
@@ -82,16 +82,6 @@ public class DataMesh : VirgisFeature
             Debug.Log(e.ToString());
         }
     }
-
-    public override void SetMaterial(int idx)
-        {
-            base.SetMaterial(idx);
-            Renderer thisRenderer = GetComponent<Renderer>();
-            if (thisRenderer)
-            {
-                thisRenderer.material = mainMat;
-            }
-        }
 
     public DMesh3 GetMesh() {
         return m_mesh;

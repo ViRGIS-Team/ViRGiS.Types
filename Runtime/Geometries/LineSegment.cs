@@ -31,7 +31,6 @@ namespace Virgis
     /// </summary>
     public class LineSegment : VirgisFeature
     {
-        private Renderer thisRenderer; // convenience link to the renderer for this marker
 
         private Vector3 start; // coords of the start of the line in Map.local space coordinates
         private Vector3 end;  // coords of the start of the line in Map.local space coordinates
@@ -42,7 +41,6 @@ namespace Virgis
 
         public void Start()
         {
-            SetMaterial(2);
         }
 
         /// <summary>
@@ -55,6 +53,10 @@ namespace Virgis
         /// <param name="dia">Diameter of the line segement in Map.local units</param>
         public void Draw(Vector3 from, Vector3 to, int vertStart, int vertEnd, float dia)
         {
+            mainMat = GetMaterial("line");
+            selectedMat = GetMaterial("line_sel");
+            Transform shape = transform.GetChild(0);
+            shape.GetComponent<MeshRenderer>().SetMaterials(new List<Material>() {mainMat});
             start = transform.parent.InverseTransformPoint(from);
             end = transform.parent.InverseTransformPoint(to);
             diameter = dia;
