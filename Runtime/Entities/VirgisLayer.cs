@@ -22,15 +22,16 @@ SOFTWARE. */
 
 using g3;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UniRx;
-using UnityEngine;
 using Unity.Netcode;
-using System.Collections;
+using UnityEngine;
 
-namespace Virgis {
+namespace Virgis
+{
 
     /// <summary>
     /// Abstract parent for all Layer entities
@@ -95,25 +96,33 @@ namespace Virgis {
         }
 
         public override void OnNetworkSpawn() {
-            m_cols.OnListChanged += ColHashChange;
+            m_cols.OnListChanged += ColHashChangeEvent;
+            foreach (SerializableColorHash col in m_cols) {
+                AddColHash(col);
+            }
+
         }
 
-        private void ColHashChange(NetworkListEvent<SerializableColorHash> changeEvent)
+        private void ColHashChangeEvent(NetworkListEvent<SerializableColorHash> changeEvent)
         {
-            string name = changeEvent.Value.Name.ToString();
-            Color color = changeEvent.Value.Color;
+            AddColHash(changeEvent.Value);
+        }
+
+        private void AddColHash(SerializableColorHash hash) { 
+            string name = hash.Name.ToString();
+            Color color = hash.Color;
             Material mat = MapMaterial(color, name);
-            if (changeEvent.Value.Property1.Key.ToString() != "")
-                mat.SetFloat(changeEvent.Value.Property1.Key.ToString(),changeEvent.Value.Property1.Value);
-            if (changeEvent.Value.Property2.Key.ToString() != "")
-                mat.SetFloat(changeEvent.Value.Property2.Key.ToString(),changeEvent.Value.Property2.Value);
-            if (changeEvent.Value.Property3.Key.ToString() != "")
-                mat.SetFloat(changeEvent.Value.Property3.Key.ToString(),changeEvent.Value.Property3.Value);
+            if (hash.Property1.Key.ToString() != "")
+                mat.SetFloat(hash.Property1.Key.ToString(),hash.Property1.Value);
+            if (hash.Property2.Key.ToString() != "")
+                mat.SetFloat(hash.Property2.Key.ToString(),hash.Property2.Value);
+            if (hash.Property3.Key.ToString() != "")
+                mat.SetFloat(hash.Property3.Key.ToString(),hash.Property3.Value);
             m_mat.Add(name, mat);
         }
 
         public override void OnNetworkDespawn() {
-            m_cols.OnListChanged += ColHashChange;
+            m_cols.OnListChanged += ColHashChangeEvent;
         }
 
         protected new void OnDestroy() {
