@@ -32,8 +32,8 @@ namespace Virgis {
     public abstract class VirgisFeature : NetworkBehaviour, IVirgisFeature
     {
         protected Material mainMat; // color of the component
-        protected Material selectedMat; // color of the component when selected
         protected MeshRenderer mr;
+        protected Material mat;
         protected Vector3 m_firstHitPosition = Vector3.zero;
         protected bool m_nullifyHitPos = true;
         protected bool m_blockMove = false; // is entity in a block-move state
@@ -48,6 +48,17 @@ namespace Virgis {
         void Awake()
         {
             _id = Guid.NewGuid();
+        }
+
+        public void Start()
+        {
+            if(TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            if (TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
         }
 
         public override void OnDestroy()
@@ -256,7 +267,12 @@ namespace Virgis {
         }
 
         public IVirgisLayer GetLayer() {
-            return transform.parent.GetComponent<IVirgisEntity>()?.GetLayer();
+            Transform parent = transform.parent; 
+            if (parent != null)
+            {
+                return transform.parent.GetComponent<IVirgisEntity>()?.GetLayer();
+            }
+            return null;
         }
 
         public virtual void OnEdit(bool inSession) {

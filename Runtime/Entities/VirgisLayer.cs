@@ -555,5 +555,21 @@ namespace Virgis
         {
             return default;
         }
+
+        public SerializableColorHash GetColorHash(string idx)
+        {
+            try
+            {
+                foreach (SerializableColorHash hash in m_cols)
+                    if (hash.Name == idx)
+                        return hash;
+                throw new Exception("Color Hash Index Error");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+                return default;
+            }
+        }
     }
 }

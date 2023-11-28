@@ -25,7 +25,7 @@ using UnityEngine;
 using System.Linq;
 using System.Collections.Generic;
 using System;
-
+using Unity.Netcode;
 
 namespace Virgis
 {
@@ -34,15 +34,16 @@ namespace Virgis
     /// </summary>
     public class Datapoint : VirgisFeature
     {
-        private Renderer thisRenderer; // convenience link to the rendere for this marker
-
-
-        private void Start() {
-            mainMat = GetMaterial("point");
-            selectedMat = GetMaterial("point_sel");
+        /// <summary>
+        /// sets the label reference
+        /// </summary>
+        public new void Start() {
+            base.Start();
             if (transform.childCount > 0)
                 label = transform.GetChild(0);
         }
+
+
         /// <summary>
         /// Every frame - realign the billboard
         /// </summary>
@@ -51,16 +52,32 @@ namespace Virgis
             if (label) label.LookAt(State.instance.mainCamera.transform);
         }
 
+        public void Draw()
+        {
+            try
+            {
+                VirgisLayer layer = GetLayer() as VirgisLayer;
+                if (layer != null)
+                {
+                    SerializableColorHash hash = layer.GetColorHash("point");
+                    mat.SetColor("_BaseColor", hash.Color);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($" DataPoint Draw Error{ e }");
+            }
+        }
 
         public override void Selected(SelectionType button){
             base.Selected(button);
-            thisRenderer.material = selectedMat;
+            mr.material.SetInt("_Selected", 1);
         }
 
 
         public override void UnSelected(SelectionType button){
             base.Selected(button);
-            thisRenderer.material = mainMat;
+            mr.material.SetInt("_Selected", 0);
             if (button != SelectionType.BROADCAST){
                 MoveArgs args = new MoveArgs();
                 switch (State.instance.EditSession.mode){

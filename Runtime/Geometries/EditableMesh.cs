@@ -205,9 +205,9 @@ public class EditableMesh : DataMesh
 
     public override void OnEdit(bool inSession) {
         if (inSession) {
-            mr.material = selectedMat;
+            mr.material.SetInt("_Selected", 1);
         } else {
-            mr.material = mainMat;
+            mr.material.SetInt("_Selected", 0);
         }
     }
 

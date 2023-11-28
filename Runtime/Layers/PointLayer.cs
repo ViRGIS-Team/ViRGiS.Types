@@ -30,7 +30,6 @@ namespace Virgis {
         public GameObject CubePrefab;
         public GameObject CylinderPrefab;
         public GameObject LabelPrefab;
-        public Material BaseMaterial;
 
         new protected void Awake() {
             base.Awake();
@@ -50,13 +49,6 @@ namespace Virgis {
             if (State.instance.InEditSession() && IsEditable()) {
                 Destroy(vertex.gameObject);
             }
-        }
-
-        protected override Material MapMaterial(Color color, string idx)
-        {
-            Material m = Instantiate(BaseMaterial);
-            m.SetColor("_BaseColor", color);
-            return m;
         }
     }
 }

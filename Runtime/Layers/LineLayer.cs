@@ -37,8 +37,6 @@ namespace Virgis
         public GameObject CubePrefab; // prefab to be used for Vertex handles
         public GameObject CylinderPrefab; // prefab to be used for Vertex handle
         public GameObject LabelPrefab;
-        public Material PointBaseMaterial;
-        public Material LineBaseMaterial;
 
         new protected void Awake() {
             base.Awake();
@@ -57,27 +55,6 @@ namespace Virgis
             changed = true;
             Dataline[] dataFeatures = gameObject.GetComponentsInChildren<Dataline>();
             dataFeatures.ToList<Dataline>().Find(item => args.id == item.GetId()).MoveAxisAction(args);
-        }
-
-        protected override Material MapMaterial(Color color, string idx)
-        {
-            Material m;
-            switch (idx)
-            {
-                case "point":
-                case "point_sel":
-                    m = Instantiate(PointBaseMaterial);
-                    break;
-                case "line":
-                case "line_sel":
-                    m = Instantiate(LineBaseMaterial);
-                    break;
-                default:
-                    m = Instantiate(LineBaseMaterial);
-                    break;
-            }
-            m.SetColor("_BaseColor", color);
-            return m;
         }
     }
 }

@@ -37,25 +37,30 @@ public class DataMesh : VirgisFeature
 
     public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
         umesh.OnValueChanged += SetMesh;
         if (umesh.Value != null && umesh.Value.IsMesh) SetMesh(new SerializableMesh(), umesh.Value);
     }
 
     public override void OnNetworkDespawn()
     {
+        base.OnNetworkSpawn();
         umesh.OnValueChanged -= SetMesh;
-    }
-
-    public void Start()
-    {
-        MeshRenderer mr = GetComponent<MeshRenderer>();
-        mr.material = GetLayer().GetMaterial("body");
     }
 
     
     private void SetMesh(SerializableMesh previousValue, SerializableMesh newValue)
     {
         if( newValue == previousValue || !newValue.IsMesh) return;
+        try
+        {
+            SerializableColorHash hash = (GetLayer() as VirgisLayer).GetColorHash("body");
+            mat.SetColor("_BaseColor", hash.Color);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e.Message);
+        }
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
         Mesh mesh = newValue;

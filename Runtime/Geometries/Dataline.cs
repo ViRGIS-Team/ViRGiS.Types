@@ -44,8 +44,6 @@ namespace Virgis
         public List<VertexLookup> VertexTable = new List<VertexLookup>();
         private Dictionary<string, UnitPrototype> m_symbology;
         private GameObject m_handlePrefab;
-        private Material m_lineMain;
-        private Material m_lineSelected;
         public DCurve3 Curve;
 
         /// <summary>
@@ -62,9 +60,9 @@ namespace Virgis
             if (VertexTable.Contains(new VertexLookup() { Id = data.id})) {
                 VertexLookup vdata = VertexTable.Find(item => item.Id == data.id);
                 foreach (VertexLookup vLookup in VertexTable) {
-                    if (vLookup.Line && vLookup.Line.vStart == vdata.Vertex)
+                    if (vLookup.Line && vLookup.Line.m_vStart == vdata.Vertex)
                         vLookup.Line.MoveStart(data.pos);
-                    if (vLookup.Line && vLookup.Line.vEnd == vdata.Vertex)
+                    if (vLookup.Line && vLookup.Line.m_vEnd == vdata.Vertex)
                         vLookup.Line.MoveEnd(data.pos);
                 }
                 Curve = new(GetVertexPositions(), m_Lr);
@@ -176,7 +174,7 @@ namespace Virgis
                     VertexTable.Remove(Last);
                     Last = VertexTable.Find(item => item.Vertex == Last.Vertex - 1);
                     Last.Line.MoveEnd(First.Com.transform.position);
-                    Last.Line.vEnd = 0;
+                    Last.Line.m_vEnd = 0;
                 } else {
                     VertexTable.Last().Line = _createSegment(VertexTable.Last().Com.transform.position, VertexTable.First().Com.transform.position, VertexTable.Count -1, true);
                 }
@@ -256,23 +254,23 @@ namespace Virgis
         /// <param name="position"> Vertex Position in Wordl Space coordinates</param>
         /// <returns></returns>
         public VirgisFeature AddVertex(LineSegment segment, Vector3 position) {
-            int start = segment.vStart;
-            int next = segment.vEnd;
+            int start = segment.m_vStart;
+            int next = segment.m_vEnd;
             VertexTable.ForEach(item => {
                 if (item.Vertex > start) {
                     item.Vertex++;
                     if (item.Line != null) {
-                        item.Line.vStart++;
-                        if (item.Line.vEnd != 0) {
-                            item.Line.vEnd++;
+                        item.Line.m_vStart++;
+                        if (item.Line.m_vEnd != 0) {
+                            item.Line.m_vEnd++;
                         }
                     }
                 }
-                if (m_Lr && item.isVertex && item.Line.vStart == start) {
-                    item.Line.vEnd = start + 1;
+                if (m_Lr && item.isVertex && item.Line.m_vStart == start) {
+                    item.Line.m_vEnd = start + 1;
                 }
-                if (m_Lr && item.isVertex && item.Line.vEnd > VertexTable.Count)
-                    item.Line.vEnd = 0;
+                if (m_Lr && item.isVertex && item.Line.m_vEnd > VertexTable.Count)
+                    item.Line.m_vEnd = 0;
             });
             start++;
             int end = next;
@@ -305,14 +303,14 @@ namespace Virgis
                         if (item.Vertex >= thisVertex) {
                             item.Vertex--;
                             if (item.Line != null) {
-                                item.Line.vStart--;
-                                if (item.Line.vEnd != 0) {
-                                    item.Line.vEnd--;
+                                item.Line.m_vStart--;
+                                if (item.Line.m_vEnd != 0) {
+                                    item.Line.m_vEnd--;
                                 }
                             }
                         };
-                        if (m_Lr && item.isVertex  && item.Line.vEnd >= VertexTable.Count) {
-                            item.Line.vEnd = 0;
+                        if (m_Lr && item.isVertex  && item.Line.m_vEnd >= VertexTable.Count) {
+                            item.Line.m_vEnd = 0;
                         };
                     });
                     int end = thisVertex;
@@ -336,6 +334,7 @@ namespace Virgis
             GameObject handle = Instantiate(m_handlePrefab, vertex, Quaternion.identity, transform );
             Datapoint com = handle.GetComponent<Datapoint>();
             com.Spawn(transform);
+            com.Draw();
             VertexTable.Add(new VertexLookup() { Id = com.GetId(), Vertex = i, isVertex = true, Com = com });
             handle.transform.localScale = m_symbology["point"].Transform.Scale;
             return com;
@@ -347,7 +346,7 @@ namespace Virgis
             com.Spawn(transform);
             com.Draw(start, end, i, i + 1, m_symbology["line"].Transform.Scale.magnitude);
             if (close)
-                com.vEnd = 0;
+                com.m_vEnd = 0;
             VertexTable.Find(item => item.Vertex == i).Line = com;
             return com;
         }

@@ -1,6 +1,6 @@
 /* MIT License
 
-Copyright (c) 2020 - 21 Runette Software
+Copyright (c) 2020 - 23 Runette Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -32,15 +33,25 @@ namespace Virgis
     public class LineSegment : VirgisFeature
     {
 
-        private Vector3 start; // coords of the start of the line in Map.local space coordinates
-        private Vector3 end;  // coords of the start of the line in Map.local space coordinates
-        private float diameter; // Diameter of the vertex in Map.local units
-        public int vStart; // Vertex ID of the start of the line
-        public int vEnd; // Vertex ID of the end of the line
-        private bool selected; //used to hold if this is a valid selection for this line segment
+        private Vector3 m_Start; // coords of the start of the line in Map.local space coordinates
+        private Vector3 m_End;  // coords of the start of the line in Map.local space coordinates
+        private float m_Diameter; // Diameter of the vertex in Map.local units
+        public int m_vStart; // Vertex ID of the start of the line
+        public int m_vEnd; // Vertex ID of the end of the line
+        private bool m_Selected; //used to hold if this is a valid selection for this line segment
+        private Transform m_Shape;
 
-        public void Start()
+        public new void Start()
         {
+            m_Shape = transform.GetChild(0);
+            if (m_Shape.TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            base.OnNetworkSpawn();
+            m_Shape = transform.GetChild(0);
+            if (m_Shape.TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
         }
 
         /// <summary>
@@ -53,15 +64,20 @@ namespace Virgis
         /// <param name="dia">Diameter of the line segement in Map.local units</param>
         public void Draw(Vector3 from, Vector3 to, int vertStart, int vertEnd, float dia)
         {
-            mainMat = GetMaterial("line");
-            selectedMat = GetMaterial("line_sel");
-            Transform shape = transform.GetChild(0);
-            shape.GetComponent<MeshRenderer>().SetMaterials(new List<Material>() {mainMat});
-            start = transform.parent.InverseTransformPoint(from);
-            end = transform.parent.InverseTransformPoint(to);
-            diameter = dia;
-            vStart = vertStart;
-            vEnd = vertEnd;
+            try
+            {
+                SerializableColorHash hash = (GetLayer() as VirgisLayer).GetColorHash("line");
+                mat.SetColor("_BaseColor", hash.Color);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+            }
+            m_Start = transform.parent.InverseTransformPoint(from);
+            m_End = transform.parent.InverseTransformPoint(to);
+            m_Diameter = dia;
+            m_vStart = vertStart;
+            m_vEnd = vertEnd;
             _draw();
 
         }
@@ -69,42 +85,42 @@ namespace Virgis
         {
             if (button == SelectionType.SELECTALL) {
                 transform.parent.SendMessageUpwards("Selected", button, SendMessageOptions.DontRequireReceiver);
-                selected = true;
+                m_Selected = true;
             }
         }
 
         public override void UnSelected(SelectionType button)
         {
-            selected = false;
+            m_Selected = false;
             if (button != SelectionType.BROADCAST)
             {
                 transform.parent.SendMessageUpwards("UnSelected", button, SendMessageOptions.DontRequireReceiver);
-                selected = false;
+                m_Selected = false;
             }
         }
 
         // Move the start of line to newStart point in World Coords
         public void MoveStart(Vector3 newStart)
         {
-            start = transform.parent.InverseTransformPoint(newStart);
+            m_Start = transform.parent.InverseTransformPoint(newStart);
             _draw();
         }
 
         // Move the start of line to newStart point in World Coords
         public void MoveEnd(Vector3 newEnd)
         {
-            end = transform.parent.InverseTransformPoint(newEnd);
+            m_End = transform.parent.InverseTransformPoint(newEnd);
             _draw();
         }
 
         private void _draw()
         {
 
-            transform.localPosition = start;
-            transform.LookAt(transform.parent.TransformPoint(end));
-            float length = Vector3.Distance(start, end) / 2.0f;
+            transform.localPosition = m_Start;
+            transform.LookAt(transform.parent.TransformPoint(m_End));
+            float length = Vector3.Distance(m_Start, m_End) / 2.0f;
             Vector3 linescale = transform.parent.localScale;
-            transform.localScale = new Vector3(diameter / linescale.x, diameter / linescale.y, length);
+            transform.localScale = new Vector3(m_Diameter / linescale.x, m_Diameter / linescale.y, length);
         }
 
         public override void MoveAxis(MoveArgs args){
@@ -113,7 +129,7 @@ namespace Virgis
         }
 
         public override void MoveTo(MoveArgs args){
-            if (selected)
+            if (m_Selected)
                 SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);
         }
 
