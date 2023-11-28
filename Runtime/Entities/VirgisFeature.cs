@@ -31,7 +31,6 @@ namespace Virgis {
 
     public abstract class VirgisFeature : NetworkBehaviour, IVirgisFeature
     {
-        protected Material mainMat; // color of the component
         protected MeshRenderer mr;
         protected Material mat;
         protected Vector3 m_firstHitPosition = Vector3.zero;
