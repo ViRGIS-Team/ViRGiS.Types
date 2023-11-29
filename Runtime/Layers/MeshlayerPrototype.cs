@@ -64,28 +64,5 @@ namespace Virgis
                 }
             }
         }
-
-        protected override Material MapMaterial(Color color, string idx)
-        {
-            Material m;
-            switch(idx)
-            {
-                case "body":
-                    m = Instantiate(MeshMaterial);
-                    m.SetColor("_BaseColor", color);
-                    break;
-                case "wireframe":
-                    m = Instantiate(WireframeMaterial);
-                    break;
-                case "image":
-                    m = Instantiate(ImageMaterial);
-                    m.SetTexture("_BaseMap", texture.tex);
-                    break;
-                default:
-                    m = Instantiate(MeshMaterial);
-                    break;
-            };
-            return m;
-        }
     }
 }

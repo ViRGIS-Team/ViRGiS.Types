@@ -64,6 +64,12 @@ public class DataMesh : VirgisFeature
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
         Mesh mesh = newValue;
+        DMesh3 dmesh = (DMesh3)mesh;
+        dmesh.Colorisation(out Vector2[] uv1, out Vector2[] uv2);
+        mesh.uv3 = uv1;
+        mesh.uv4 = uv2;
+
+
         mf.mesh = mesh;
         Mesh imesh = new()
         {

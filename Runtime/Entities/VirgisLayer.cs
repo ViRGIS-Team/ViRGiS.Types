@@ -95,36 +95,6 @@ namespace Virgis
             State.instance.AddLayer(this);
         }
 
-        public override void OnNetworkSpawn() {
-            m_cols.OnListChanged += ColHashChangeEvent;
-            foreach (SerializableColorHash col in m_cols) {
-                AddColHash(col);
-            }
-
-        }
-
-        private void ColHashChangeEvent(NetworkListEvent<SerializableColorHash> changeEvent)
-        {
-            AddColHash(changeEvent.Value);
-        }
-
-        private void AddColHash(SerializableColorHash hash) { 
-            string name = hash.Name.ToString();
-            Color color = hash.Color;
-            Material mat = MapMaterial(color, name);
-            if (hash.Property1.Key.ToString() != "")
-                mat.SetFloat(hash.Property1.Key.ToString(),hash.Property1.Value);
-            if (hash.Property2.Key.ToString() != "")
-                mat.SetFloat(hash.Property2.Key.ToString(),hash.Property2.Value);
-            if (hash.Property3.Key.ToString() != "")
-                mat.SetFloat(hash.Property3.Key.ToString(),hash.Property3.Value);
-            m_mat.Add(name, mat);
-        }
-
-        public override void OnNetworkDespawn() {
-            m_cols.OnListChanged += ColHashChangeEvent;
-        }
-
         protected new void OnDestroy() {
             State.instance.DelLayer(this);
             // kill any active loader process
