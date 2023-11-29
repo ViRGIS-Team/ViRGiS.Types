@@ -89,37 +89,18 @@ namespace Virgis
             IEnumerable<Vector3d> VerticesItr;
             GeneralPolygon2d polygon2d = new(Polygon, out frame, out VerticesItr );
 
-            Mesh mesh = new()
-            {
-                indexFormat = UnityEngine.Rendering.IndexFormat.UInt32
-            };
-
             Index3i[] triangles = polygon2d.GetMesh();
 
             //
             // for each vertex in the dalaunay triangulatin - map back to a 3d point and also populate the vertex table
             //
 
-            List<Vector3> vertices = VerticesItr.Select(vertex => Shape.transform.InverseTransformPoint((Vector3)vertex)).ToList<Vector3>();
+            //List<Vector3d> vertices = VerticesItr.Select(vertex => Shape.transform.InverseTransformPoint(vertex)).ToList();
 
-            List<int> tris = new();
-
-            foreach (Index3i tri in triangles)
-            {
-                tris.Add(tri.a);
-                tris.Add(tri.b);
-                tris.Add(tri.c);
-            }
-
-            mesh.vertices = vertices.ToArray();
-            mesh.triangles = tris.ToArray();
-            mesh.uv = BuildUVs(mesh.vertices);
-
-            mesh.RecalculateBounds();
-            mesh.RecalculateNormals();
-
-            Shape.GetComponent<DataMesh>().umesh.Value =mesh;
-
+            DMesh3 dmesh = new();
+            foreach (Vector3d vertex in VerticesItr) { dmesh.AppendVertex(vertex); };
+            foreach (Index3i tri in triangles) { dmesh.AppendTriangle(tri);  };
+            Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
         }
 
         public override VirgisFeature AddVertex(Vector3 position) {

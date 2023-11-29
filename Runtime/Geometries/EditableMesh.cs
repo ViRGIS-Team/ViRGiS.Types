@@ -37,7 +37,6 @@ public class EditableMesh : DataMesh
 
     private Vector3 m_currentHit; // current hit vertex
     private int? m_currentHitTri; // current hit triangle
-    private DMeshAABBTree3 m_aabb; // AABB Tree for current m,esh
     private int n = 0;
     private List<Int32> m_nRing;
     private bool m_selectOn = false;
@@ -187,8 +186,7 @@ public class EditableMesh : DataMesh
     public Transform Draw(DMesh3 dmeshin) {
         Spawn(transform.parent);
         m_mesh = new(dmeshin);
-        m_aabb = new DMeshAABBTree3(m_mesh, true);
-        umesh.Value = (Mesh)m_mesh;
+        umesh.Value = m_mesh;
         return transform;
     }
 

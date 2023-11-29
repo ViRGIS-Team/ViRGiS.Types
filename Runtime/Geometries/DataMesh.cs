@@ -31,6 +31,7 @@ using Unity.Netcode;
 public class DataMesh : VirgisFeature
 {
     protected DMesh3 m_mesh;
+    protected DMeshAABBTree3 m_aabb; // AABB Tree for current mesh
 
     public NetworkVariable<SerializableMesh> umesh = new();
 
@@ -63,14 +64,18 @@ public class DataMesh : VirgisFeature
         }
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
-        Mesh mesh = newValue;
-        DMesh3 dmesh = (DMesh3)mesh;
-        dmesh.Colorisation(out Vector2[] uv1, out Vector2[] uv2);
-        mesh.uv3 = uv1;
-        mesh.uv4 = uv2;
 
+        // load mesh as dmesh and process
+        DMesh3 dmesh = newValue;
+        dmesh.Colorisation(out Vector2[] uv);
+        m_aabb = new DMeshAABBTree3(m_mesh, true);
 
+        // lead mesh as unity mesh and add to MeshFilter
+        Mesh mesh = (Mesh)dmesh;
+        mesh.uv4 = uv;
         mf.mesh = mesh;
+
+        // create the mesh colliders
         Mesh imesh = new()
         {
             indexFormat = mesh.indexFormat,
