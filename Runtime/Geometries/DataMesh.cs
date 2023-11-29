@@ -66,12 +66,15 @@ public class DataMesh : VirgisFeature
         MeshCollider[] mc = GetComponents<MeshCollider>();
 
         // load mesh as dmesh and process
-        DMesh3 dmesh = newValue;
-        dmesh.Colorisation(out Vector2[] uv);
+        m_mesh = newValue;
+        System.Diagnostics.Stopwatch stopwatch = new ();
+        stopwatch.Start();
+        m_mesh.Colorisation(out Vector2[] uv);
+        stopwatch.Stop();
         m_aabb = new DMeshAABBTree3(m_mesh, true);
 
         // lead mesh as unity mesh and add to MeshFilter
-        Mesh mesh = (Mesh)dmesh;
+        Mesh mesh = (Mesh)m_mesh;
         mesh.uv4 = uv;
         mf.mesh = mesh;
 
