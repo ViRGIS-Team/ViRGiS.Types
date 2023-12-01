@@ -71,6 +71,7 @@ public class DataMesh : VirgisFeature
         stopwatch.Start();
         m_mesh.Colorisation(out Vector2[] uv);
         stopwatch.Stop();
+        Debug.Log($"{m_mesh.VertexCount} triangles took {stopwatch.Elapsed.TotalSeconds}");
         m_aabb = new DMeshAABBTree3(m_mesh, true);
 
         // lead mesh as unity mesh and add to MeshFilter
