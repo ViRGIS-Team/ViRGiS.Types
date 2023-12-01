@@ -186,7 +186,7 @@ namespace Virgis
         /// <summary>
         /// called to get the verteces of the LineString
         /// </summary>
-        /// <returns>Vector3[] of verteces</returns>
+        /// <returns>Vector3[] of vertices</returns>
         public Vector3[] GetVertexPositions()
         {
             List<Vector3> result = new List<Vector3>();

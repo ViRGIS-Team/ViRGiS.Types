@@ -68,9 +68,12 @@ public class DataMesh : VirgisFeature
         // load mesh as dmesh and process
         m_mesh = newValue;
         m_aabb = new DMeshAABBTree3(m_mesh, true);
+        m_mesh.ReverseOrientation();
 
         // lead mesh as unity mesh and add to MeshFilter
         Mesh mesh = (Mesh)m_mesh;
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
         mf.mesh = mesh;
         StartCoroutine(m_mesh.ColorisationCoroutine((uv) =>
         {
