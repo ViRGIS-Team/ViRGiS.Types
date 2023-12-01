@@ -12,12 +12,14 @@ namespace Virgis
 
         public int width;
 
+        public int PointCount;
+
 
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
         /// <param name="newValue">The new value</param>
-        public delegate void OnValueChangedDelegate( Texture2D newPositions, Texture2D newColors);
+        public delegate void OnValueChangedDelegate( Texture2D newPositions, Texture2D newColors, int PointCount);
         /// <summary>
         /// The callback to be invoked when the value gets changed
         /// </summary>
@@ -28,12 +30,13 @@ namespace Virgis
         /// if there are subscribers to that event.
         /// </summary>
         /// <param name="value">the new value of type `T` to be set/></param>
-        public void Set(Texture2D positions, Texture2D colors)
+        public void Set(Texture2D positions, Texture2D colors, int pc)
         {
             SetDirty(true);
             PositionMap = positions;
             ColorMap = colors;
-            OnValueChanged?.Invoke( positions, colors);
+            PointCount = pc;
+            OnValueChanged?.Invoke( positions, colors, pc);
         }
 
         /// <summary>
@@ -49,6 +52,7 @@ namespace Virgis
             } else {
                 writer.WriteValueSafe(width);
             }
+            writer.WriteValueSafe(PointCount);
 
             // Serialize the data we need to synchronize
             writer.WriteValueSafe(PositionMap.EncodeToPNG());
@@ -63,9 +67,19 @@ namespace Virgis
         {
             reader.ReadValueSafe(out width);
             if (width == 0) return;
+            reader.ReadValueSafe(out PointCount);
 
-            PositionMap = new Texture2D(width, width);
-            ColorMap = new Texture2D(width, width);
+            PositionMap = new Texture2D(width, width, TextureFormat.RGBAFloat, false)
+            {
+                name = "Position Map",
+                filterMode = FilterMode.Point
+            };
+
+            ColorMap = new Texture2D(width, width, TextureFormat.RGBA32, false)
+            {
+                name = "Color Map",
+                filterMode = FilterMode.Point
+            };
 
             // De-Serialize the data being synchronized
 
@@ -75,7 +89,7 @@ namespace Virgis
             byte[] colors = new byte[width * width];
             reader.ReadValueSafe(out colors);
             ColorMap.LoadImage(colors);
-            OnValueChanged?.Invoke(PositionMap, ColorMap);
+            OnValueChanged?.Invoke(PositionMap, ColorMap, PointCount);
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)

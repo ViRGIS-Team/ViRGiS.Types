@@ -46,6 +46,8 @@ namespace Virgis
         public List<IVirgisLayer> subLayers
         { get; } = new List<IVirgisLayer>();
 
+
+
         /// <summary>
         /// true if this layer has been changed from the original file
         /// </summary>
@@ -451,7 +453,7 @@ namespace Virgis
         public bool Equals(VirgisLayer other) {
             if (other == null)
                 return false;
-            return (this.m_id.Equals(other.GetId()));
+            return m_id.Equals(other.GetId());
         }
 
         public IVirgisLayer GetLayer() {
