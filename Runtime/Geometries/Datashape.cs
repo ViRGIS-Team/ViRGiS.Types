@@ -98,6 +98,7 @@ namespace Virgis
             //List<Vector3d> vertices = VerticesItr.Select(vertex => Shape.transform.InverseTransformPoint(vertex)).ToList();
 
             DMesh3 dmesh = new();
+            dmesh.Clockwise = true;
             foreach (Vector3d vertex in VerticesItr) { dmesh.AppendVertex(vertex); };
             foreach (Index3i tri in triangles) { dmesh.AppendTriangle(tri);  };
             Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
