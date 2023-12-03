@@ -26,7 +26,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using g3;
-using UnityEngine.UI;
 using System.Linq;
 
 namespace Virgis
@@ -42,8 +41,9 @@ namespace Virgis
 
         private bool m_Lr = false; // is this line a Linear Ring - i.e. used to define a polygon
         public List<VertexLookup> VertexTable = new List<VertexLookup>();
-        private Dictionary<string, UnitPrototype> m_symbology;
         private GameObject m_handlePrefab;
+        private SerializableMaterialHash m_Point_hash;
+        private SerializableMaterialHash m_Line_hash;
         public DCurve3 Curve;
 
         /// <summary>
@@ -121,12 +121,15 @@ namespace Virgis
         /// <param name="symbology">The symbo,logy to be applied to the line</param>
         /// <param name="handlePrefab"> The prefab to be used for the handle</param>
         /// <param name="labelPrefab"> the prefab to used for the label</param>
-        public void Draw(DCurve3 geom, Dictionary<string, UnitPrototype> symbology,  GameObject handlePrefab, GameObject labelPrefab, bool isring = false)
+        public void Draw(DCurve3 geom, Dictionary<string, SerializableMaterialHash> symbology,  GameObject handlePrefab, GameObject labelPrefab, bool isring = false)
         {
             Curve = geom;
             m_Lr = isring;
-            m_symbology = symbology;
+            if (!symbology.TryGetValue("point", out m_Point_hash)) m_Point_hash = new();
+            if (!symbology.TryGetValue("line", out m_Line_hash)) m_Line_hash = new();
             m_handlePrefab = handlePrefab;
+
+
 
             Vector3[] line = Curve.ToVector3().ToArray();
 
@@ -147,17 +150,17 @@ namespace Virgis
             Curve = new(GetVertexPositions(), m_Lr);
 
             //Set the label
-            if (labelPrefab != null)
-            {
-                Dictionary<string, object> meta = transform.parent.GetComponent<IVirgisEntity>().GetInfo(this); 
-                if (symbology["line"].ContainsKey("Label") && symbology["line"].Label != null && (meta?.ContainsKey(symbology["line"].Label) ?? false))
-                   {
-                    GameObject labelObject = Instantiate(labelPrefab, _labelPosition(), Quaternion.identity, transform);
-                    label = labelObject.transform;
-                    Text labelText = labelObject.GetComponentInChildren<Text>();
-                    labelText.text = (string)meta[symbology["line"].Label];
-                }
-            }
+            //if (labelPrefab != null)
+            //{
+            //    Dictionary<string, object> meta = transform.parent.GetComponent<IVirgisEntity>().GetInfo(this); 
+            //    if (symbology["line"].ContainsKey("Label") && symbology["line"].Label != null && (meta?.ContainsKey(symbology["line"].Label) ?? false))
+            //       {
+            //        GameObject labelObject = Instantiate(labelPrefab, _labelPosition(), Quaternion.identity, transform);
+            //        label = labelObject.transform;
+            //        Text labelText = labelObject.GetComponentInChildren<Text>();
+            //        labelText.text = (string)meta[symbology["line"].Label];
+            //    }
+            //}
         }
 
         /// <summary>
@@ -334,9 +337,9 @@ namespace Virgis
             GameObject handle = Instantiate(m_handlePrefab, vertex, Quaternion.identity, transform );
             Datapoint com = handle.GetComponent<Datapoint>();
             com.Spawn(transform);
-            com.Draw();
+            com.SetMaterial(m_Point_hash);
             VertexTable.Add(new VertexLookup() { Id = com.GetId(), Vertex = i, isVertex = true, Com = com });
-            handle.transform.localScale = m_symbology["point"].Transform.Scale;
+            handle.transform.localScale = Symbology["point"].Transform.Scale;
             return com;
         }
 
@@ -344,7 +347,8 @@ namespace Virgis
             GameObject lineSegment = Instantiate(CylinderObject, start, Quaternion.identity, transform);
             LineSegment com = lineSegment.GetComponent<LineSegment>();
             com.Spawn(transform);
-            com.Draw(start, end, i, i + 1, m_symbology["line"].Transform.Scale.magnitude);
+            com.SetMaterial(m_Line_hash);
+            com.Draw(start, end, i, i + 1, Symbology["line"].Transform.Scale.magnitude);
             if (close)
                 com.m_vEnd = 0;
             VertexTable.Find(item => item.Vertex == i).Line = com;
@@ -360,7 +364,7 @@ namespace Virgis
         }
 
         private Vector3 _labelPosition() {
-            return Center() + transform.TransformVector(Vector3.up) * m_symbology["line"].Transform.Scale.magnitude;
+            return Center() + transform.TransformVector(Vector3.up) * Symbology["line"].Transform.Scale.magnitude;
         }
 
         public override Dictionary<string, object> GetInfo() {

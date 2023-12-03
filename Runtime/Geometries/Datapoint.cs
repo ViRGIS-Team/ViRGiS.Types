@@ -37,7 +37,7 @@ namespace Virgis
         /// <summary>
         /// sets the label reference
         /// </summary>
-        public new void Start() {
+        public void Start() {
             base.Start();
             if (transform.childCount > 0)
                 label = transform.GetChild(0);
@@ -50,23 +50,6 @@ namespace Virgis
         void Update()
         {
             if (label) label.LookAt(State.instance.mainCamera.transform);
-        }
-
-        public void Draw()
-        {
-            try
-            {
-                VirgisLayer layer = GetLayer() as VirgisLayer;
-                if (layer != null)
-                {
-                    SerializableColorHash hash = layer.GetColorHash("point");
-                    mat.SetColor("_BaseColor", hash.Color);
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($" DataPoint Draw Error{ e }");
-            }
         }
 
         public override void Selected(SelectionType button){

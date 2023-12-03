@@ -75,10 +75,6 @@ namespace Virgis
         private bool m_changed;
 
         private readonly List<IDisposable> m_subs = new();
-        protected readonly Dictionary<string, Material> m_mat = new();
-        protected NetworkList<SerializableColorHash> m_cols;
-        public SerializableTexture texture;
-
 
         protected void Awake() {
             m_id = Guid.NewGuid();
@@ -86,8 +82,6 @@ namespace Virgis
             changed = true;
             isContainer = false;
             isWriteable = false;
-            m_cols = new();
-            texture = new();
         }
 
         void Start() {
@@ -492,56 +486,6 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public virtual void SetMaterial(string idx, Color color, Texture2D tex, Dictionary<string, float> properties = null)
-        {
-            SetMaterial(idx, color, properties);
-            texture.tex = tex;
-        }
-
-        public virtual void SetMaterial(string idx, Color color, Dictionary<string, float> properties = null)
-        {
-            SerializableColorHash hash = new(){Name = idx, Color=color};
-            if (properties!= null && properties.Count > 0) 
-            {
-                int count = properties.Count;
-                var p = properties.AsEnumerable();
-                hash.Property1 = new() { Key = p.ElementAt(0).Key, Value = p.ElementAt(0).Value };
-                if (count > 1)
-                    hash.Property2 = new() { Key = p.ElementAt(1).Key, Value = p.ElementAt(1).Value };
-                if (count > 2)
-                    hash.Property3 = new() { Key = p.ElementAt(2).Key, Value = p.ElementAt(2).Value };
-            }
-            m_cols.Add(hash);
-        }
-
-        public Material GetMaterial(string idx)
-        {
-            try {
-                return m_mat[idx];
-            } catch (Exception e) {
-                throw new Exception($"Material index error - {GetMetadata().DisplayName} - {e}");
-            }
-        }
-
-        protected virtual Material MapMaterial(Color color, string name)
-        {
-            return default;
-        }
-
-        public SerializableColorHash GetColorHash(string idx)
-        {
-            try
-            {
-                foreach (SerializableColorHash hash in m_cols)
-                    if (hash.Name == idx)
-                        return hash;
-                throw new Exception("Color Hash Index Error");
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
-                return default;
-            }
-        }
+        
     }
 }

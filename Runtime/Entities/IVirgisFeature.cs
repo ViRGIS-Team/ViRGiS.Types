@@ -52,8 +52,6 @@ namespace Virgis {
     /// </summary>
     public interface IVirgisFeature : IVirgisEntity
     {
-        Material GetMaterial(string idx);
-        //void MoveTo(Vector3 newPos);
         VirgisFeature AddVertex(Vector3 position);
         void RemoveVertex(VirgisFeature vertex);
         T GetGeometry<T>();

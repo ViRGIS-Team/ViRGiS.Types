@@ -81,7 +81,5 @@ namespace Virgis
         void SetEditable(bool inSession);
         bool IsEditable();
         void MessageUpwards(string method, object args);
-        void SetMaterial(string idx, Color color, Dictionary<string, float> properties = null);
-        Material GetMaterial(string idx);
     }
 }

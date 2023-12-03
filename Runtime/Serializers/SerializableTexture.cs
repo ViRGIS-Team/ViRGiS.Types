@@ -9,7 +9,7 @@ namespace Virgis
     {
         public Texture2D tex;
 
-        /// <summary>
+        /// <summary> 
         /// Delegate type for value changed event
         /// </summary>
         /// <param name="newValue">The new value</param>

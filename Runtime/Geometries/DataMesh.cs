@@ -53,15 +53,6 @@ public class DataMesh : VirgisFeature
     private void SetMesh(SerializableMesh previousValue, SerializableMesh newValue)
     {
         if( newValue == previousValue || !newValue.IsMesh) return;
-        try
-        {
-            SerializableColorHash hash = (GetLayer() as VirgisLayer).GetColorHash("body");
-            mat.SetColor("_BaseColor", hash.Color);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError(e.Message);
-        }
         MeshFilter mf = GetComponent<MeshFilter>();
         MeshCollider[] mc = GetComponents<MeshCollider>();
 

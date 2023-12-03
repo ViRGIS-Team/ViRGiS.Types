@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -64,23 +63,14 @@ namespace Virgis
         /// <param name="dia">Diameter of the line segement in Map.local units</param>
         public void Draw(Vector3 from, Vector3 to, int vertStart, int vertEnd, float dia)
         {
-            try
-            {
-                SerializableColorHash hash = (GetLayer() as VirgisLayer).GetColorHash("line");
-                mat.SetColor("_BaseColor", hash.Color);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(e.Message);
-            }
             m_Start = transform.parent.InverseTransformPoint(from);
             m_End = transform.parent.InverseTransformPoint(to);
             m_Diameter = dia;
             m_vStart = vertStart;
             m_vEnd = vertEnd;
             _draw();
-
         }
+
         public override void Selected(SelectionType button)
         {
             if (button == SelectionType.SELECTALL) {

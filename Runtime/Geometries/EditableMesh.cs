@@ -183,8 +183,23 @@ public class EditableMesh : DataMesh
     /// <param name="mat">Material to be used for mesh normally</param>
     /// <param name="Wf">Wirframe material to be used when the mesh is being edited</param>
     /// <returns></returns>
-    public Transform Draw(DMesh3 dmeshin) {
+    public Transform Draw(DMesh3 dmeshin, UnitPrototype bodySymbology) {
+        SerializableMaterialHash hash = new()
+        {
+            Name = "body",
+            Color = bodySymbology.Color,
+        };
+        hash.properties = new SerializableProperty[]
+        {
+            new SerializableProperty()
+            {
+                Key = "_hasVertexColor",
+                Value = dmeshin.HasVertexColors ? 1 : 0
+            }
+        };
+
         Spawn(transform.parent);
+        SetMaterial(hash);
         m_mesh = new(dmeshin);
         umesh.Value = m_mesh;
         return transform;

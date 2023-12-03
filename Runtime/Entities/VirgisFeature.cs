@@ -1,6 +1,6 @@
 ﻿/* MIT License
 
-Copyright (c) 2020 - 21 Runette Software
+Copyright (c) 2020 - 23 Runette Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,10 @@ namespace Virgis {
         private Guid _id; // internal ID for this component - used when it is part of a larger structure
         public Transform label; //  Go of the label or billboard
         public Vector3 lastHit; // last hit location
-        public object feature; // courtesy holder for a feature object - deprecated
+
+        protected NetworkVariable<SerializableMaterialHash> m_col = new();
+        //protected SerializableTexture m_Texture; 
+        public Dictionary<string, UnitPrototype> Symbology =new();
 
 
         void Awake()
@@ -51,19 +54,43 @@ namespace Virgis {
 
         public void Start()
         {
-            if(TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+
         }
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             if (TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+            m_col.OnValueChanged += UpdateMaterial;
+            UpdateMaterial(new (), m_col.Value);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            m_col.OnValueChanged -= UpdateMaterial;
+            base.OnNetworkDespawn();
         }
 
         public override void OnDestroy()
         {
             m_subs.ForEach(item => item.Dispose());
             base.OnDestroy();
+        }
+
+        public void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
+        {
+            if (newValue.Equals(previousValue)) return;
+            mat.SetColor("_BaseColor", newValue.Color);
+            if (newValue.properties == null) return;
+            foreach (SerializableProperty prop in newValue.properties)
+            {
+                mat.SetFloat(prop.Key.ToString(), prop.Value);
+            }
+        }
+
+        public void SetMaterial(SerializableMaterialHash hash)
+        {
+            m_col.Value = hash;
         }
 
         /// <summary>
@@ -111,13 +138,6 @@ namespace Virgis {
             }
         }
 
-        /// <summary>
-        /// Use to set the material of the feature
-        /// </summary>
-        public virtual Material GetMaterial(string idx) {
-            IVirgisLayer layer = GetLayer();
-            return layer?.GetMaterial(idx);
-        }
 
         /// <summary>
         /// Use to tell the Component that it is selected
