@@ -92,13 +92,12 @@ namespace Virgis
             Index3i[] triangles = polygon2d.GetMesh();
 
             //
-            // for each vertex in the dalaunay triangulatin - map back to a 3d point and also populate the vertex table
+            // for each vertex in the dalaunay triangulation - map back to a 3d point and also populate the vertex table
             //
 
             //List<Vector3d> vertices = VerticesItr.Select(vertex => Shape.transform.InverseTransformPoint(vertex)).ToList();
 
             DMesh3 dmesh = new();
-            dmesh.Clockwise = true;
             foreach (Vector3d vertex in VerticesItr) { dmesh.AppendVertex(vertex); };
             foreach (Index3i tri in triangles) { dmesh.AppendTriangle(tri);  };
             Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
