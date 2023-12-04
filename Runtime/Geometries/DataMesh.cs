@@ -44,6 +44,7 @@ namespace Virgis {
             umesh.OnValueChanged += SetMesh;
             if (umesh.Value != null && umesh.Value.IsMesh) SetMesh(new SerializableMesh(), umesh.Value);
             colorArray.OnValueChanged += OnColorisation;
+            if (colorArray.Value.Colors != null) OnColorisation(new SerializableColorArray(), colorArray.Value);
         }
 
         public override void OnNetworkDespawn()
@@ -55,11 +56,11 @@ namespace Virgis {
 
         public void OnColorisation(SerializableColorArray previousValue, SerializableColorArray newValue)
         {
-            if (newValue.colors == null) return;
-            Vector2[] uv = new Vector2[newValue.colors.Length];
-            for (int i = 0; i < newValue.colors.Length; i++)
+            if (newValue.Colors == null) return;
+            Vector2[] uv = new Vector2[newValue.Colors.Length];
+            for (int i = 0; i < newValue.Colors.Length; i++)
             {
-                uv[i] = new Vector2(newValue.colors[i], 0);
+                uv[i] = new Vector2(newValue.Colors[i], 0);
             };
             MeshFilter mf = GetComponent<MeshFilter>();
             mf.sharedMesh.uv4 = uv;
@@ -87,7 +88,7 @@ namespace Virgis {
             {
                 StartCoroutine(m_mesh.ColorisationCoroutine(100, (colors) =>
                 {
-                    colorArray.Value = new SerializableColorArray() { colors = colors };
+                    colorArray.Value = new SerializableColorArray() { Colors = colors };
                 }
                 ));
             };
