@@ -60,9 +60,12 @@ namespace Virgis {
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            if (TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
-            m_col.OnValueChanged += UpdateMaterial;
-            UpdateMaterial(new (), m_col.Value);
+            if (TryGetComponent<MeshRenderer>(out mr))
+            {
+                mat = mr.material;
+                m_col.OnValueChanged += UpdateMaterial;
+                UpdateMaterial(new(), m_col.Value);
+            }
         }
 
         public override void OnNetworkDespawn()
