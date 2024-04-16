@@ -86,7 +86,7 @@ namespace Virgis {
             NetworkManager nm = GetComponent<NetworkObject>().NetworkManager;
             if (nm.IsServer)
             {
-                StartCoroutine(m_mesh.ColorisationCoroutine(100, (colors) =>
+                StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
                 {
                     colorArray.Value = new SerializableColorArray() { Colors = colors };
                 }

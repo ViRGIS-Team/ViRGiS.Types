@@ -13,6 +13,9 @@ namespace Virgis
         private Vector2[] uvs;
         private int[] tris;
         private bool clockwise;
+        private bool hasColors;
+        private bool hasUVs;
+
 
         // INetworkSerializable
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -24,34 +27,39 @@ namespace Virgis
                 if (vertexCount == 0) return;
                 reader.ReadValueSafe(out int triCount);
                 reader.ReadValueSafe(out clockwise);
+                reader.ReadValueSafe(out hasColors);
+                reader.ReadValueSafe(out hasUVs);
                 vertices = new Vector3[vertexCount];
                 reader.ReadValueSafe(out vertices);
-                colors = new Color32[vertexCount];
-                reader.ReadValueSafe(out colors);
-                uvs = new Vector2[vertexCount];
-                reader.ReadValueSafe(out uvs);
                 tris = new int[triCount];
                 reader.ReadValueSafe(out tris);
+                colors = new Color32[vertexCount];
+                if (hasColors) reader.ReadValueSafe(out colors);
+                uvs = new Vector2[vertexCount];
+                if (hasUVs) reader.ReadValueSafe(out uvs);
             } else {
                 var writer = serializer.GetFastBufferWriter();
                 writer.WriteValueSafe(vertices.Length);
+                if (vertices.Length == 0) return;
                 writer.WriteValueSafe(tris.Length);
                 writer.WriteValueSafe(clockwise);
+                writer.WriteValueSafe(hasColors);
+                writer.WriteValueSafe(hasUVs);
                 writer.WriteValueSafe(vertices);
-                writer.WriteValueSafe(colors);
-                writer.WriteValueSafe(uvs);
                 writer.WriteValueSafe(tris);
+                if (hasColors) writer.WriteValueSafe(colors);
+                if (hasUVs) writer.WriteValueSafe(uvs);
             }
         }
 
         public static implicit operator DMesh3(SerializableMesh mesh)
         {
-            DMesh3 dmesh = new DMesh3();
+            DMesh3 dmesh = new DMesh3(false, mesh.hasColors, mesh.hasUVs, false);
             dmesh.Clockwise = mesh.clockwise;
-            Vector3[] vertices = mesh.vertices;
-            foreach (Vector3 v in vertices)
+            for (int i=0; i<mesh.vertices.Length;i++)
             {
-                dmesh.AppendVertex(v);
+                NewVertexInfo info = new(mesh.vertices[i], (Color)mesh.colors[i], mesh.uvs[i]);
+                dmesh.AppendVertex(info);
             }
 
             int[] tris = mesh.tris;
@@ -69,6 +77,8 @@ namespace Virgis
             smesh.vertices = new Vector3[mesh.VertexCount];
             smesh.colors = new Color32[mesh.VertexCount];
             smesh.uvs = new Vector2[mesh.VertexCount];
+            smesh.hasColors = mesh.HasVertexColors;
+            smesh.hasUVs = mesh.HasVertexUVs;
             NewVertexInfo data;
             for (int i = 0; i < mesh.VertexCount; i++)
             {

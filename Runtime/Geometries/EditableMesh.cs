@@ -200,8 +200,7 @@ public class EditableMesh : DataMesh
 
         Spawn(transform.parent);
         SetMaterial(hash);
-        m_mesh = new(dmeshin);
-        umesh.Value = m_mesh;
+        umesh.Value = dmeshin;
         return transform;
     }
 
