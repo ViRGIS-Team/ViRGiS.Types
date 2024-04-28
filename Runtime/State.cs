@@ -36,8 +36,10 @@ namespace Virgis {
     public interface IState  {
         static IState instance;
         Vector3 lastHitPosition { get; set; }
-        int editScale { get; set; } 
-        int currentView { get; set; }
+        int editScale { get; set; } // holds the current Edit Svcal
+        int currentView { get; set; } // holds the current view number
+        string UserID { get; set; } // holds a user identity
+        object Token { get; set; } // allows the storing of an arbitrary licence token object
 
         /// <summary>
         /// Shows if there is interaction with the gui
@@ -233,6 +235,15 @@ namespace Virgis {
             get; set;
         }
         public int currentView
+        {
+            get; set;
+        }
+
+        public string UserID {
+            get; set;
+        }
+
+        public object Token
         {
             get; set;
         }
