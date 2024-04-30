@@ -45,7 +45,7 @@ namespace Virgis
             verteces.ForEach(v =>
             {
                 result.Add(
-                    State.instance.map.transform.TransformPoint((Vector3)v)
+                    State.instance.Map.transform.TransformPoint((Vector3)v)
                     ) ;
             });
             return result;

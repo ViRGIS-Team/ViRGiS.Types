@@ -251,7 +251,7 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public virtual void SetEditable(bool inSession)
+        public virtual void SetEditableRpc(bool inSession)
         {
             throw new NotImplementedException();
         }

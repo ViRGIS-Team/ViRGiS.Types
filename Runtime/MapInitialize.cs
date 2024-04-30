@@ -31,7 +31,7 @@ namespace Virgis
         protected void Start()
         {
             base.Start();
-            State.instance.map = gameObject;
+            State.instance.Map = gameObject;
         }
 
         public override void Add(MoveArgs args)
@@ -44,17 +44,8 @@ namespace Virgis
             throw new System.NotImplementedException();
         }
 
-        public override bool Load(string file)
-        {
-            throw new System.NotImplementedException();
-        }
 
         public override void OnLoad()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override Task<RecordSetPrototype> Save(bool all = true)
         {
             throw new System.NotImplementedException();
         }
@@ -64,22 +55,12 @@ namespace Virgis
             throw new System.NotImplementedException();
         }
 
-        protected override void _checkpoint()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        protected override Task _draw()
-        {
-            throw new System.NotImplementedException();
-        }
-
         protected override bool _load(string file)
         {
             throw new System.NotImplementedException();
         }
 
-        protected override Task _save()
+        public override VirgisLayer CreateLayer(RecordSetPrototype thisLayer)
         {
             throw new System.NotImplementedException();
         }

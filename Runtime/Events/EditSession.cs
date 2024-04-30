@@ -65,8 +65,9 @@ namespace Virgis {
         public IVirgisLayer editableLayer {
             get => _editableLayer;
             set {
-                value?.SetEditable(true);
-                _editableLayer?.SetEditable(false);
+                if (value == null) return;
+                value.SetEditableRpc(true);
+                _editableLayer?.SetEditableRpc(false);
                 _editableLayer = value;
                 if (_active) _editableLayerChangedEvent.OnNext(_editableLayer);
             }

@@ -78,8 +78,8 @@ namespace Virgis
         void SetMetadata(RecordSetPrototype meta);
         void SetVisible(bool visible);
         bool IsVisible();
-        void SetEditable(bool inSession);
         bool IsEditable();
+        void SetEditableRpc(bool inSession);
         void MessageUpwards(string method, object args);
     }
 }

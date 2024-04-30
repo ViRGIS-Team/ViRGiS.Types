@@ -38,6 +38,8 @@ namespace Virgis {
     public abstract class MapInitializePrototype : MonoBehaviour, IVirgisLayer
     {
 
+        public GameObject appState;
+
         protected string m_loadOnStartup;
 
         public FeatureType featureType => throw new NotImplementedException();
@@ -73,15 +75,67 @@ namespace Virgis {
         private bool m_changed;
         private readonly List<IDisposable> m_subs = new List<IDisposable>();
 
+
+
         protected void Start()
         {
             m_subs.Add(State.instance.EditSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(State.instance.EditSession.EndEvent.Subscribe(_onEditStop));
         }
 
+        /// 
+        /// This is the initialisation script.
+        /// 
+        /// It loads the Project file, reads it for the layers and calls Draw to render each layer
+        /// </summary>
+        public bool Load(string file)
+        {
+            return _load(file);
+        }
+
         protected abstract bool _load(string file);
 
-        public abstract bool Load(string file);
+
+        /// <summary>
+        /// override this call in the consuming project to process the individual layers.
+        /// This allows the consuming project to define the layer types
+        /// </summary>
+        /// <param name="thisLayer"> the layer that ws pulled from the project file</param>
+        /// <returns></returns>
+        public abstract VirgisLayer CreateLayer(RecordSetPrototype thisLayer);
+
+
+        protected void initLayers(List<RecordSetPrototype> layers)
+        {
+            foreach (RecordSetPrototype thisLayer in layers)
+            {
+                VirgisLayer temp = null;
+                Debug.Log("Loading Layer : " + thisLayer.DisplayName);
+                temp = CreateLayer(thisLayer);
+                if (temp == null) continue;
+                if (!temp.Spawn(State.instance.Map.transform)) Debug.Log("reparent failed");
+                StartCoroutine(temp.Init(thisLayer));
+            }
+        }
+
+
+        /// <summary>
+        /// This call initiates the drawing of the virtual space and calls `Draw ` on each layer in turn.
+        /// </summary>
+        public void Draw()
+        {
+            foreach (IVirgisLayer layer in State.instance.Layers)
+            {
+                try
+                {
+                    layer.Draw();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"Project Layer {layer.sourceName} hasfailed to draw :" + e.ToString());
+                }
+            }
+        }
 
         /// <summary>
         /// Override this call to add functionality after the Project has loaded
@@ -91,38 +145,53 @@ namespace Virgis {
 
         public abstract void Add(MoveArgs args);
 
-
-        /// <summary>
-        /// This cll initiates the drawing of the virtual space and calls `Draw ` on each layer in turn.
-        /// </summary>
-        public async virtual Task Draw()
+        protected Task _draw()
         {
-            foreach (IVirgisLayer layer in State.instance.Layers)
-            {
-                try {
-                    await layer.Draw();
-                } catch(Exception e) {
-                    Debug.LogError($"Project Layer {layer.sourceName} hasfailed to draw :" + e.ToString());
-                }
-            }
-            return;
+            throw new System.NotImplementedException();
         }
 
-        protected abstract Task _draw();
-
-        protected abstract void _checkpoint();
+        protected void _checkpoint()
+        {
+        }
 
         /// <summary>
         /// this call initiates the saving of the whole project and calls `Save` on each layer in turn
         /// </summary>
         /// <param name="all"></param>
         /// <returns></returns>
-        public abstract Task<RecordSetPrototype> Save(bool all = true);
+        public virtual async Task<RecordSetPrototype> Save(bool all = true)
+        {
+            try
+            {
+                Debug.Log("Save starts");
+                if (State.instance.project != null)
+                {
+                    if (all)
+                    {
+                        foreach (IVirgisLayer com in State.instance.Layers)
+                        {
+                            RecordSetPrototype alayer = await (com as VirgisLayer).Save();
+                            int index = State.instance.project.RecordSets.FindIndex(x => x.Id == alayer.Id);
+                            State.instance.project.RecordSets[index] = alayer;
+                        }
+                    }
+                }
+                return default;
+            }
+            catch (Exception e)
+            {
+                Debug.Log("Save failed : " + e.ToString());
+                return default;
+            }
+        }
 
-        protected abstract Task _save();
+        protected Task _save()
+        {
+            throw new System.NotImplementedException();
+        }
 
 
-        protected virtual void _onEditStart(bool ignore)
+        protected void _onEditStart(bool ignore)
         {
             CheckPoint();
         }
@@ -130,14 +199,15 @@ namespace Virgis {
         /// <summary>
         /// Called when an edit session ends
         /// </summary>
-        /// <param name="save">true if stop and save, false if stop and discard</param>
-        protected async virtual void _onEditStop(bool save)
+        /// <param name="saved">true if stop and save, false if stop and discard</param>
+        protected async void _onEditStop(bool saved)
         {
-            if (!save) {
-                await Draw();
+            if (!saved)
+            {
+                Draw();
             }
-            await Save(save);
-    }
+            await Save(saved);
+        }
 
         public virtual GameObject GetFeatureShape()
         {
@@ -189,7 +259,7 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public void SetEditable(bool inSession)
+        public void SetEditableRpc(bool inSession)
         {
             throw new NotImplementedException();
         }
@@ -280,6 +350,11 @@ namespace Virgis {
         }
 
         public Material GetMaterial(string idx)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task IVirgisLayer.Draw()
         {
             throw new NotImplementedException();
         }
