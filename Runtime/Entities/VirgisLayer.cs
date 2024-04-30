@@ -39,6 +39,9 @@ namespace Virgis
     public abstract class VirgisLayer : NetworkBehaviour, IVirgisLayer {
 
         public NetworkVariable<RecordSetPrototype> _layer;
+        public NetworkVariable<bool> m_Editable;
+
+
         public FeatureType featureType { get; protected set; }
 
         public string sourceName { get; set; }
@@ -67,7 +70,6 @@ namespace Virgis
             set;
         }
         protected Guid m_id;
-        protected bool m_editable;
         protected IVirgisLoader m_loader;
 
         protected Task m_loaderTask;
@@ -78,7 +80,6 @@ namespace Virgis
 
         protected void Awake() {
             m_id = Guid.NewGuid();
-            m_editable = false;
             changed = true;
             isContainer = false;
             isWriteable = false;
@@ -89,6 +90,14 @@ namespace Virgis
             m_subs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
             State.instance.AddLayer(this);
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsServer)
+            {
+                m_Editable.Value = false;
+            }
         }
 
         protected new void OnDestroy() {
@@ -391,13 +400,14 @@ namespace Virgis
         /// Sets a marker that this particular layer is being edited.
         /// </summary>
         /// 
-        /// There can be only one layer being edited during an edit session.
+        /// There can be only one layer being edited during an edit session on the client
         /// 
         /// <param name="inSession"></param> true to indicate that this layer is in edit session,
         /// or false if otherwise.
-        public void SetEditable(bool inSession) {
+        [Rpc(SendTo.Server)]
+        public void SetEditableRpc(bool inSession) {
             if (isWriteable) {
-                m_editable = inSession;
+                m_Editable.Value = inSession;
                 _set_editable();
             }
         }
@@ -409,8 +419,9 @@ namespace Virgis
         /// Test to see if this layer is currently being edited
         /// </summary>
         /// <returns>Boolean</returns>
+        
         public bool IsEditable() {
-            return m_editable;
+            return m_Editable.Value;
         }
 
         protected virtual void _onEditStart(bool test) {

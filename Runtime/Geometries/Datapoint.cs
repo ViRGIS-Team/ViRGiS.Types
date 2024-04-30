@@ -80,7 +80,7 @@ namespace Virgis
                         break;
                     case EditSession.EditMode.SnapGrid:
                         args.oldPos = transform.position;
-                        args.pos = transform.position.Round(State.instance.map.transform.TransformVector(Vector3.one * (State.instance.project.ContainsKey("GridScale") && State.instance.project.GridScale != 0 ? State.instance.project.GridScale :  1f)).magnitude);;
+                        args.pos = transform.position.Round(State.instance.Map.transform.TransformVector(Vector3.one * (State.instance.project.ContainsKey("GridScale") && State.instance.project.GridScale != 0 ? State.instance.project.GridScale :  1f)).magnitude);;
                         args.id = GetId();
                         args.translate = args.pos - transform.position;
                         SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);

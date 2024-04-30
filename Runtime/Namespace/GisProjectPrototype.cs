@@ -7,7 +7,7 @@ namespace Virgis
 {
     public abstract class GisProjectPrototype : TestableObject
     {
-
+        public abstract string path {  set; }   
         protected abstract string TYPE { get;}
         protected abstract string VERSION { get;}
 

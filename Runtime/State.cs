@@ -26,6 +26,7 @@ using UniRx;
 using System;
 using System.Threading.Tasks;
 using System.Linq;
+using Unity.Netcode;
 
 namespace Virgis {
 
@@ -301,9 +302,9 @@ namespace Virgis {
             get; set;
         }
 
-        public virtual void Init() { }
 
-        public GisProjectPrototype project
+
+        public virtual GisProjectPrototype project
         {
             get
             {
@@ -321,18 +322,20 @@ namespace Virgis {
         }
 
 
-        public GameObject map
+        public GameObject Map
         {
             get; set;
         }
+
+        public IVirgisLayer MapInitialize;
 
         public List<VirgisLayer> Layers
         {
             get
             {
-                if (map != null)
+                if (Map != null)
                 {
-                    var list = map.GetComponentsInChildren<VirgisLayer>().ToList();
+                    var list = Map.GetComponentsInChildren<VirgisLayer>().ToList();
                     return list;
                 }
                 else
@@ -341,6 +344,11 @@ namespace Virgis {
                 };
             }
         }
+
+        /// <summary>
+        /// Project startup tasks
+        /// </summary>
+        public abstract void InitProj();
 
         public virtual void AddLayer(VirgisLayer layer)
         {
@@ -402,18 +410,46 @@ namespace Virgis {
         {
             if (zoom != 0)
             {
-                instance.map.transform.localScale = Vector3.one / zoom;
-                float scale = instance.map.transform.InverseTransformVector(Vector3.right).magnitude;
+                instance.Map.transform.localScale = Vector3.one / zoom;
+                float scale = instance.Map.transform.InverseTransformVector(Vector3.right).magnitude;
                 Zoom.OnNext(scale);
                 return scale;
             }
             return 0;
         }
 
-        public abstract bool LoadProject(string path);
+        public bool LoadProject(string path)
+        {
+            return MapInitialize.Load(path);
+        }
 
-        public abstract void UnloadProject();
+        public void UnloadProject()
+        {
 
-        public abstract Task Exit();
+            //Kill all map entities
+            if (Map != null)
+            {
+                for (int i = Map.transform.childCount - 1; i >= 0; i--)
+                {
+                    if (Map.transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer))
+                    {
+                        sublayer.Destroy();
+                        NetworkObject no = sublayer.GetComponent<NetworkObject>();
+                        no.Despawn();
+                    }
+                }
+            }
+        }
+
+        public async Task Exit()
+        {
+            Debug.Log("QuitButton.OnClick save before quit");
+            if (Map.TryGetComponent(out MapInitializePrototype mi))
+                await mi.Save(false);
+            Debug.Log("QuitButton.OnClick now quit");
+            UnloadProject();
+            NetworkManager.Singleton.Shutdown();
+            Application.Quit();
+        }
     }
 }
