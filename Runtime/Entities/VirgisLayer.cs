@@ -39,8 +39,11 @@ namespace Virgis
     public abstract class VirgisLayer : NetworkBehaviour, IVirgisLayer {
 
         public NetworkVariable<RecordSetPrototype> _layer;
+
         public NetworkVariable<bool> m_Editable;
 
+
+        public NetworkVariable<int> m_SubLayersCount;
 
         public FeatureType featureType { get; protected set; }
 
@@ -50,6 +53,13 @@ namespace Virgis
         { get; } = new List<IVirgisLayer>();
 
 
+        public void AddSubLayer(IVirgisLayer layer)
+        {
+            subLayers.Add(layer);
+            m_SubLayersCount.Value++;
+        }
+
+        private IVirgisLayer m_Parent;
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -60,8 +70,7 @@ namespace Virgis
             }
             set {
                 m_changed = value;
-                IVirgisLayer parent = transform.parent?.GetComponent<IVirgisLayer>();
-                if (parent != null) parent.changed = value;
+                if (m_Parent != null) m_Parent.changed = value;
             }
         }
         public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
@@ -69,6 +78,9 @@ namespace Virgis
             get;
             set;
         }
+
+        protected int m_SubLayersLoaded;
+
         protected Guid m_id;
         protected IVirgisLoader m_loader;
 
@@ -85,11 +97,15 @@ namespace Virgis
             isWriteable = false;
         }
 
-        void Start() {
+        public void Start() {
             State appState = State.instance;
             m_subs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
-            State.instance.AddLayer(this);
+            if (! IsServer)
+            {
+                m_Parent = transform.parent?.GetComponent<IVirgisLayer>();
+                if (! isContainer) Loaded(this);
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -97,7 +113,7 @@ namespace Virgis
             if (IsServer)
             {
                 m_Editable.Value = false;
-            }
+            } 
         }
 
         protected new void OnDestroy() {
@@ -177,10 +193,22 @@ namespace Virgis
             return m_loaderItr;
         }
 
+        public virtual void Loaded(VirgisLayer layer) {
+            if (! IsServer) subLayers.Add(layer);
+            if (isContainer) {
+                m_SubLayersLoaded++;
+                if (m_SubLayersLoaded >= m_SubLayersCount.Value)
+                {
+                    m_Parent.Loaded(this);
+                }
+            } else {
+                m_Parent.Loaded(this);
+            }
+        }
+
         public async virtual Task AsyncInit(RecordSetPrototype layer) {
             await SubInit(layer);
             await Draw();
-            Debug.Log($"Loaded Layer : {layer.DisplayName}");
         }
 
         public Task Awaiter(){
@@ -194,6 +222,8 @@ namespace Virgis
         /// 
         public async virtual Task SubInit(RecordSetPrototype layer) {
             try {
+                m_Parent = transform.parent?.GetComponent<IVirgisLayer>();
+                m_SubLayersLoaded = 0;
                 m_loader = GetComponent<IVirgisLoader>();
                 SetMetadata(layer);
                 if (m_loader != null)
@@ -247,6 +277,7 @@ namespace Virgis
                     await m_loader._draw();
                 changed = false;
             }
+            if (! isContainer) Loaded(this);
             return;
         }
 

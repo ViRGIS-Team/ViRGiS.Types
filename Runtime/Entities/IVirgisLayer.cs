@@ -70,6 +70,7 @@ namespace Virgis
         Task AsyncInit(RecordSetPrototype layer);
         Task SubInit(RecordSetPrototype layer);
         Task Draw();
+        void Loaded(VirgisLayer layer);
         void CheckPoint();
         Task<RecordSetPrototype> Save(bool flag);
         VirgisFeature GetFeature(Guid id);

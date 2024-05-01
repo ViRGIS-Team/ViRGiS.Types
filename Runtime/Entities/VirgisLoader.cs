@@ -89,8 +89,8 @@ namespace Virgis
 
         public List<IVirgisLayer> subLayers
         {
-            get { return m_parent?.subLayers; }
-        }
+            get { return m_parent?.subLayers;}
+            }
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -342,6 +342,11 @@ namespace Virgis
         }
 
         public Material GetMaterial(string idx)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Loaded(VirgisLayer layer)
         {
             throw new NotImplementedException();
         }

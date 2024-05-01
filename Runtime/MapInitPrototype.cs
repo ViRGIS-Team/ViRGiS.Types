@@ -358,5 +358,10 @@ namespace Virgis {
         {
             throw new NotImplementedException();
         }
+
+        public virtual void Loaded(VirgisLayer layer)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
