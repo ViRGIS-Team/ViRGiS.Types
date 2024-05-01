@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using UnityEngine;
 
 namespace Virgis
@@ -38,5 +39,12 @@ namespace Virgis
         RASTER,
         MAP,
         CUSTOM_FEATURE
+    }
+
+    public struct VirgisServerDetails
+    {
+        public IPEndPoint Endpoint;
+        public string ServerName;
+        public string ModelName;
     }
 }

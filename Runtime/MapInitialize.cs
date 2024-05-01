@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
+using UnityEngine;
 using System.Threading.Tasks;
 
 namespace Virgis
@@ -48,6 +49,12 @@ namespace Virgis
         public override void OnLoad()
         {
             throw new System.NotImplementedException();
+        }
+
+        public override void Loaded(VirgisLayer layer)
+        {
+            if (layer._layer.Value != null) Debug.Log($"Loaded Layer : {layer._layer.Value.DisplayName}");
+            State.instance.AddLayer(layer);
         }
 
         public override Task SubInit(RecordSetPrototype layer)

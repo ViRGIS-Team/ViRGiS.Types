@@ -102,6 +102,17 @@ namespace Virgis {
        BehaviorSubject<bool> ConfigEvent { get; }
 
         /// <summary>
+        /// Holds the list of servers currently resgistered with the client
+        /// </summary>
+        List<VirgisServerDetails> Servers { get; }
+
+        /// <summary>
+        /// Register a server qwith this client
+        /// </summary>
+        /// <param name="details">Server Details as VirgisServerDetails</param>
+        void RegisterServer(VirgisServerDetails details) { }
+
+        /// <summary>
         /// Init is called after a project has been fully loaded.
         /// </summary>
         /// 
@@ -331,19 +342,9 @@ namespace Virgis {
 
         public List<VirgisLayer> Layers
         {
-            get
-            {
-                if (Map != null)
-                {
-                    var list = Map.GetComponentsInChildren<VirgisLayer>().ToList();
-                    return list;
-                }
-                else
-                {
-                    return new List<VirgisLayer>();
-                };
-            }
-        }
+            get;
+            private set;
+        } = new List<VirgisLayer>();
 
         /// <summary>
         /// Project startup tasks
@@ -352,6 +353,7 @@ namespace Virgis {
 
         public virtual void AddLayer(VirgisLayer layer)
         {
+            Layers.Add(layer);
             LayerUpdate.AddLayer(layer);
         }
 
@@ -368,6 +370,21 @@ namespace Virgis {
         public Transform trackingSpace
         {
             get; set;
+        }
+
+        public List<VirgisServerDetails> Servers { get; private set; } = new();
+
+        public BehaviorSubject<bool> ServerEvent { get; private set; } = new BehaviorSubject<bool>(false);
+
+        public void RegisterServer(VirgisServerDetails details) 
+        {
+            Servers.Add(details);
+            ServerEvent.OnNext(true);
+        }
+
+        public void ClearServers()
+        {
+            Servers = new();
         }
 
         public bool InEditSession()
@@ -417,6 +434,8 @@ namespace Virgis {
             }
             return 0;
         }
+
+
 
         public bool LoadProject(string path)
         {
