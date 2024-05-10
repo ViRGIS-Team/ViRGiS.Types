@@ -338,7 +338,7 @@ namespace Virgis {
             get; set;
         }
 
-        public IVirgisLayer MapInitialize;
+        public MapInitializePrototype MapInitialize;
 
         public List<VirgisLayer> Layers
         {
