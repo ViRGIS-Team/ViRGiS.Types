@@ -425,7 +425,7 @@ namespace Virgis {
 
         public virtual float SetScale(float zoom)
         {
-            if (zoom != 0)
+            if (zoom != 0 && instance.Map != null)
             {
                 instance.Map.transform.localScale = Vector3.one / zoom;
                 float scale = instance.Map.transform.InverseTransformVector(Vector3.right).magnitude;
@@ -446,7 +446,7 @@ namespace Virgis {
         {
 
             //Kill all map entities
-            if (Map != null)
+            if (Map != null && NetworkManager.Singleton.IsServer)
             {
                 for (int i = Map.transform.childCount - 1; i >= 0; i--)
                 {
@@ -462,9 +462,6 @@ namespace Virgis {
 
         public async Task Exit()
         {
-            Debug.Log("QuitButton.OnClick save before quit");
-            if (Map.TryGetComponent(out MapInitializePrototype mi))
-                await mi.Save(false);
             Debug.Log("QuitButton.OnClick now quit");
             UnloadProject();
             NetworkManager.Singleton.Shutdown();
