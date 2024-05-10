@@ -40,7 +40,7 @@ namespace Virgis {
 
         public GameObject appState;
 
-        protected string m_loadOnStartup;
+        public string LoadOnStartup;
 
         public FeatureType featureType => throw new NotImplementedException();
 
