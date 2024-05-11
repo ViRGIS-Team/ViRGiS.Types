@@ -260,6 +260,9 @@ namespace Virgis
         /// Draw the layer based upon the features in the features RecordSet
         /// </summary>
         public virtual async Task Draw() {
+            // if not a server - do ntohing
+            if(!IsServer) return;
+            
             //change nothing if there are no changes
             if (changed) {
                 if (!isContainer) {
@@ -298,6 +301,7 @@ namespace Virgis
         /// </summary>
         /// <returns>A copy of the data save dot the source</returns>
         public virtual async Task<RecordSetPrototype> Save(bool flag = false) {
+            if (!IsServer) return GetMetadata();
             if (changed) {
                 if (m_loader != null)
                     await m_loader._save();
