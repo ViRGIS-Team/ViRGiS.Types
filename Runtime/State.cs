@@ -25,7 +25,6 @@ using UnityEngine;
 using UniRx;
 using System;
 using System.Threading.Tasks;
-using System.Linq;
 using Unity.Netcode;
 
 namespace Virgis {
@@ -232,7 +231,6 @@ namespace Virgis {
         {
             get
             {
-                if (m_inst == null) { Debug.Log("no instance"); }
                 return m_inst;
             }
 
