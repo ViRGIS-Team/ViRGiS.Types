@@ -105,6 +105,10 @@ namespace Virgis
             {
                 m_Parent = transform.parent?.GetComponent<IVirgisLayer>();
                 if (! isContainer) Loaded(this);
+                else if (m_SubLayersLoaded >= m_SubLayersCount.Value)
+                {
+                    if (m_Parent != null) m_Parent.Loaded(this);
+                }
             }
         }
 
@@ -199,7 +203,7 @@ namespace Virgis
                 m_SubLayersLoaded++;
                 if (m_SubLayersLoaded >= m_SubLayersCount.Value)
                 {
-                    m_Parent.Loaded(this);
+                    if (m_Parent != null) m_Parent.Loaded(this);
                 }
             } else {
                 m_Parent.Loaded(this);
