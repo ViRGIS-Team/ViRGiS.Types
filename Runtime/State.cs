@@ -372,17 +372,18 @@ namespace Virgis {
 
         public List<VirgisServerDetails> Servers { get; private set; } = new();
 
-        public BehaviorSubject<bool> ServerEvent { get; private set; } = new BehaviorSubject<bool>(false);
+        public BehaviorSubject<VirgisServerDetails> ServerEvent { get; private set; } = new BehaviorSubject<VirgisServerDetails>(new());
 
         public void RegisterServer(VirgisServerDetails details) 
         {
             Servers.Add(details);
-            ServerEvent.OnNext(true);
+            ServerEvent.OnNext(details);
         }
 
         public void ClearServers()
         {
             Servers = new();
+            ServerEvent.OnNext(new());
         }
 
         public bool InEditSession()
