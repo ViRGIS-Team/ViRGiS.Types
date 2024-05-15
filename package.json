@@ -6,7 +6,7 @@
   "unity": "2020.3",
   "dependencies": {
     "com.virgis.geometry": "3.1.1",
-    "com.virgis.geojson.net": "1.2.19",
+    "com.virgis.geojson.net": "1.2.20",
     "com.atteneder.draco": "4.1.0"
   },
   "keywords": [
