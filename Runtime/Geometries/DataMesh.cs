@@ -21,11 +21,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using UnityEngine;
+using UnityEngine.Rendering;
 using g3;
 using System.Collections.Generic;
 using System;
+using System.Collections;
 using System.Linq;
 using Unity.Netcode;
+using Unity.Mathematics;
+using Unity.Collections;
 
 namespace Virgis {
 
@@ -36,6 +40,9 @@ namespace Virgis {
 
         public NetworkVariable<SerializableMesh> umesh = new();
         public NetworkVariable<SerializableColorArray> colorArray = new();
+
+        [SerializeField]
+        public ComputeShader colorShader;
 
 
         public override void OnNetworkSpawn()
@@ -86,11 +93,16 @@ namespace Virgis {
             NetworkManager nm = GetComponent<NetworkObject>().NetworkManager;
             if (nm.IsServer)
             {
-                StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
+                //StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
+                //{
+                //    colorArray.Value = new SerializableColorArray() { Colors = colors };
+                //}
+                //));
+
+                StartCoroutine(TestCoroutine(m_mesh, (colors) =>
                 {
                     colorArray.Value = new SerializableColorArray() { Colors = colors };
-                }
-                ));
+                }));
             };
 
             // create the mesh colliders
@@ -117,6 +129,92 @@ namespace Virgis {
             }
         }
 
+        public IEnumerator TestCoroutine(DMesh3 mesh, Action<int[]> callback)
+        {
+            System.Diagnostics.Stopwatch stopwatch = new();
+            stopwatch.Start();
+            Debug.Log("Start Coloristion");
+            int triangleCount = mesh.TriangleCount;
+            uint3[] Triangles_arr = new uint3[triangleCount];
+            for (int i = 0; i < triangleCount; i++) {
+                Triangles_arr[i] = (uint3)(int3)mesh.GetTriangle(i);
+            }
+            uint[] Colors_arr = new uint[mesh.VertexCount];
+            uint[] Flag_arr = new uint[triangleCount];
+
+            List<int> Degree = new();
+            foreach (int vID in m_mesh.VertexIndices())
+            {
+                Degree.Add(m_mesh.GetVtxEdgeCount(vID));
+            }
+
+            for (uint i = 0; i < 6; i++)
+            {
+                int val = Degree.Max();
+                int idx = Degree.IndexOf(val);
+                Degree[idx] = 0;
+                Colors_arr[idx] = i + 1;
+            }
+
+            colorShader.SetInt("TriangleCount", triangleCount);
+
+            ComputeBuffer Triangles_buf = new ComputeBuffer(triangleCount, 12);
+            Triangles_buf.SetData(Triangles_arr);
+
+            ComputeBuffer Colors_buff = new ComputeBuffer(mesh.VertexCount, 4);
+            Colors_buff.SetData(Colors_arr);
+
+            ComputeBuffer Flag_buff = new ComputeBuffer(triangleCount, 4);
+
+            int kernel = colorShader.FindKernel("CSMain");
+
+            colorShader.SetBuffer(kernel, "Triangles", Triangles_buf);
+            colorShader.SetBuffer(kernel, "Colors", Colors_buff);
+            colorShader.SetBuffer(kernel, "completeFlag", Flag_buff);
+
+            int threadgroup = (int)(triangleCount / 16) + 1 ;
+
+            int itr = 0;
+            Debug.Log($"start the GPU after {stopwatch.Elapsed.TotalSeconds}");
+
+            while (true)
+            {
+                Flag_buff.SetData(Flag_arr);
+                colorShader.Dispatch(kernel, threadgroup, 1, 1);
+                AsyncGPUReadbackRequest req = AsyncGPUReadback.Request(Flag_buff);
+                while (!req.done)
+                {
+                    yield return null;
+                }
+
+                if (req.hasError) throw new Exception();
+
+                uint[] changearray = req.GetData<uint>().ToArray();
+                long changes = changearray.Sum<uint>(x => (long)x);
+                Debug.Log($"Changes ; {changes}");
+                if (changes == 0) break;
+                itr++;
+            }
+
+            AsyncGPUReadbackRequest req2 = AsyncGPUReadback.Request(Colors_buff);
+            while (!req2.done)
+            {
+                yield return null;
+            }
+
+            if (req2.hasError) throw new Exception();
+            NativeArray<int> colors = req2.GetData<int>();
+
+
+            callback(colors.ToArray());
+            stopwatch.Stop();
+            Flag_buff.Dispose();
+            Colors_buff.Dispose();
+            Triangles_buf.Dispose();
+            colors.Dispose();
+            Debug.Log($"{triangleCount} triangles took {stopwatch.Elapsed.TotalSeconds}, {itr + 1} iterations");
+        }
+             
         public DMesh3 GetMesh() {
             return m_mesh;
         }

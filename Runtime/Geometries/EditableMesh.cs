@@ -29,7 +29,8 @@ using System;
 using System.Linq;
 
 public class EditableMesh : DataMesh
-{   
+{
+
     private bool m_BlockMove = false; // is entity in a block-move state
     private DMesh3 m_oldDmesh; // holds the previous mesh during editing
     private int m_selectedVertex;
