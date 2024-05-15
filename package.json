@@ -1,27 +1,27 @@
 {
-    "name": "com.virgis.virgis.types",
-    "version": "3.0.0",
-    "displayName": "ViRGiS Basic Types",
-    "description": "ViRGiS is a GIS platform for VR. See https://www.vrgis.org for more details.",
-    "unity": "2020.3",
-    "dependencies": {
-      "com.virgis.geometry": "3.1.1",
-      "com.virgis.geojson.net": "1.2.17",
-      "com.atteneder.draco": "4.1.0"
-    },
-    "keywords": [
-        "geometry",
-        "geojson",
-        "GeoJSON.NET",
-        "toolkit",
-        "gdal",
-        "pdal",
-        "mdal",
-        "GIS"
-    ],
-    "author": {
-        "name": "Virgis Team",
-        "email": "info@virgis.org",
-        "url": "https://www.virgis.org"
-    }
+  "name": "com.virgis.virgis.types",
+  "version": "3.0.0",
+  "displayName": "ViRGiS Visualisation Entities",
+  "description": "ViRGiS is a GIS platform for VR. See https://www.vrgis.org for more details.",
+  "unity": "2020.3",
+  "dependencies": {
+    "com.virgis.geometry": "3.1.1",
+    "com.virgis.geojson.net": "1.2.19",
+    "com.atteneder.draco": "4.1.0"
+  },
+  "keywords": [
+    "geometry",
+    "geojson",
+    "GeoJSON.NET",
+    "toolkit",
+    "gdal",
+    "pdal",
+    "mdal",
+    "GIS"
+  ],
+  "author": {
+    "name": "Virgis Team",
+    "email": "info@virgis.org",
+    "url": "https://www.virgis.org"
+  }
 }
