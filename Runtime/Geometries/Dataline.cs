@@ -121,10 +121,10 @@ namespace Virgis
         /// <param name="symbology">The symbo,logy to be applied to the line</param>
         /// <param name="handlePrefab"> The prefab to be used for the handle</param>
         /// <param name="labelPrefab"> the prefab to used for the label</param>
-        public void Draw(DCurve3 geom, Dictionary<string, SerializableMaterialHash> symbology,  GameObject handlePrefab, GameObject labelPrefab, bool isring = false)
+        public void Draw(DCurve3 geom, Dictionary<string, SerializableMaterialHash> symbology,  GameObject handlePrefab, GameObject labelPrefab)
         {
             Curve = geom;
-            m_Lr = isring;
+            m_Lr = geom.Closed;
             if (!symbology.TryGetValue("point", out m_Point_hash)) m_Point_hash = new();
             if (!symbology.TryGetValue("line", out m_Line_hash)) m_Line_hash = new();
             m_handlePrefab = handlePrefab;
@@ -339,7 +339,7 @@ namespace Virgis
             com.Spawn(transform);
             com.SetMaterial(m_Point_hash);
             VertexTable.Add(new VertexLookup() { Id = com.GetId(), Vertex = i, isVertex = true, Com = com });
-            handle.transform.localScale = Symbology["point"].Transform.Scale;
+            handle.transform.localScale = Symbology.ContainsKey("point") ? Symbology["point"].Transform.Scale : Vector3.one;
             return com;
         }
 
