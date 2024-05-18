@@ -17,13 +17,18 @@ namespace Virgis
     /// <summary>
     /// A Graph Unit from a Data Level
     /// </summary>
-    public abstract class DataUnitPrototype : TestableObject
+    public class DataUnitPrototype : TestableObject
     {
         /// <summary>
         /// The name of the Data Unit
         /// </summary>
         [JsonProperty(PropertyName = "name")]
         public string Name;
+        /// <summary>
+        /// Tranform to be applied to this Data Unit
+        /// </summary>
+        [JsonProperty(PropertyName = "transform")]
+        public JsonTransform Transform;
         /// <summary>
         /// The data vizualisation to use
         /// </summary>
@@ -36,7 +41,22 @@ namespace Virgis
         [JsonProperty(PropertyName = "source_table")]
         public string TableName;
         /// <summary>
-        /// The rage to be used as labels
+        /// The range to be used as X value
+        /// </summary>
+        [JsonProperty(PropertyName = "x_range")]
+        public string XRange;
+        /// <summary>
+        /// The range to be used as Y value
+        /// </summary>
+        [JsonProperty(PropertyName = "z_range")]
+        public string YRange;
+        /// <summary>
+        /// The range to be used as labels
+        /// </summary>
+        [JsonProperty(PropertyName = "y_range")]
+        public string ZRange;
+        /// <summary>
+        /// The range to be used as labels
         /// </summary>
         [JsonProperty(PropertyName = "label_range")]
         public string LabelRange;
