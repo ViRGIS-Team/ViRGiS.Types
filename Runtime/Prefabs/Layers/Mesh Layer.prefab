@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 103705025751674339}
-  - component: {fileID: -3035415006739421960}
   - component: {fileID: 8214003711893909731}
+  - component: {fileID: -3035415006739421960}
   - component: {fileID: 1529240364314137381}
   m_Layer: 0
   m_Name: Mesh Layer
@@ -26,30 +26,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 103705025751674337}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-3035415006739421960
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 103705025751674337}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9c3cf82cab402401f85f76a46694a3f1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Mesh: {fileID: 6956378504070967302, guid: d15231c7492fcb34295475931d27da3c, type: 3}
-  MeshMaterial: {fileID: 2100000, guid: 6970656647e782d4b8df7b5128b92fba, type: 2}
-  WireframeMaterial: {fileID: 2100000, guid: e12795e638da343278da0871f4f80f35, type: 2}
-  ImageMaterial: {fileID: 2100000, guid: a3a71c26a238e46408a40be8807453a8, type: 2}
 --- !u!114 &8214003711893909731
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -62,10 +46,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
+  GlobalObjectIdHash: 1630244507
+  InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+--- !u!114 &-3035415006739421960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 103705025751674337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c3cf82cab402401f85f76a46694a3f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Editable:
+    m_InternalValue: 0
+  m_SubLayersCount:
+    m_InternalValue: 0
+  Mesh: {fileID: 6956378504070967302, guid: d15231c7492fcb34295475931d27da3c, type: 3}
+  MeshMaterial: {fileID: 2100000, guid: 6970656647e782d4b8df7b5128b92fba, type: 2}
+  WireframeMaterial: {fileID: 2100000, guid: e12795e638da343278da0871f4f80f35, type: 2}
+  ImageMaterial: {fileID: 2100000, guid: a3a71c26a238e46408a40be8807453a8, type: 2}
 --- !u!114 &1529240364314137381
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78,6 +87,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UseUnreliableDeltas: 0
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
@@ -90,5 +100,9 @@ MonoBehaviour:
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
   InLocalSpace: 1
   Interpolate: 0
+  SlerpPosition: 0
