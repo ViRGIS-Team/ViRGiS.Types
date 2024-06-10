@@ -40,7 +40,7 @@ namespace Virgis
         public void Start() {
             base.Start();
             if (transform.childCount > 0)
-                label = transform.GetChild(0);
+                Label = transform.GetChild(0);
         }
 
 
@@ -49,18 +49,18 @@ namespace Virgis
         /// </summary>
         void Update()
         {
-            if (label) label.LookAt(State.instance.mainCamera.transform);
+            if (Label) Label.LookAt(State.instance.mainCamera.transform);
         }
 
         public override void Selected(SelectionType button){
             base.Selected(button);
-            mr.material.SetInt("_Selected", 1);
+            m_Mr.material.SetInt("_Selected", 1);
         }
 
 
         public override void UnSelected(SelectionType button){
-            base.Selected(button);
-            mr.material.SetInt("_Selected", 0);
+            base.UnSelected(button);
+            m_Mr.material.SetInt("_Selected", 0);
             if (button != SelectionType.BROADCAST){
                 MoveArgs args = new MoveArgs();
                 switch (State.instance.EditSession.mode){
@@ -73,23 +73,21 @@ namespace Virgis
                         {
                             args.oldPos = transform.position;
                             args.pos = hitColliders.First<Collider>().transform.position;
-                            args.id = GetId();
                             args.translate = args.pos - args.oldPos;
-                            SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);
+                            MoveTo(args);
                         }
                         break;
                     case EditSession.EditMode.SnapGrid:
                         args.oldPos = transform.position;
-                        args.pos = transform.position.Round(State.instance.Map.transform.TransformVector(Vector3.one * (State.instance.project.ContainsKey("GridScale") && State.instance.project.GridScale != 0 ? State.instance.project.GridScale :  1f)).magnitude);;
-                        args.id = GetId();
+                        args.pos = transform.position.Round(State.instance.Map.transform.TransformVector(Vector3.one * (State.instance.GridScale.Get() != 0 ? State.instance.GridScale.Get() :  1f)).magnitude);;
                         args.translate = args.pos - transform.position;
-                        SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);
+                        MoveTo(args);
                         break;
                 }
             }
         }
 
-        public override void MoveTo(MoveArgs args) {
+        protected override void _move(MoveArgs args) {
             if (args.translate != Vector3.zero) {
                 args.id = GetId();
                 transform.parent.SendMessage("Translate", args, SendMessageOptions.DontRequireReceiver);
@@ -112,14 +110,14 @@ namespace Virgis
                 transform.Translate(argsin.translate, Space.World);
                 argsout.id = GetId();
                 argsout.pos = transform.position;
-                SendMessageUpwards("VertexMove", argsout, SendMessageOptions.DontRequireReceiver);
+                VertexMove(argsout);
             }
         }
 
 
-        public override void MoveAxis(MoveArgs args) {
+        protected override void _moveAxis(MoveArgs args) {
             args.pos = transform.position;
-            base.MoveAxis(args);
+            base._moveAxis(args);
         }
 
 
@@ -128,27 +126,12 @@ namespace Virgis
         }
 
         public void Delete() {
-            transform.parent.SendMessage("RemoveVertex", this, SendMessageOptions.DontRequireReceiver);
+            transform.parent.SendMessage("RemoveVertexRpc", this, SendMessageOptions.DontRequireReceiver);
         }
 
 
         public override Dictionary<string, object> GetInfo() {
             return GetLayer().GetInfo(this);
-            //if (meta == default) {
-            //    meta = feature.GetAll();
-            //    Geometry geom = (gameObject.transform.position.ToGeometry());
-            //    string wkt;
-            //    try {
-            //        GetLayer<IVirgisLayer>().GetCrs().ExportToWkt(out wkt, null);
-            //        geom.TransformTo(GetLayer<IVirgisLayer>().GetCrs());
-            //    } catch { }
-            //    double[] coords = new double[3];
-            //    geom.GetPoint(0, coords);
-            //    meta.Add("X Coordinate", coords[0].ToString());
-            //    meta.Add("Y Coordinate", coords[1].ToString());
-            //    meta.Add("Z Coordinate", coords[2].ToString());
-            //    geom.Dispose();
-            //}
         }
 
         public override void SetInfo(Dictionary<string, object> meta) {

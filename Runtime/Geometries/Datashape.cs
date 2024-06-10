@@ -37,7 +37,6 @@ namespace Virgis
 
         public GameObject shapePrefab;
         protected GameObject Shape; // gameObject to be used for the shape
-        protected List<VertexLookup> VertexTable = new();
         protected List<Dataline> lines = new();
         protected List<DCurve3> Polygon = new();
         protected float scaleX;
@@ -46,7 +45,7 @@ namespace Virgis
         public override void Selected(SelectionType button) {
             if (button == SelectionType.SELECTALL) {
                 gameObject.BroadcastMessage("Selected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = true;
+                m_SetBlockMove(true);
                 GetComponentsInChildren<Dataline>().ToList<Dataline>().ForEach(item => item.Selected(SelectionType.SELECTALL));
             }
         }
@@ -54,11 +53,11 @@ namespace Virgis
         public override void UnSelected(SelectionType button) {
             if (button != SelectionType.BROADCAST) {
                 gameObject.BroadcastMessage("UnSelected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = false;
+                m_SetBlockMove(false);
             }
         }
 
-        public override void MoveTo(MoveArgs args) {
+        protected override void _move(MoveArgs args) {
             throw new NotImplementedException();
         }
 
@@ -72,12 +71,7 @@ namespace Virgis
                 Polygon = new List<DCurve3>();
                 foreach (Dataline ring in lines)
                 {
-                    foreach (VertexLookup v in ring.VertexTable)
-                    {
-                        VertexTable.Add(v);
-                    }
-                    DCurve3 curve = new(ring.GetVertexPositions(), true);
-                    Polygon.Add(curve);
+                    Polygon.Add(ring.Curve); // Note that Polygon is in World Coordinates
                 }
             }
 
@@ -100,16 +94,21 @@ namespace Virgis
             DMesh3 dmesh = new();
             foreach (Vector3d vertex in VerticesItr) { dmesh.AppendVertex(vertex); };
             foreach (Index3i tri in triangles) { dmesh.AppendTriangle(tri);  };
+
+            // Note that DMesh is in World Coordinates since the DCurve3's were in World Coordinates
+            // However, the Unity Mesh must by in object local coordinates
+            dmesh.ToLocal(transform);
+
             Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
         }
 
-        public override VirgisFeature AddVertex(Vector3 position) {
+        public override void AddVertexRpc(Vector3 position) {
             _redraw();
-            return base.AddVertex(position);
+            base.AddVertexRpc(position);
         }
 
-        public override void RemoveVertex(VirgisFeature vertex) {
-            if (m_blockMove) {
+        public override void RemoveVertexRpc(VirgisFeature vertex) {
+            if (m_State.BlockMove) {
                 Destroy(gameObject);
             } else {
                 _redraw();
@@ -175,18 +174,6 @@ namespace Virgis
                 ret[i] = new Vector2( (ret[i].x - minX) / scaleX, (ret[i].y - minY) / scaleY);
             }
             return ret.ToArray();
-        }
-
-        /// <summary>
-        /// Get an array of the Datapoint components for the vertexes
-        /// </summary>
-        /// <returns> Datapoint[]</returns>
-        public Datapoint[] GetVertexes() {
-            Datapoint[] result = new Datapoint[VertexTable.Count ];
-            for (int i = 0; i < result.Length; i++) {
-                result[i] = VertexTable.Find(item => item.isVertex && item.pVertex == i).Com as Datapoint;
-            }
-            return result;
         }
 
         public override Dictionary<string, object> GetInfo() {

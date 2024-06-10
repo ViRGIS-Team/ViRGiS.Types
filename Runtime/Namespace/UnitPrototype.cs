@@ -10,9 +10,10 @@ namespace Virgis
     /// </summary>
     public enum Shapes
     {
+        None,
         Spheroid,
         Cuboid,
-        Cylinder
+        Cylinder,
     }
 
     /// <summary>

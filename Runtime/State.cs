@@ -21,11 +21,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 using UniRx;
 using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 namespace Virgis {
 
@@ -215,11 +217,13 @@ namespace Virgis {
         /// <param name=""></param>
         /// <param name=""></param>
         /// <returns> a number representing the scale set</returns>
-        float SetScale(float zoom);
+        void SetZoom(float zoom);
+
+        void SetScale(float scale);
 
         bool LoadProject(string path);
 
-        void UnloadProject();
+        void UnloadProject(Action callback);
 
     }
 
@@ -281,6 +285,18 @@ namespace Virgis {
         }
 
         public ZoomEvent Zoom
+        {
+            get;
+            protected set;
+        }
+
+        public ZoomEvent MapScale
+        {
+            get;
+            protected set;
+        }
+
+        public GridEvent GridScale
         {
             get;
             protected set;
@@ -422,28 +438,28 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public virtual float SetScale(float zoom)
-        {
-            if (zoom != 0 && instance.Map != null)
-            {
-                instance.Map.transform.localScale = Vector3.one / zoom;
-                float scale = instance.Map.transform.InverseTransformVector(Vector3.right).magnitude;
-                Zoom.OnNext(scale);
-                return scale;
-            }
-            return 0;
+        public virtual void SetZoom(float zoom) { 
+            Zoom.OnNext(zoom);
         }
 
-
+        public virtual void SetScale(float scale)
+        {
+            MapScale.OnNext(scale);
+            if (scale != 0 && instance.Map != null)
+            {
+                instance.Map.transform.localScale = Vector3.one / scale;
+            }
+        }
 
         public bool LoadProject(string path)
         {
             return MapInitialize.Load(path);
         }
 
-        public void UnloadProject()
+        public void UnloadProject(Action callback = null)
         {
-
+            SetZoom(1);
+            NetworkObject no;
             //Kill all map entities
             if (Map != null && NetworkManager.Singleton.IsServer)
             {
@@ -452,11 +468,24 @@ namespace Virgis {
                     if (Map.transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer))
                     {
                         sublayer.Destroy();
-                        NetworkObject no = sublayer.GetComponent<NetworkObject>();
+                        no = sublayer.GetComponent<NetworkObject>();
                         no.Despawn();
                     }
                 }
+                no = Map.GetComponent<NetworkObject>();
+                no.Despawn();
             }
+
+            StartCoroutine(m_UnloadSceneCoroutine(callback));
+        }
+
+        public IEnumerator m_UnloadSceneCoroutine(Action callback)
+        {
+            if (SceneManager.GetSceneByName("Map").IsValid())
+            { 
+                yield return SceneManager.UnloadSceneAsync("Map");
+            }
+            if (callback != null) callback();
         }
 
         public async Task Exit()

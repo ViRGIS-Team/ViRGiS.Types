@@ -58,11 +58,10 @@ namespace Virgis {
             return;
         }
 
-        public override async Task<RecordSetPrototype> Save(bool flag = false) {
+        public override async Task<RecordSetPrototype> Save() {
             foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
                 await layer.Save();
             }
-            await base.Save();
             return GetMetadata();
         }
 

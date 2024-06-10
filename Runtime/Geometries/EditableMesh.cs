@@ -86,7 +86,7 @@ public class EditableMesh : DataMesh
         n = -1;
     }
 
-    public override void MoveTo(MoveArgs args) {
+    protected override void _move(MoveArgs args) {
         if (m_BlockMove) {
             if (args.translate != Vector3.zero) {
                 transform.Translate(args.translate, Space.World);
@@ -217,9 +217,9 @@ public class EditableMesh : DataMesh
 
     public override void OnEdit(bool inSession) {
         if (inSession) {
-            mr.material.SetInt("_Selected", 1);
+            m_Mr.material.SetInt("_Selected", 1);
         } else {
-            mr.material.SetInt("_Selected", 0);
+            m_Mr.material.SetInt("_Selected", 0);
         }
     }
 
@@ -228,7 +228,7 @@ public class EditableMesh : DataMesh
         mcs.ToList().ForEach(item => Destroy(item));
     }
 
-    public override VirgisFeature AddVertex(Vector3 position) {
+    public override void AddVertexRpc(Vector3 position) {
         Vector3d localPosition = (Vector3d) transform.InverseTransformPoint(position);
         int currentHitTri;
         m_aabb = new DMeshAABBTree3(m_mesh, true);
@@ -265,7 +265,6 @@ public class EditableMesh : DataMesh
         MeshFilter mf = GetComponent<MeshFilter>();
         mf.mesh = tempMesh;
         UnSelected(SelectionType.SELECT);
-        return this;
     }
 
     /// <summary>

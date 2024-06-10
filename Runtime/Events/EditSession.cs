@@ -65,11 +65,12 @@ namespace Virgis {
         public IVirgisLayer editableLayer {
             get => _editableLayer;
             set {
-                if (value == null) return;
-                value.SetEditableRpc(true);
-                _editableLayer?.SetEditableRpc(false);
-                _editableLayer = value;
-                if (_active) _editableLayerChangedEvent.OnNext(_editableLayer);
+                if (_active)
+                {
+                    _editableLayerChangedEvent.OnNext(_editableLayer);
+                    _editableLayer = value;
+                    value?.SetEditable(true);
+                }
             }
         }
 
@@ -86,6 +87,7 @@ namespace Virgis {
 
         public void StopAndSave() {
             if (_active) {
+                editableLayer = null;
                 _active = false;
                 _endEditSessionEvent.OnNext(true);
             }
@@ -93,6 +95,7 @@ namespace Virgis {
 
         public void StopAndDiscard() {
             if (_active) {
+                editableLayer = null;
                 _active = false;
                 _endEditSessionEvent.OnNext(false);
             }
@@ -122,7 +125,5 @@ namespace Virgis {
                 return _editableLayerChangedEvent.AsObservable<IVirgisLayer>();
             }
         }
-
-
     }
 }

@@ -50,7 +50,7 @@ namespace Virgis
             changed = true;
         }
 
-        public override void MoveAxis(MoveArgs args)
+        protected override void _moveAxis(MoveArgs args)
         {
             changed = true;
         }

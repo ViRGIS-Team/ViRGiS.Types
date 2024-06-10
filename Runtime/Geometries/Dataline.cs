@@ -44,14 +44,14 @@ namespace Virgis
         private GameObject m_handlePrefab;
         private SerializableMaterialHash m_Point_hash;
         private SerializableMaterialHash m_Line_hash;
-        public DCurve3 Curve;
+        public DCurve3 Curve; // The DCurve3 of the line. Is in world coordinates and kept updated
 
         /// <summary>
         /// Every frame - realign the billboard
         /// </summary>
         public void Update()
         {
-            if (label) label.LookAt(State.instance.mainCamera.transform);
+            if (Label) Label.LookAt(State.instance.mainCamera.transform);
         }
 
 
@@ -65,15 +65,10 @@ namespace Virgis
                     if (vLookup.Line && vLookup.Line.m_vEnd == vdata.Vertex)
                         vLookup.Line.MoveEnd(data.pos);
                 }
-                Curve = new(GetVertexPositions(), m_Lr);
-                if (label) label.position = _labelPosition();
+                if (Label) Label.position = _labelPosition();
+                Curve.SetVertex(vdata.Vertex, data.pos);
             }
-            Curve = new(GetVertexPositions(), m_Lr);
-        }
-
-        public override void MoveAxis(MoveArgs args) {
-
-            base.MoveAxis(args);
+            base.VertexMove(data);
         }
 
 
@@ -117,37 +112,32 @@ namespace Virgis
         /// <summary>
         /// Called to draw the line
         /// </summary>
-        /// <param name="geom"> A LineString in DCurve3 format in map space coordinates</param>
+        /// <param name="curve"> A LineString in DCurve3 format in world space coordinates</param>
         /// <param name="symbology">The symbo,logy to be applied to the line</param>
         /// <param name="handlePrefab"> The prefab to be used for the handle</param>
         /// <param name="labelPrefab"> the prefab to used for the label</param>
-        public void Draw(DCurve3 geom, Dictionary<string, SerializableMaterialHash> symbology,  GameObject handlePrefab, GameObject labelPrefab)
+        public void Draw(DCurve3 curve, Dictionary<string, SerializableMaterialHash> symbology,  GameObject handlePrefab, GameObject labelPrefab)
         {
-            Curve = geom;
-            m_Lr = geom.Closed;
+            Curve = curve;
+            m_Lr = curve.Closed;
             if (!symbology.TryGetValue("point", out m_Point_hash)) m_Point_hash = new();
             if (!symbology.TryGetValue("line", out m_Line_hash)) m_Line_hash = new();
             m_handlePrefab = handlePrefab;
 
-
-
-            Vector3[] line = Curve.ToVector3().ToArray();
-
-
+            List<Vector3> line = curve.ToVector3();
             int i = 0;
             foreach (Vector3 vertex in line)
             {
-                if (!(i + 1 == line.Length && m_Lr))
+                _createVertex(vertex, i);
+                if (i + 1 != line.Count)
                 {
-                    _createVertex(vertex, i);
-                }
-                if (i + 1 != line.Length)
-                {
-                    _createSegment(vertex, line[i + 1],i , (i + 2 == line.Length && m_Lr));
+                    _createSegment(vertex, line[i + 1],i , false);
+                } else {
+                    if (curve.Closed)
+                        _createSegment(vertex, line[0], i, true);
                 }
                 i++;
             }
-            Curve = new(GetVertexPositions(), m_Lr);
 
             //Set the label
             //if (labelPrefab != null)
@@ -213,7 +203,7 @@ namespace Virgis
             if (button == SelectionType.SELECTALL)
             {
                 gameObject.BroadcastMessage("Selected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = true;
+                m_SetBlockMove(true);
             }
         }
 
@@ -222,15 +212,15 @@ namespace Virgis
             if (button != SelectionType.BROADCAST)
             {
                 gameObject.BroadcastMessage("UnSelected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = false;
+                m_SetBlockMove(false);
             }
         }
 
         public override void Translate(MoveArgs args)
         {
-            if (!m_blockMove)
+            if (!m_State.BlockMove)
             {
-                gameObject.BroadcastMessage("TranslateHandle", args, SendMessageOptions.DontRequireReceiver);
+                BroadcastMessage("TranslateHandle", args, SendMessageOptions.DontRequireReceiver);
             }
             else
             {
@@ -239,15 +229,17 @@ namespace Virgis
             }
         }
 
-        public override void MoveTo(MoveArgs args)
+        protected override void _move(MoveArgs args)
         {
             throw new NotImplementedException();
         }
 
-        public override VirgisFeature AddVertex(Vector3 position) {
+        public override void AddVertexRpc(Vector3 position) {
             int seg = Curve.NearestSegment(position);
             LineSegment segment = VertexTable.Find(item => item.Vertex == seg).Line;
-            return AddVertex(segment, position);
+            AddVertex(segment, position);
+            Curve.InsertVertex(position, seg);
+            Curve.InsertData((long)Curve.VertexCount, seg);
         }
 
         /// <summary>
@@ -284,12 +276,11 @@ namespace Virgis
             _createSegment(position, VertexTable.Find(item => item.Vertex == end).Com.transform.position, start, end == 0);
             transform.parent.SendMessage("AddVertex", position, SendMessageOptions.DontRequireReceiver);
             vertex.UnSelected(SelectionType.SELECT);
-            Curve = new(GetVertexPositions(), m_Lr);
             return vertex;
         }
 
-        public override void RemoveVertex(VirgisFeature vertex) {
-            if (m_blockMove) {
+        public override void RemoveVertexRpc(VirgisFeature vertex) {
+            if (m_State.BlockMove) {
                 Destroy(gameObject);
             } else {
                 VertexLookup vLookup = VertexTable.Find(item => item.Com == vertex);

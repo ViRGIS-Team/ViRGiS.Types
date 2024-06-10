@@ -37,20 +37,19 @@ namespace Virgis
         private float m_Diameter; // Diameter of the vertex in Map.local units
         public int m_vStart; // Vertex ID of the start of the line
         public int m_vEnd; // Vertex ID of the end of the line
-        private bool m_Selected; //used to hold if this is a valid selection for this line segment
         private Transform m_Shape;
 
         public new void Start()
         {
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out m_Mr)) m_Material = m_Mr.material;
         }
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out m_Mr)) m_Material = m_Mr.material;
         }
 
         /// <summary>
@@ -69,24 +68,6 @@ namespace Virgis
             m_vStart = vertStart;
             m_vEnd = vertEnd;
             _draw();
-        }
-
-        public override void Selected(SelectionType button)
-        {
-            if (button == SelectionType.SELECTALL) {
-                transform.parent.SendMessageUpwards("Selected", button, SendMessageOptions.DontRequireReceiver);
-                m_Selected = true;
-            }
-        }
-
-        public override void UnSelected(SelectionType button)
-        {
-            m_Selected = false;
-            if (button != SelectionType.BROADCAST)
-            {
-                transform.parent.SendMessageUpwards("UnSelected", button, SendMessageOptions.DontRequireReceiver);
-                m_Selected = false;
-            }
         }
 
         // Move the start of line to newStart point in World Coords
@@ -113,19 +94,18 @@ namespace Virgis
             transform.localScale = new Vector3(m_Diameter / linescale.x, m_Diameter / linescale.y, length);
         }
 
-        public override void MoveAxis(MoveArgs args){
+        protected override void _moveAxis(MoveArgs args){
             args.pos = transform.position;
             transform.parent.GetComponent<IVirgisEntity>().MoveAxis(args);
         }
 
-        public override void MoveTo(MoveArgs args){
-            if (m_Selected)
+        protected override void _move(MoveArgs args){
+            if (m_State.BlockMove)
                 SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);
         }
 
-        public override VirgisFeature AddVertex(Vector3 position) {
+        public override void AddVertexRpc(Vector3 position) {
             GetComponentInParent<Dataline>().AddVertex( this, position);
-            return this;
         }
 
         public void Delete() {

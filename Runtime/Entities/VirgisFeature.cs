@@ -31,25 +31,31 @@ namespace Virgis {
 
     public abstract class VirgisFeature : NetworkBehaviour, IVirgisFeature
     {
-        protected MeshRenderer mr;
-        protected Material mat;
-        protected Vector3 m_firstHitPosition = Vector3.zero;
-        protected bool m_nullifyHitPos = true;
-        protected bool m_blockMove = false; // is entity in a block-move state
-        protected readonly List<IDisposable> m_subs = new();
+        /// <summary>
+        /// The Symbology for this Feature
+        /// </summary>
+        public Dictionary<string, UnitPrototype> Symbology = new();
+        /// <summary>
+        /// The Label object for this feature
+        /// </summary>
+        public Transform Label;
 
-        private Guid _id; // internal ID for this component - used when it is part of a larger structure
-        public Transform label; //  Go of the label or billboard
-        public Vector3 lastHit; // last hit location
+        protected MeshRenderer m_Mr;
+        protected Material m_Material;
+        protected readonly List<IDisposable> m_Subs = new();
+        protected NetworkVariable<SerializableMaterialHash> m_Col = new();
+        protected VirgisFeatureState m_State = new VirgisFeatureState() {
+            FirstHitPosition = Vector3.zero,
+            NullifyHitPos = true,
+            BlockMove = false
+        };
 
-        protected NetworkVariable<SerializableMaterialHash> m_col = new();
-        //protected SerializableTexture m_Texture; 
-        public Dictionary<string, UnitPrototype> Symbology =new();
-
+        private Guid m_Id; // internal ID for this component - used when it is part of a larger structure
+        private object m_FID;
 
         void Awake()
         {
-            _id = Guid.NewGuid();
+            m_Id = Guid.NewGuid();
         }
 
         public void Start()
@@ -60,40 +66,40 @@ namespace Virgis {
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            if (TryGetComponent<MeshRenderer>(out mr))
+            if (TryGetComponent<MeshRenderer>(out m_Mr))
             {
-                mat = mr.material;
-                m_col.OnValueChanged += UpdateMaterial;
-                UpdateMaterial(new(), m_col.Value);
+                m_Material = m_Mr.material;
+                m_Col.OnValueChanged += UpdateMaterial;
+                UpdateMaterial(new(), m_Col.Value);
             }
         }
 
         public override void OnNetworkDespawn()
         {
-            m_col.OnValueChanged -= UpdateMaterial;
+            m_Col.OnValueChanged -= UpdateMaterial;
             base.OnNetworkDespawn();
         }
 
         public override void OnDestroy()
         {
-            m_subs.ForEach(item => item.Dispose());
+            m_Subs.ForEach(item => item.Dispose());
             base.OnDestroy();
         }
 
         public void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
         {
             if (newValue.Equals(previousValue)) return;
-            mat.SetColor("_BaseColor", newValue.Color);
+            m_Material.SetColor("_BaseColor", newValue.Color);
             if (newValue.properties == null) return;
             foreach (SerializableProperty prop in newValue.properties)
             {
-                mat.SetFloat(prop.Key.ToString(), prop.Value);
+                m_Material.SetFloat(prop.Key.ToString(), prop.Value);
             }
         }
 
         public void SetMaterial(SerializableMaterialHash hash)
         {
-            m_col.Value = hash;
+            m_Col.Value = hash;
         }
 
         /// <summary>
@@ -111,6 +117,7 @@ namespace Virgis {
                     DeSpawn(com.transform);
                 }
             }
+            DeSpawn(transform);
         }
 
         public bool Spawn(Transform parent)
@@ -147,11 +154,11 @@ namespace Virgis {
         /// </summary>
         /// <param name="button"> SelectionType</param>
         public virtual void Selected(SelectionType button) {
-            m_nullifyHitPos = true;
+            m_State.NullifyHitPos = true;
             if (button != SelectionType.BROADCAST)
                 transform.parent.GetComponent<IVirgisEntity>().Selected(button);
             if (button == SelectionType.SELECTALL) {
-                m_blockMove = true;
+                m_SetBlockMove(true);
             }
         }
 
@@ -161,38 +168,84 @@ namespace Virgis {
         /// <param name="button"> SelectionType</param>
         public virtual void UnSelected(SelectionType button) {
             if (button != SelectionType.BROADCAST)
-                transform.parent.GetComponent<IVirgisEntity>().UnSelected(SelectionType.BROADCAST);
-            m_blockMove = false;
+                transform.parent.GetComponent<IVirgisEntity>().UnSelected(button);
+            m_SetBlockMove(false);
         }
 
-        
+        /// <summary>
+        /// Called to Set the Feature State of the feature:
+        /// - Sets the BlockMove State from the VirgisFeatureState object
+        /// </summary>
+        /// <param name="state"></param>
+        public virtual void SetFeatureState(VirgisFeatureState state)
+        {
+            m_SetBlockMove(state.BlockMove);
+            transform.parent.SendMessageUpwards("SetFeatureState",m_State,SendMessageOptions.DontRequireReceiver);
+        }
+
+        protected void m_SetBlockMove(bool state) {
+            m_State.BlockMove = state;
+        }
 
 
         /// <summary>
         /// Sent by the UI to request this component to move.
         /// </summary>
-        /// <param name="args">MoveArgs : Either a trabslate vectir OR a Vector position to move to, both in World space coordinates</param>
-        public virtual void MoveTo(MoveArgs args) {
-            transform.parent.GetComponent<IVirgisEntity>().Translate(args);
+        /// <param name="args">MoveArgs : Either a translation vector OR a Vector position to move to, both in World space coordinates</param>
+        public void MoveTo(MoveArgs args)
+        {
+            MoveToRpc(args, m_State, ! IsServer);
+        }
+
+        [Rpc(SendTo.Server)]
+        protected void MoveToRpc(MoveArgs args, VirgisFeatureState state, bool fromClient)
+        {
+            m_State = state;
+            if (fromClient)
+            {
+                SetFeatureState(state);
+            }
+            _move(args);
+        }
+
+        protected virtual void _move(MoveArgs args)
+        {
+            //do nothing
         }
 
         /// <summary>
         /// received when a Move Axis request is made by the user
         /// </summary>
-        /// <param name="delta"> Vector representing this channge to the transform</param>
-        public virtual void MoveAxis(MoveArgs args) {
+        /// <param name="args">The move argumants structure holding the new position</param>
+        public void MoveAxis(MoveArgs args)
+        {
+            if (m_State.NullifyHitPos)
+            {
+                m_State.FirstHitPosition = args.pos;
+                m_State.NullifyHitPos = false;
+            } else
+            {
+                args.pos = m_State.FirstHitPosition;
+            }
+            MoveAxisRpc(args, m_State);
+        }
+
+        [Rpc(SendTo.Server)]
+        protected void MoveAxisRpc(MoveArgs args, VirgisFeatureState state) {
+            m_State = state;
+            _moveAxis(args);
+        }
+
+        protected virtual void _moveAxis(MoveArgs args) { 
             args.id = GetId();
-            if (m_nullifyHitPos)
-                m_firstHitPosition = args.pos;
-            args.pos = m_firstHitPosition;
             transform.parent.GetComponent<IVirgisEntity>().MoveAxis(args);
-            m_nullifyHitPos = false;
         }
 
         /// <summary>
         /// Called when a child component is translated by User action
         /// </summary>
         /// <param name="args">MoveArgs</param>
+        /// <param name="state">The state structure for the client feature object</param>
         public virtual void Translate(MoveArgs args) {
             //do nothing
         }
@@ -201,12 +254,13 @@ namespace Virgis {
         /// Called when a child Vertex moves to the point in the MoveArgs - which is in World Coordinates
         /// </summary>
         /// <param name="data">MoveArgs</param>
+        /// <param name="state">The state structure for the client feature object</param>
         public virtual void VertexMove(MoveArgs args) {
-            //do nothing
+            transform.parent.SendMessage("VertexMove", args, SendMessageOptions.DontRequireReceiver);
         }
 
         /// <summary>
-        /// Gets the closest point of the faeture geometry to the coordinates
+        /// Gets the closest point of the feature geometry to the coordinates
         /// </summary>
         /// <param name="coords"> Vector3 Target Coordinates </param>
         /// <returns> Vector3 in world space coordinates </returns>
@@ -219,17 +273,17 @@ namespace Virgis {
         /// </summary>
         /// <param name="position">Vector3</param>
         /// <returns>VirgisComponent The new vertex</returns>
-        public virtual VirgisFeature AddVertex(Vector3 position) {
-            // do nothing
-            return this;
+        [Rpc(SendTo.Server)]
+        public virtual void AddVertexRpc(Vector3 position) {
+            throw new System.NotImplementedException();
         }
 
         /// <summary>
         /// call this to remove a vertxe from a feature
         /// </summary>
         /// <param name="vertex">Vertex to remove</param>
-        public virtual void RemoveVertex(VirgisFeature vertex) {
-            // do nothing
+        //[Rpc(SendTo.Server)]
+        public virtual void RemoveVertexRpc(VirgisFeature vertex) {
             throw new System.NotImplementedException();
         }
 
@@ -244,7 +298,7 @@ namespace Virgis {
         }
 
         public Guid GetId() {
-            return _id;
+            return m_Id;
         }
 
         public abstract Dictionary<string, object> GetInfo();
@@ -261,19 +315,19 @@ namespace Virgis {
                 return Equals(com);
         }
         public override int GetHashCode() {
-            return _id.GetHashCode();
+            return m_Id.GetHashCode();
         }
         public bool Equals(VirgisFeature other) {
             if (other == null)
                 return false;
-            return (this._id.Equals(other.GetId()));
+            return (this.m_Id.Equals(other.GetId()));
         }
 
         /// <summary>
-        /// Called whnen the pointer hovers on this feature
+        /// Called when the pointer hovers on this feature
         /// </summary>
         public void Hover(Vector3 hit) {
-            lastHit = hit;
+            m_State.LastHit = hit;
             Dictionary<string, object> meta = GetInfo();
             if (meta != null && meta.Count > 0) {
                 string output = string.Join("\n", meta.Select(x => $"{x.Key}:\t{x.Value}"));
@@ -304,6 +358,16 @@ namespace Virgis {
         public virtual Dictionary<string, object> GetInfo(VirgisFeature feat)
         {
             return default;
+        }
+
+        public void SetFID<T>(T FID)
+        {
+            m_FID = FID;
+        }
+
+        public T GetFID<T>()
+        {
+            return (T)m_FID;
         }
     }
 }

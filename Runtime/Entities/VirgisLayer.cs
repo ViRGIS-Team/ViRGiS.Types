@@ -39,11 +39,11 @@ namespace Virgis
     public abstract class VirgisLayer : NetworkBehaviour, IVirgisLayer {
 
         public NetworkVariable<RecordSetPrototype> _layer;
-
-        public NetworkVariable<bool> m_Editable;
-
-
+        public NetworkVariable<bool> m_CheckedOut;
+        public NetworkVariable<bool> m_Writeable;
         public NetworkVariable<int> m_SubLayersCount;
+        public NetworkVariable<Shapes> m_FeatureShape;
+        public NetworkVariable<SerializableMaterialHash> m_DefaultCol = new();
 
         public FeatureType featureType { get; protected set; }
 
@@ -60,6 +60,7 @@ namespace Virgis
         }
 
         private IVirgisLayer m_Parent;
+        private bool m_Editing;
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -74,10 +75,7 @@ namespace Virgis
             }
         }
         public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
-        public bool isWriteable { // only allow edit and save for layers that can be written
-            get;
-            set;
-        }
+
 
         protected int m_SubLayersLoaded;
 
@@ -86,7 +84,7 @@ namespace Virgis
 
         protected Task m_loaderTask;
         protected IEnumerator m_loaderItr;
-        private bool m_changed;
+        public bool m_changed;
 
         private readonly List<IDisposable> m_subs = new();
 
@@ -94,13 +92,13 @@ namespace Virgis
             m_id = Guid.NewGuid();
             changed = true;
             isContainer = false;
-            isWriteable = false;
         }
 
-        public void Start() {
+        public virtual void Start() {
             State appState = State.instance;
             m_subs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
+            m_subs.Add(appState.EditSession.ChangeLayerEvent.Subscribe(_onEditLayerChange));
             if (! IsServer)
             {
                 m_Parent = transform.parent?.GetComponent<IVirgisLayer>();
@@ -116,7 +114,7 @@ namespace Virgis
         {
             if (IsServer)
             {
-                m_Editable.Value = false;
+                m_CheckedOut.Value = false;
             } 
         }
 
@@ -230,8 +228,14 @@ namespace Virgis
                 m_SubLayersLoaded = 0;
                 m_loader = GetComponent<IVirgisLoader>();
                 SetMetadata(layer);
-                if (m_loader != null)
+                if (m_loader != null) {
                     await m_loader._init();
+                    m_FeatureShape.Value = m_loader.GetFeatureShape();
+                }
+                else
+                {
+                    m_FeatureShape.Value = Shapes.None;
+                }
                 gameObject.SetActive(layer.Visible);
             } catch (Exception e) {
                 Debug.LogError($"Layer : { layer.DisplayName} :  {e}");
@@ -243,7 +247,7 @@ namespace Virgis
         /// </summary>
         /// <param name="position">Vector3 or DMesh3</param>
         public IVirgisFeature AddFeature<T>(T geometry) {
-            if (State.instance.InEditSession() && IsEditable()) {
+            if (State.instance.InEditSession() && IsWriteable) {
                 if (m_loader != null)
                 {
                     changed = true;
@@ -273,7 +277,13 @@ namespace Virgis
                     //make sure the layer is empty
                     for (int i = transform.childCount - 1; i >= 0; i--) {
                         Transform child = transform.GetChild(i);
-                        Destroy(child.gameObject);
+                        VirgisFeature com = child.GetComponent<VirgisFeature>();
+                        if (com != null)
+                        {
+                            com.Destroy();
+                            Destroy(com);
+                        }
+
                     }
 
                     transform.rotation = Quaternion.identity;
@@ -304,13 +314,22 @@ namespace Virgis
         /// Called to save the current layer data to source
         /// </summary>
         /// <returns>A copy of the data save dot the source</returns>
-        public virtual async Task<RecordSetPrototype> Save(bool flag = false) {
-            if (!IsServer) return GetMetadata();
+        public virtual async Task<RecordSetPrototype> Save() {
             if (changed) {
-                if (m_loader != null)
-                    await m_loader._save();
+                SaveRpc();
             }
+            changed = false;
+            m_Editing = false;
             return GetMetadata();
+        }
+
+        [Rpc(SendTo.Server)]
+        public void SaveRpc()
+        {
+            Debug.Log($"Save requested on layer {GetId()}");
+            if (m_loader != null)
+                m_loader._save();
+            m_CheckedOut.Value = false;
         }
 
         /// <summary>
@@ -325,11 +344,23 @@ namespace Virgis
         /// Called whenever a member entity is asked to Change Axis
         /// </summary>
         /// <param name="args">MoveArgs Object</param>
-        public virtual void MoveAxis(MoveArgs args) {
-            // do nothing 
+        public void MoveAxis(MoveArgs args)
+        {
+            _moveAxis(args);
         }
 
-        public virtual void MoveTo(MoveArgs args) {
+        protected virtual void _moveAxis(MoveArgs args)
+        {
+            //do nothing
+        }
+
+        public void MoveTo(MoveArgs args)
+        {
+            _move(args);
+        }
+
+        protected virtual void _move(MoveArgs args)
+        {
             //do nothing
         }
 
@@ -405,12 +436,12 @@ namespace Virgis
         /// Fetches the feature shape to be used to create new features
         /// </summary>
         /// <returns></returns>
-        public virtual GameObject GetFeatureShape()
+        public virtual Shapes GetFeatureShape()
         {
-            if (m_loader == null)
-                return default;
-            return m_loader.GetFeatureShape();
+            return m_FeatureShape.Value;
         }
+
+
 
         /// <summary>
         /// Change the layer visibility
@@ -435,50 +466,86 @@ namespace Virgis
             return GetMetadata().Visible;
         }
 
-        /// <summary>
-        /// Sets a marker that this particular layer is being edited.
-        /// </summary>
-        /// 
-        /// There can be only one layer being edited during an edit session on the client
-        /// 
-        /// <param name="inSession"></param> true to indicate that this layer is in edit session,
-        /// or false if otherwise.
-        [Rpc(SendTo.Server)]
-        public void SetEditableRpc(bool inSession) {
-            if (isWriteable) {
-                m_Editable.Value = inSession;
-                _set_editable();
+        public bool IsWriteable
+        {
+            get { return m_Writeable.Value; }
+            set { m_Writeable.Value = value; }
+        }
+
+        public bool IsEditable
+        {
+            get { return ! m_CheckedOut.Value; }
+        }
+
+        public void SetEditable(bool checkout)
+        {
+            if (!checkout && !changed) return; // don't checkin if this layer hs never been checkout
+            if (isContainer)
+            {
+                foreach (VirgisLayer sublayer in subLayers)
+                {
+                    sublayer.SetEditable(checkout);
+                }
+            } else
+            {
+                SetEditableRpc(checkout);
+                changed = checkout; // this will ripple up
             }
+        }
+
+        [Rpc(SendTo.Server)]
+        private void SetEditableRpc(bool checkout) {
+            _set_editable();
+            if (!checkout)
+            {
+                Debug.Log($"Check-in layer {GetId()}");
+                Draw();
+            } else
+            {
+                Debug.Log($"Check-out layer {GetId()}");
+            }
+            m_CheckedOut.Value = checkout;
         }
 
         protected virtual void _set_editable() {
         }
 
-        /// <summary>
-        /// Test to see if this layer is currently being edited
-        /// </summary>
-        /// <returns>Boolean</returns>
-        
-        public bool IsEditable() {
-            return m_Editable.Value;
+        protected virtual void _onEditStart(bool test) {
+            // do nothing
         }
 
-        protected virtual void _onEditStart(bool test) {
-            if (IsEditable()) {
-                VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
-                foreach (VirgisFeature com in coms) {
-                    com.OnEdit(true);
+        protected virtual void _onEditLayerChange(IVirgisLayer layer)
+        {
+            if (IsWriteable)
+            {
+                if (layer as VirgisLayer == this )
+                {
+                    if (IsWriteable)
+                    {
+                        m_Editing = true;
+                        VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
+                        foreach (VirgisFeature com in coms)
+                        {
+                            com.OnEdit(true);
+                        }
+                    }
+                } else if (m_Editing)
+                {
+                    if (IsWriteable)
+                    {
+                        VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
+                        foreach (VirgisFeature com in coms)
+                        {
+                            com.OnEdit(false);
+                        }
+                        m_Editing = false;
+                    }
                 }
             }
         }
 
         protected virtual void _onEditStop(bool test) {
-            if (IsEditable()) {
-                VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
-                foreach (VirgisFeature com in coms) {
-                    com.OnEdit(false);
-                }
-            }
+            // do nothing
         }
 
         public override bool Equals(object obj) {
@@ -502,6 +569,11 @@ namespace Virgis
 
         public IVirgisLayer GetLayer() {
             return this;
+        }
+
+        public IVirgisLoader GetLoader()
+        {
+            return m_loader;
         }
 
         public void OnEdit(bool inSession) {
@@ -535,7 +607,5 @@ namespace Virgis
         public void SetInfo(Dictionary<string, object> meta) {
             throw new NotImplementedException();
         }
-
-        
     }
 }

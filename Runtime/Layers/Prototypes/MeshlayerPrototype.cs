@@ -42,7 +42,7 @@ namespace Virgis
             changed = true;
         }
 
-        public override void MoveAxis(MoveArgs args) {
+        protected override void _moveAxis(MoveArgs args) {
             changed = true;
             EditableMesh[] dataFeatures = gameObject.GetComponentsInChildren<EditableMesh>();
             dataFeatures.ToList<EditableMesh>().Find(item => args.id == item.GetId()).MoveAxisAction(args);
@@ -51,7 +51,7 @@ namespace Virgis
         protected override void _set_editable() {
             base._set_editable();
             if (State.instance.InEditSession()) {
-                if (IsEditable()) {
+                if (IsWriteable) {
                     EditableMesh[] meshes = GetComponentsInChildren<EditableMesh>();
                     foreach (EditableMesh mesh in meshes) {
                         mesh.OnEdit(true);

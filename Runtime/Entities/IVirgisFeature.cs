@@ -52,11 +52,14 @@ namespace Virgis {
     /// </summary>
     public interface IVirgisFeature : IVirgisEntity
     {
-        VirgisFeature AddVertex(Vector3 position);
-        void RemoveVertex(VirgisFeature vertex);
+        void AddVertexRpc(Vector3 position);
+        void RemoveVertexRpc(VirgisFeature vertex);
+        void SetFeatureState(VirgisFeatureState state);
         T GetGeometry<T>();
 
         void Hover(Vector3 hit);
         void UnHover();
+        void SetFID<T>(T FID);
+        T GetFID<T>();
     }
 }

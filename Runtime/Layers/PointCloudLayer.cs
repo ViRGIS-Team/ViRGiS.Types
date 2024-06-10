@@ -63,7 +63,7 @@ namespace Virgis
 
 
         // https://answers.unity.com/questions/14170/scaling-an-object-from-a-different-center.html
-        public override void MoveAxis(MoveArgs args)
+        protected override void _moveAxis(MoveArgs args)
         {
             if (args.translate != Vector3.zero) transform.Translate(args.translate, Space.World);
             args.rotate.ToAngleAxis(out float angle, out Vector3 axis);

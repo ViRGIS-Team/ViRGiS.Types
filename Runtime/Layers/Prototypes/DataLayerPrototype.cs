@@ -29,8 +29,8 @@ namespace Virgis
         // The prefab for the data points to be instantiated
         public GameObject PointLayer;
         public GameObject LineLayer;
-        public GameObject PolygonLayer;
-        public GameObject TinLayer;
+        public GameObject AreaLayer;
+        public GameObject SurfaceLayer;
         public GameObject ContainerLayer;
     }
 }
