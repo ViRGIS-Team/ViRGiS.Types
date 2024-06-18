@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using UnityEngine;
-using g3;
+using VirgisGeometry;
 using System.Collections.Generic;
 using System;
 using System.Linq;
@@ -135,6 +135,12 @@ namespace Virgis {
         public void MakeConvex() {
             MeshCollider[] mcs = gameObject.GetComponents<MeshCollider>();
             mcs.ToList().ForEach(item => item.convex = true);
+        }
+
+        public void MakeKinematic()
+        {
+            MeshCollider[] mcs = gameObject.GetComponents<MeshCollider>();
+            mcs.ToList().ForEach(item => Destroy(item));
         }
     }
 }

@@ -25,7 +25,7 @@ SOFTWARE. */
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using g3;
+using VirgisGeometry;
 using System.Linq;
 
 namespace Virgis

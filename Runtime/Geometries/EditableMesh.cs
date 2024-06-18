@@ -21,12 +21,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using UnityEngine;
-using g3;
+using VirgisGeometry;
 using gs;
 using Virgis;
 using System.Collections.Generic;
 using System;
-using System.Linq;
 
 public class EditableMesh : DataMesh
 {   
@@ -217,15 +216,10 @@ public class EditableMesh : DataMesh
 
     public override void OnEdit(bool inSession) {
         if (inSession) {
-            m_Mr.material.SetInt("_Selected", 1);
+            m_Mr.material.SetFloat("_Wireframe", 1);
         } else {
-            m_Mr.material.SetInt("_Selected", 0);
+            m_Mr.material.SetFloat("_Wireframe", 0);
         }
-    }
-
-    public void MakeKinematic() {
-        MeshCollider[] mcs = gameObject.GetComponents<MeshCollider>();
-        mcs.ToList().ForEach(item => Destroy(item));
     }
 
     public override void AddVertexRpc(Vector3 position) {

@@ -22,7 +22,7 @@ SOFTWARE. */
 
 using System.Collections.Generic;
 using UnityEngine;
-using g3;
+using VirgisGeometry;
 using System.Linq;
 using System;
 

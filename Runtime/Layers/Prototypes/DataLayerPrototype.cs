@@ -30,7 +30,7 @@ namespace Virgis
         public GameObject PointLayer;
         public GameObject LineLayer;
         public GameObject AreaLayer;
-        public GameObject SurfaceLayer;
+        public GameObject ManifoldLayer;
         public GameObject ContainerLayer;
     }
 }
