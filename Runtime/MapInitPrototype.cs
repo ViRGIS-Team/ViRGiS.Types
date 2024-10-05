@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UniRx;
 using System.Collections;
+using Unity.Netcode;
+using Unity.Mathematics;
 
 namespace Virgis {
 
@@ -74,6 +76,13 @@ namespace Virgis {
 
         protected void Start()
         {
+            UserNetworkVariableSerialization<double3[]>.WriteValue = VirgisSerializationExtensions.WriteValueSafe;
+            UserNetworkVariableSerialization<double3[]>.ReadValue = VirgisSerializationExtensions.ReadValueSafe;
+            UserNetworkVariableSerialization<double2[]>.WriteValue = VirgisSerializationExtensions.WriteValueSafe;
+            UserNetworkVariableSerialization<double2[]>.ReadValue = VirgisSerializationExtensions.ReadValueSafe;
+            UserNetworkVariableSerialization<int3[]>.WriteValue = VirgisSerializationExtensions.WriteValueSafe;
+            UserNetworkVariableSerialization<int3[]>.ReadValue = VirgisSerializationExtensions.ReadValueSafe;
+
             m_subs.Add(State.instance.EditSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(State.instance.EditSession.EndEvent.Subscribe(_onEditStop));
         }

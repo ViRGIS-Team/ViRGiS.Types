@@ -75,30 +75,17 @@ namespace Virgis
                 }
             }
 
-
             //
             // Map 3d Polygon to the bext fit 2d polygon and also return the frame used for the mapping
             //
             Frame3f frame;
-            IEnumerable<Vector3d> VerticesItr;
-            GeneralPolygon2d polygon2d = new(Polygon, out frame, out VerticesItr );
+            IEnumerable<Vector3d> verticesItr;
+            GeneralPolygon2d polygon2d = new(Polygon, out frame, out verticesItr );
 
-            Index3i[] triangles = polygon2d.GetMesh();
+            Index3i[] trianglesItr = polygon2d.GetMesh();
 
-            //
-            // for each vertex in the dalaunay triangulation - map back to a 3d point and also populate the vertex table
-            //
 
-            //List<Vector3d> vertices = VerticesItr.Select(vertex => Shape.transform.InverseTransformPoint(vertex)).ToList();
-
-            DMesh3 dmesh = new();
-            foreach (Vector3d vertex in VerticesItr) { dmesh.AppendVertex(vertex); };
-            foreach (Index3i tri in triangles) { dmesh.AppendTriangle(tri);  };
-
-            // Note that DMesh is in World Coordinates since the DCurve3's were in World Coordinates
-            // However, the Unity Mesh must by in object local coordinates
-            dmesh.ToLocal(transform);
-
+            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, Polygon[0].GetVertex(0).axisOrder);
             Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
         }
 

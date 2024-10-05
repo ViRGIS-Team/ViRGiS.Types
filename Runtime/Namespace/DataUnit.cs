@@ -65,5 +65,10 @@ namespace Virgis
         /// </summary>
         [JsonProperty(PropertyName = "units")]
         public Dictionary<string, UnitPrototype> Units;
+        /// <summary>
+        /// String that defines the axis order - should be "ENU" or "EUN"
+        /// </summary>
+        [JsonProperty(PropertyName = "axis_order")]
+        public string AxisOrder;
     }
 }

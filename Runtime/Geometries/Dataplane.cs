@@ -41,11 +41,11 @@ namespace Virgis
         /// <param name="perimeter">LineString defining the perimter of the polygon</param>
         /// <param name="mat"> Material to be used</param>
         /// <returns></returns>
-        public GameObject Draw( Vector3[] top, Vector3[] bottom,  Material mat = null)
+        public GameObject Draw( Vector3d[] top, Vector3d[] bottom,  Material mat = null)
         {
             Polygon = new List<DCurve3>();
             lines = new List<Dataline>();
-            Polygon.Add(new DCurve3(top.ToList<Vector3>().ConvertAll(item => (Vector3d)item), true));
+            Polygon.Add(new DCurve3(top, true));
             for (int i = 0; i < bottom.Length; i++) {
                 Polygon[0].AppendVertex(bottom[bottom.Length - i - 1]);
             }

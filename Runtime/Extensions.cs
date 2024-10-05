@@ -20,38 +20,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using VirgisGeometry;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Jobs;
 using UnityEngine;
+using Unity.Netcode;
+using VirgisGeometry;
+using Unity.Mathematics;
 
 namespace Virgis
 {
-    public static class DCurveExtensions
-    {
-
-        /// <summary>
-        /// Converts a DCurve3 in map space coordinates to a List of Vector3 to world space
-        /// </summary>
-        /// <param name="curve"></param>
-        /// <returns></returns>
-        public static List<Vector3> ToVector3(this DCurve3 curve)
-        {
-            List<Vector3d> verteces = curve.Vertices.ToList();
-            List<Vector3> result = new();
-            verteces.ForEach(v =>
-            {
-                result.Add(
-                    State.instance.Map.transform.TransformPoint((Vector3)v)
-                    ) ;
-            });
-            return result;
-        }
-    }
-
 
     public static class VirgisVectorExtensions
     {
@@ -95,6 +75,113 @@ namespace Virgis
         public static IEnumerator WaitFor(this JobHandle job)
         {
             yield return new WaitUntil(() => job.IsCompleted);
+        }
+    }
+
+    public static class VirgisSerializationExtensions
+    {
+        public static void WriteValueSafe(this FastBufferWriter writer, in double3 v)
+        {
+            writer.WriteValueSafe(v.x);
+            writer.WriteValueSafe(v.y);
+            writer.WriteValueSafe(v.z);
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out double3 v)
+        {
+            reader.ReadValueSafe(out v.x);
+            reader.ReadValueSafe(out v.y);
+            reader.ReadValueSafe(out v.z);
+        }
+
+        public static void WriteValueSafe(this FastBufferWriter writer, in double2 v)
+        {
+            writer.WriteValueSafe(v.x);
+            writer.WriteValueSafe(v.y);
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out double2 v)
+        {
+            reader.ReadValueSafe(out v.x);
+            reader.ReadValueSafe(out v.y);
+        }
+
+        public static void WriteValueSafe(this FastBufferWriter writer, in int3 i)
+        {
+            writer.WriteValueSafe(i.x);
+            writer.WriteValueSafe(i.y);
+            writer.WriteValueSafe(i.z);
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out int3 i)
+        {
+            reader.ReadValueSafe(out i.x);
+            reader.ReadValueSafe(out i.y);
+            reader.ReadValueSafe(out i.z);
+        }
+
+
+        public static void WriteValueSafe(this FastBufferWriter writer, in double3[] varray)
+        {
+            writer.WriteValueSafe(varray.Length);
+            foreach (double3 v in varray)
+            {
+                writer.WriteValueSafe(v);
+            }
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out double3[] varray)
+        {
+            reader.ReadValueSafe(out int arrayLength);
+            varray = new double3[arrayLength];
+            double3 value;
+            for (int i = 0; i < arrayLength; i++)
+            {
+                reader.ReadValueSafe(out value);
+                varray[i] = (value);
+            }
+        }
+
+        public static void WriteValueSafe(this FastBufferWriter writer, in double2[] varray)
+        {
+            writer.WriteValueSafe(varray.Length);
+            foreach (double2 v in varray)
+            {
+                writer.WriteValueSafe(v);
+            }
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out double2[] varray)
+        {
+            reader.ReadValueSafe(out int arrayLength);
+            varray = new double2[arrayLength];
+            double2 value;
+            for (int i = 0; i < arrayLength; i++)
+            {
+                reader.ReadValueSafe(out value);
+                varray[i] = (value);
+            }
+        }
+
+        public static void WriteValueSafe(this FastBufferWriter writer, in int3[] iarray)
+        {
+            writer.WriteValueSafe(iarray.Length);
+            foreach (int3 i in iarray)
+            {
+                writer.WriteValueSafe(i);
+            }
+        }
+
+        public static void ReadValueSafe(this FastBufferReader reader, out int3[] iarray)
+        {
+            reader.ReadValueSafe(out int arrayLength);
+            iarray = new int3[arrayLength];
+            int3 value;
+            for (int i = 0; i < arrayLength; i++)
+            {
+                reader.ReadValueSafe(out value);
+                iarray[i] = (value);
+            }
         }
     }
 }

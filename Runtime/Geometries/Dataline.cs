@@ -124,17 +124,18 @@ namespace Virgis
             if (!symbology.TryGetValue("line", out m_Line_hash)) m_Line_hash = new();
             m_handlePrefab = handlePrefab;
 
-            List<Vector3> line = curve.ToVector3();
+            List<Vector3d> line = curve.VertexItr().ToList();
             int i = 0;
-            foreach (Vector3 vertex in line)
+            foreach (Vector3d vertex3d in line)
             {
+                Vector3 vertex = (Vector3)vertex3d;
                 _createVertex(vertex, i);
                 if (i + 1 != line.Count)
                 {
-                    _createSegment(vertex, line[i + 1],i , false);
+                    _createSegment(vertex, (Vector3)line[i + 1],i , false);
                 } else {
                     if (curve.Closed)
-                        _createSegment(vertex, line[0], i, true);
+                        _createSegment(vertex, (Vector3)line[0], i, true);
                 }
                 i++;
             }
