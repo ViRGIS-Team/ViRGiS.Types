@@ -34,15 +34,52 @@ namespace Virgis
                 reader.ReadValueSafe(out hasUVs);
                 reader.ReadValueSafe(out hasNormals);
                 vertices = new double3[vertexCount];
-                reader.ReadValueSafe(out vertices);
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    double x;
+                    double y;
+                    double z;
+                    reader.ReadValueSafe(out x);
+                    reader.ReadValueSafe(out y);
+                    reader.ReadValueSafe(out z);
+                    vertices[i] = new double3(x, y, z); 
+                }
                 tris = new int3[triCount];
-                reader.ReadValueSafe(out tris);
+                for (int i = 0; i < tris.Length; i++)
+                {
+                    int x;
+                    int y;
+                    int z;
+                    reader.ReadValueSafe(out x);
+                    reader.ReadValueSafe(out y);
+                    reader.ReadValueSafe(out z);
+                    tris[i] = new int3(x, y, z);
+                }
                 normals = new double3[vertexCount];
-                if (hasNormals) reader.ReadValueSafe(out normals);
+                if (hasNormals) for (int i = 0; i < vertices.Length; i++)
+                    {
+                        double x;
+                        double y;
+                        double z;
+                        reader.ReadValueSafe(out x);
+                        reader.ReadValueSafe(out y);
+                        reader.ReadValueSafe(out z);
+                        normals[i] = new double3(x, y, z);
+                    };
                 colors = new Color32[vertexCount];
-                if (hasColors) reader.ReadValueSafe(out colors);
+                if (hasColors) for (int i = 0; i < vertices.Length; i++)
+                    {
+                        reader.ReadValueSafe(out colors[i]);
+                    };
                 uvs = new double2[vertexCount];
-                if (hasUVs) reader.ReadValueSafe(out uvs);
+                if (hasUVs) for (int i = 0; i < vertices.Length; i++)
+                    {
+                        double x;
+                        double y;
+                        reader.ReadValueSafe(out x);
+                        reader.ReadValueSafe(out y);
+                        uvs[i] = new double2(x, y);
+                    };
                 axisOrder = new AxisOrder();
                 byte val;
                 reader.ReadValueSafe(out val);
@@ -60,11 +97,33 @@ namespace Virgis
                 writer.WriteValueSafe(hasColors);
                 writer.WriteValueSafe(hasUVs);
                 writer.WriteValueSafe(hasNormals);
-                writer.WriteValueSafe(vertices);
-                writer.WriteValueSafe(tris);
-                if (hasNormals) writer.WriteValueSafe(normals);
-                if (hasColors) writer.WriteValueSafe(colors);
-                if (hasUVs) writer.WriteValueSafe(uvs);
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    writer.WriteValueSafe(vertices[i].x);
+                    writer.WriteValueSafe(vertices[i].y);
+                    writer.WriteValueSafe(vertices[i].z);
+                }
+                for (int i = 0; i < tris.Length; i++)
+                {
+                    writer.WriteValueSafe(tris[i].x);
+                    writer.WriteValueSafe(tris[i].y);
+                    writer.WriteValueSafe(tris[i].z);
+                };
+                if (hasNormals) for (int i = 0; i < vertices.Length; i++)
+                    {
+                        writer.WriteValueSafe(normals[i].x);
+                        writer.WriteValueSafe(normals[i].y);
+                        writer.WriteValueSafe(normals[i].z);
+                    };
+                if (hasColors) for (int i = 0; i < vertices.Length; i++)
+                    {
+                        writer.WriteValueSafe(colors[i]);
+                    };
+                if (hasUVs) for (int i = 0; i < vertices.Length; i++)
+                    {
+                        writer.WriteValueSafe(uvs[i].x);
+                        writer.WriteValueSafe(uvs[i].y);
+                    };
                 writer.WriteValueSafe(axisOrder.ToArray());
             }
         }
@@ -111,6 +170,7 @@ namespace Virgis
             smesh.vertices = new double3[mesh.VertexCount];
             smesh.colors = new Color32[mesh.VertexCount];
             smesh.uvs = new double2[mesh.VertexCount];
+            smesh.normals = new double3[mesh.VertexCount];
             smesh.hasColors = mesh.HasVertexColors;
             smesh.hasNormals = mesh.HasVertexNormals;
             smesh.hasUVs = mesh.HasVertexUVs;

@@ -4,10 +4,10 @@ using System;
 namespace Virgis {
     public struct SerializableColorArray : INetworkSerializable, IEquatable<SerializableColorArray>
     {
-        private int[] m_Colors;
+        private byte[] m_Colors;
         public Guid guid { get; private set; }
 
-        public int[] Colors {
+        public byte[] Colors {
             get { return m_Colors; }
             set { 
                 m_Colors = value;
@@ -30,10 +30,10 @@ namespace Virgis {
                 reader.ReadValueSafe(out int length);
                 if (length == 0)
                 {
-                    m_Colors = new int[0];
+                    m_Colors = new byte[0];
                     return;
                 }
-                m_Colors = new int[length];
+                m_Colors = new byte[length];
                 reader.ReadValueSafe(out m_Colors);
             }
             else

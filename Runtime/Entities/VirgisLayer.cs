@@ -170,6 +170,7 @@ namespace Virgis
             NetworkObject no = t.GetComponent<NetworkObject>();
             try
             {
+                if (no.IsSpawned)
                 no.Despawn();
             }
             catch (Exception e)

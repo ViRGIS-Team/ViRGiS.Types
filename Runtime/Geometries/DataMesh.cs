@@ -62,8 +62,8 @@ namespace Virgis {
             {
                 uv[i] = new Vector2(newValue.Colors[i], 0);
             };
-            MeshFilter mf = GetComponent<MeshFilter>();
-            mf.sharedMesh.uv4 = uv;
+            if (TryGetComponent<MeshFilter>(out MeshFilter mf))
+                mf.sharedMesh.uv4 = uv;
         }
 
 

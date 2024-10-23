@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5439871295236148344}
-  - component: {fileID: 6099655075429881142}
   - component: {fileID: 7605284545505889244}
+  - component: {fileID: 6099655075429881142}
   - component: {fileID: -1741669470792995549}
   m_Layer: 0
   m_Name: PointCloudLayer
@@ -26,31 +26,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5409354041263640922}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6099655075429881142
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5409354041263640922}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 406b3b9910fb44ce5951faf97ecd4810, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  material: {fileID: 0}
-  handle: {fileID: 7561112754695135729, guid: 034407076198e45269efc10e2878ccfe, type: 3}
-  pointCloud: {fileID: 590308289072081736, guid: 130ec72ef7d024321a581816c678c825, type: 3}
-  meshes: []
-  HandleMaterial: {fileID: 2100000, guid: 0a565577b8a68423b838ffaf92d386b7, type: 2}
 --- !u!114 &7605284545505889244
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63,10 +46,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 951099334
+  GlobalObjectIdHash: 2886147236
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &6099655075429881142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5409354041263640922}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 406b3b9910fb44ce5951faf97ecd4810, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  m_CheckedOut:
+    m_InternalValue: 0
+  m_Writeable:
+    m_InternalValue: 0
+  m_SubLayersCount:
+    m_InternalValue: 0
+  m_FeatureShape:
+    m_InternalValue: 0
+  m_changed: 0
+  material: {fileID: 0}
+  handle: {fileID: 7561112754695135729, guid: 034407076198e45269efc10e2878ccfe, type: 3}
+  pointCloud: {fileID: 590308289072081736, guid: 130ec72ef7d024321a581816c678c825, type: 3}
+  meshes: []
+  HandleMaterial: {fileID: 2100000, guid: 0a565577b8a68423b838ffaf92d386b7, type: 2}
 --- !u!114 &-1741669470792995549
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79,6 +98,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
@@ -91,5 +115,10 @@ MonoBehaviour:
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
   InLocalSpace: 1
+  SwitchTransformSpaceWhenParented: 0
   Interpolate: 0
+  SlerpPosition: 0
