@@ -132,7 +132,7 @@ namespace Virgis
     
         public bool Equals(SerializableMesh other)
         {
-            return dmesh.IsSameMesh(other.dmesh, false, true, true, true, false);
+            return dmesh.IsSameMesh(other.dmesh, false, false, true, true, true, false);
         }
 
         public bool IsMesh { get { return dmesh != null; } }
