@@ -64,6 +64,7 @@ namespace Virgis {
             };
             if (TryGetComponent<MeshFilter>(out MeshFilter mf))
                 mf.sharedMesh.uv4 = uv;
+            Debug.Log($"Mesh Colorisation set : mesh {GetId()} ");
         }
 
 
@@ -77,9 +78,8 @@ namespace Virgis {
             m_mesh = newValue;
             m_aabb = new DMeshAABBTree3(m_mesh, true);
 
-            // lead mesh as unity mesh and add to MeshFilter
+            // load mesh as unity mesh and add to MeshFilter
             Mesh mesh = (Mesh)m_mesh;
-            mesh.RecalculateNormals();
             mesh.RecalculateTangents();
             mf.mesh = mesh;
 
