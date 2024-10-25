@@ -85,7 +85,7 @@ namespace Virgis
             Index3i[] trianglesItr = polygon2d.GetMesh();
 
 
-            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, Polygon[0].GetVertex(0).axisOrder);
+            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, Polygon[0].axisOrder);
             Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
         }
 

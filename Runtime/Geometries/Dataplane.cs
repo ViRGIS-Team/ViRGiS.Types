@@ -20,10 +20,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VirgisGeometry;
-using System.Linq;
 
 namespace Virgis
 {
@@ -41,17 +41,19 @@ namespace Virgis
         /// <param name="perimeter">LineString defining the perimter of the polygon</param>
         /// <param name="mat"> Material to be used</param>
         /// <returns></returns>
-        public GameObject Draw( Vector3d[] top, Vector3d[] bottom,  Material mat = null)
+        public GameObject Draw( DCurve3 top, DCurve3 bottom,  Material mat = null)
         {
             Polygon = new List<DCurve3>();
             lines = new List<Dataline>();
-            Polygon.Add(new DCurve3(top, true));
-            for (int i = 0; i < bottom.Length; i++) {
-                Polygon[0].AppendVertex(bottom[bottom.Length - i - 1]);
+            Polygon.Add(top);
+            for (int i = bottom.VertexCount - 1; i >=0; i--) {
+                Polygon[0].AppendVertex(bottom[i]);
             }
+            Polygon[0].Closed = true;
 
             Shape = Instantiate(shapePrefab, transform);
-            
+            if (!Shape.GetComponent<VirgisFeature>().Spawn(transform)) throw new Exception("reparenting failed");
+
             // call the generic polygon draw function from DataShape
             _redraw();
             return gameObject;
