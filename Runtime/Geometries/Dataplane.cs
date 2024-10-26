@@ -53,9 +53,12 @@ namespace Virgis
 
             Shape = Instantiate(shapePrefab, transform);
             if (!Shape.GetComponent<VirgisFeature>().Spawn(transform)) throw new Exception("reparenting failed");
+            Renderer renderer = Shape.GetComponentInChildren<Renderer>();
+            renderer.sharedMaterial = mat;
 
             // call the generic polygon draw function from DataShape
             _redraw();
+
             return gameObject;
         }
 

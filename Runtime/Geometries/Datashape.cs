@@ -86,6 +86,7 @@ namespace Virgis
 
 
             DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, Polygon[0].axisOrder);
+            dmesh.CalculateUVs();
             Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
         }
 
@@ -100,67 +101,6 @@ namespace Virgis
             } else {
                 _redraw();
             }
-        }
-
-        /// <summary>
-        /// Builds the UV values for thw mesh represented by the vertices 
-        /// </summary>
-        /// <param name="vertices"></param>
-        /// <returns></returns>
-        protected Vector2[] BuildUVs(Vector3[] vertices) {
-            List<Vector2> ret = new();
-            List<Vector3d> vertices3d = vertices.ToList<Vector3>().ConvertAll(item => (Vector3d)item);
-
-            //
-            // create a UV mapping plane
-            // to make image planes work  - we assume that the origin of UV plane is the last vertex
-            //
-            OrthogonalPlaneFit3 orth = new OrthogonalPlaneFit3(vertices3d);
-            Frame3f frame = new Frame3f( vertices[vertices.Length - 1], -1 * orth.Normal);
-
-            //
-            // check the orientation of the plane in UV space.
-            // for image planes  - we assume that the x direction from the first point to the second point should always be positive
-            // if not - reverse the frame
-            //
-            if (Math.Sign(
-                frame.ToPlaneUV((Vector3f) vertices3d[0], 2).x -
-                frame.ToPlaneUV((Vector3f) vertices3d[1], 2).x
-                ) > -1) {
-                frame = new Frame3f(vertices[vertices.Length - 1], orth.Normal);
-            }
-
-            //
-            // map all of the points to UV space
-            //
-            foreach (Vector3d v in vertices3d) {
-                ret.Add(frame.ToPlaneUV((Vector3f)v,2));
-            }
-
-            //
-            // normalize UVs to [0..1, 0..1]
-            //
-            float maxX = float.NegativeInfinity;
-            float maxY = float.NegativeInfinity;
-            float minX = float.PositiveInfinity;
-            float minY = float.PositiveInfinity;
-
-            for (int i = 0; i < ret.Count; i++) {
-                Vector2 v = ret[i];
-                maxX = maxX > v.x ? maxX : v.x;
-                minX = minX < v.x ? minX : v.x;
-                maxY = maxY > v.y ? maxY : v.y;
-                minY = minY < v.y ? minY : v.y;
-            }
-
-            scaleX = maxX - minX;
-            scaleY = maxY - minY;
-
-
-            for (int i = 0; i < ret.Count; i++) {
-                ret[i] = new Vector2( (ret[i].x - minX) / scaleX, (ret[i].y - minY) / scaleY);
-            }
-            return ret.ToArray();
         }
 
         public override Dictionary<string, object> GetInfo() {
