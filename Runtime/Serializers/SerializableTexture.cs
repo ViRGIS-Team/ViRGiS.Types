@@ -8,6 +8,7 @@ namespace Virgis
     public class SerializableTexture : NetworkVariableBase
     {
         public Texture2D tex;
+        private byte[] m_bytes;
 
         /// <summary> 
         /// Delegate type for value changed event
@@ -28,6 +29,7 @@ namespace Virgis
         {
             SetDirty(true);
             tex = value;
+            m_bytes = tex.EncodeToPNG();
             OnValueChanged?.Invoke( tex);
         }
 
@@ -44,7 +46,7 @@ namespace Virgis
             }
 
             // Serialize the data we need to synchronize
-            writer.WriteValueSafe(tex.EncodeToPNG());
+            writer.WriteValueSafe(m_bytes);
         }
 
         /// <summary>

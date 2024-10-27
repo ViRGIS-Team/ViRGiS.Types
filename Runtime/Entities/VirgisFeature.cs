@@ -129,7 +129,7 @@ namespace Virgis {
             }
             catch (Exception e)
             {
-                _ = e;
+                Debug.Log(e.Message);
                 return false;
             }
             return no.TrySetParent(parent);
