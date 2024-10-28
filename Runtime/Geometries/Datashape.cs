@@ -41,6 +41,7 @@ namespace Virgis
         protected float m_ScaleY;
 
         public override void Start()
+        {
             base.Start();
         }
 
