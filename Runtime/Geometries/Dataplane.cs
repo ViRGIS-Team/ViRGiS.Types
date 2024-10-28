@@ -35,29 +35,34 @@ namespace Virgis
         public string gisId;
         public Dictionary<string, object> gisProperties;
 
+        public override void Start() 
+        { 
+            base.Start();
+            DataMesh com = GetComponentInChildren<DataMesh>();
+            if (Texture.tex != null) com.SetTexture(Texture.tex);
+        }
+
         /// <summary>
         /// Called to draw the Polygon based upon the 
         /// </summary>
         /// <param name="perimeter">LineString defining the perimter of the polygon</param>
-        /// <param name="mat"> Material to be used</param>
         /// <returns></returns>
-        public GameObject Draw( DCurve3 top, DCurve3 bottom,  Material mat = null)
+        public GameObject Draw( DCurve3 top, DCurve3 bottom, Texture2D tex)
         {
-            Polygon = new List<DCurve3>();
-            lines = new List<Dataline>();
-            Polygon.Add(top);
+            m_Polygon = new List<DCurve3>();
+            m_Lines = new List<Dataline>();
+            m_Polygon.Add(top);
             for (int i = bottom.VertexCount - 1; i >=0; i--) {
-                Polygon[0].AppendVertex(bottom[i]);
+                m_Polygon[0].AppendVertex(bottom[i]);
             }
-            Polygon[0].Closed = true;
-
             Shape = Instantiate(shapePrefab, transform);
             if (!Shape.GetComponent<VirgisFeature>().Spawn(transform)) throw new Exception("reparenting failed");
-            Renderer renderer = Shape.GetComponentInChildren<Renderer>();
-            renderer.sharedMaterial = mat;
+            m_Polygon[0].Closed = true;
 
             // call the generic polygon draw function from DataShape
             _redraw();
+
+            GetComponentInChildren<DataMesh>().Texture.Set(tex);
 
             return gameObject;
         }

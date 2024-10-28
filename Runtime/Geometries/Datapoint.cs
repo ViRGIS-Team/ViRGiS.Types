@@ -37,7 +37,7 @@ namespace Virgis
         /// <summary>
         /// sets the label reference
         /// </summary>
-        public void Start() {
+        public override void Start() {
             base.Start();
             if (transform.childCount > 0)
                 Label = transform.GetChild(0);

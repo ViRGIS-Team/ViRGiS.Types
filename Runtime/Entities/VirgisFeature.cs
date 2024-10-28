@@ -39,6 +39,7 @@ namespace Virgis {
         /// The Label object for this feature
         /// </summary>
         public Transform Label;
+        public SerializableTexture Texture = new();
 
         protected MeshRenderer m_Mr;
         protected Material m_Material;
@@ -58,10 +59,7 @@ namespace Virgis {
             m_Id = Guid.NewGuid();
         }
 
-        public void Start()
-        {
-
-        }
+        public virtual void Start() { }
 
         public override void OnNetworkSpawn()
         {
@@ -70,6 +68,7 @@ namespace Virgis {
             {
                 m_Material = m_Mr.material;
                 m_Col.OnValueChanged += UpdateMaterial;
+                Texture.OnValueChanged += SetTexture;
                 UpdateMaterial(new(), m_Col.Value);
             }
         }
@@ -77,6 +76,7 @@ namespace Virgis {
         public override void OnNetworkDespawn()
         {
             m_Col.OnValueChanged -= UpdateMaterial;
+            Texture.OnValueChanged -= SetTexture;
             base.OnNetworkDespawn();
         }
 
@@ -97,9 +97,15 @@ namespace Virgis {
             }
         }
 
-        public void SetMaterial(SerializableMaterialHash hash)
+        public virtual void SetMaterial(SerializableMaterialHash hash)
         {
             m_Col.Value = hash;
+        }
+
+        public virtual void SetTexture(Texture2D tex)
+        {
+            m_Material.SetColor("_BaseColor", Color.white);
+            m_Material.SetTexture("_BaseMap", tex);
         }
 
         /// <summary>

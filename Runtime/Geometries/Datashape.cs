@@ -26,8 +26,6 @@ using VirgisGeometry;
 using System.Linq;
 using System;
 
-
-
 namespace Virgis
 {
     /// <summary>
@@ -37,10 +35,14 @@ namespace Virgis
 
         public GameObject shapePrefab;
         protected GameObject Shape; // gameObject to be used for the shape
-        protected List<Dataline> lines = new();
-        protected List<DCurve3> Polygon = new();
-        protected float scaleX;
-        protected float scaleY;
+        protected List<Dataline> m_Lines = new();
+        protected List<DCurve3> m_Polygon = new();
+        protected float m_ScaleX;
+        protected float m_ScaleY;
+
+        public override void Start()
+            base.Start();
+        }
 
         public override void Selected(SelectionType button) {
             if (button == SelectionType.SELECTALL) {
@@ -66,12 +68,12 @@ namespace Virgis
         /// </summary>
         protected void _redraw()
         {
-            if (lines.Count > 0)
+            if (m_Lines.Count > 0)
             {
-                Polygon = new List<DCurve3>();
-                foreach (Dataline ring in lines)
+                m_Polygon = new List<DCurve3>();
+                foreach (Dataline ring in m_Lines)
                 {
-                    Polygon.Add(ring.Curve); // Note that Polygon is in World Coordinates
+                    m_Polygon.Add(ring.Curve); // Note that Polygon is in World Coordinates
                 }
             }
 
@@ -80,12 +82,12 @@ namespace Virgis
             //
             Frame3f frame;
             IEnumerable<Vector3d> verticesItr;
-            GeneralPolygon2d polygon2d = new(Polygon, out frame, out verticesItr );
+            GeneralPolygon2d polygon2d = new(m_Polygon, out frame, out verticesItr );
 
             Index3i[] trianglesItr = polygon2d.GetMesh();
 
 
-            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, Polygon[0].axisOrder);
+            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, m_Polygon[0].axisOrder);
             dmesh.CalculateUVs();
             Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
         }
