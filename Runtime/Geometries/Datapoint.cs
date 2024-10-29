@@ -54,13 +54,13 @@ namespace Virgis
 
         public override void Selected(SelectionType button){
             base.Selected(button);
-            m_Mr.material.SetInt("_Selected", 1);
+            MeshRenderer.material.SetInt("_Selected", 1);
         }
 
 
         public override void UnSelected(SelectionType button){
             base.UnSelected(button);
-            m_Mr.material.SetInt("_Selected", 0);
+            MeshRenderer.material.SetInt("_Selected", 0);
             if (button != SelectionType.BROADCAST){
                 MoveArgs args = new MoveArgs();
                 switch (State.instance.EditSession.mode){

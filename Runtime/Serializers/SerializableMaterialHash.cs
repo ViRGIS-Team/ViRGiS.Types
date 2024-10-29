@@ -2,6 +2,7 @@ using System;
 using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine;
+using System.Linq;
 
 namespace Virgis
 {
@@ -12,6 +13,17 @@ namespace Virgis
 
         public SerializableProperty[] properties;
 
+        public void AddProperty(SerializableProperty property)
+        {
+            if (properties == null)
+            {
+                properties = new[] { property };
+            }
+            else
+            {
+                properties.Append(property);
+            }
+        }
 
         public bool Equals(SerializableMaterialHash other)
         {

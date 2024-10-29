@@ -216,9 +216,9 @@ public class EditableMesh : DataMesh
 
     public override void OnEdit(bool inSession) {
         if (inSession) {
-            m_Mr.material.SetFloat("_Wireframe", 1);
+            MeshRenderer.material.SetFloat("_Wireframe", 1);
         } else {
-            m_Mr.material.SetFloat("_Wireframe", 0);
+            MeshRenderer.material.SetFloat("_Wireframe", 0);
         }
     }
 

@@ -56,10 +56,13 @@ namespace Virgis
         public override void ReadField(FastBufferReader reader)
         {
             // De-Serialize the data being synchronized
-            tex = new Texture2D(1, 1);
             reader.ReadValueSafe(out byte[] received);
-            tex.LoadImage(received);
-            OnValueChanged?.Invoke(tex);
+            if (received != null && received.Length > 0)
+            {
+                tex = new(1, 1);
+                tex.LoadImage(received);
+                OnValueChanged?.Invoke(tex);
+            }
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)

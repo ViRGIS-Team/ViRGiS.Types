@@ -12,6 +12,10 @@ PrefabInstance:
       propertyPath: GlobalObjectIdHash
       value: 548396409
       objectReference: {fileID: 0}
+    - target: {fileID: 1165789925040790244, guid: 034407076198e45269efc10e2878ccfe, type: 3}
+      propertyPath: MeshRenderer
+      value: 
+      objectReference: {fileID: 1859197520385761583}
     - target: {fileID: 5814859379126949569, guid: 034407076198e45269efc10e2878ccfe, type: 3}
       propertyPath: m_RootOrder
       value: 0
@@ -105,3 +109,8 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
+--- !u!23 &1859197520385761583 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 8155736877358136384, guid: 034407076198e45269efc10e2878ccfe, type: 3}
+  m_PrefabInstance: {fileID: 7558110214182755695}
+  m_PrefabAsset: {fileID: 0}

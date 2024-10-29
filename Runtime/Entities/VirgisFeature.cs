@@ -40,8 +40,8 @@ namespace Virgis {
         /// </summary>
         public Transform Label;
         public SerializableTexture Texture = new();
+        public MeshRenderer MeshRenderer;
 
-        protected MeshRenderer m_Mr;
         protected Material m_Material;
         protected readonly List<IDisposable> m_Subs = new();
         protected NetworkVariable<SerializableMaterialHash> m_Col = new();
@@ -59,18 +59,22 @@ namespace Virgis {
             m_Id = Guid.NewGuid();
         }
 
-        public virtual void Start() { }
+        public virtual void Start()
+        {
+
+        }
 
         public override void OnNetworkSpawn()
         {
-            base.OnNetworkSpawn();
-            if (TryGetComponent<MeshRenderer>(out m_Mr))
+            if (MeshRenderer != null)
             {
-                m_Material = m_Mr.material;
-                m_Col.OnValueChanged += UpdateMaterial;
-                Texture.OnValueChanged += SetTexture;
-                UpdateMaterial(new(), m_Col.Value);
+                m_Material = MeshRenderer.material;
             }
+            base.OnNetworkSpawn();
+            if (Texture.tex != null) SetTexture(Texture.tex);
+            UpdateMaterial(new(), m_Col.Value);
+            m_Col.OnValueChanged += UpdateMaterial;
+            Texture.OnValueChanged += SetTexture;
         }
 
         public override void OnNetworkDespawn()
@@ -82,6 +86,7 @@ namespace Virgis {
 
         public override void OnDestroy()
         {
+            Destroy(m_Material);
             m_Subs.ForEach(item => item.Dispose());
             base.OnDestroy();
         }

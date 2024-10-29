@@ -32,13 +32,6 @@ namespace Virgis
     /// </summary>
     public class Datapolygon : Datashape {
 
-        private float m_tiling_size;
-
-        public override void OnDestroy()
-        {
-            base.OnDestroy();
-        }
-
         public override void VertexMove(MoveArgs data) {
             if (!m_State.BlockMove) {
                 _redraw();
@@ -79,14 +72,16 @@ namespace Virgis
         /// Called to draw the Polygon based upon the 
         /// </summary>
         /// <param name="perimeter">LineString defining the perimter of the polygon</param>
-        /// <param name="mat"> Material to be used</param>
+        /// <param name="mat"> List of materials</param>
         /// <returns></returns>
-        public GameObject Draw(List<Dataline> polygon, float tiling_size = 10) {
+        public GameObject Draw(List<Dataline> polygon, Dictionary<string, SerializableMaterialHash> mat) {
 
-            m_tiling_size = tiling_size;
-            
             Shape = Instantiate(shapePrefab, transform, false);
-            Shape.GetComponent<VirgisFeature>().Spawn(transform);
+            VirgisFeature com = Shape.GetComponent<VirgisFeature>();
+            com.Spawn(transform);
+            if (!mat.TryGetValue("body", out SerializableMaterialHash body_hash))
+                body_hash = new();
+            com.SetMaterial(body_hash);
             m_Lines = polygon;
 
             // call the generic polygon draw function in DataShape

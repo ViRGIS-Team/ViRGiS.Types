@@ -42,14 +42,14 @@ namespace Virgis
         public new void Start()
         {
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out m_Mr)) m_Material = m_Mr.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out MeshRenderer)) m_Material = MeshRenderer.material;
         }
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out m_Mr)) m_Material = m_Mr.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out MeshRenderer)) m_Material = MeshRenderer.material;
         }
 
         /// <summary>
