@@ -21,9 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.VFX;
 
 namespace Virgis
 {
@@ -34,58 +32,15 @@ namespace Virgis
         public GameObject pointCloud;
         public List<GameObject> meshes;
 
-        private VisualEffect m_vfx;
-
         new protected void Awake() {
             base.Awake();
             featureType = FeatureType.RASTER;
         }
 
-        public async override Task AsyncInit(RecordSetPrototype layer)
-        {
-            await base.AsyncInit(layer);
-            m_vfx = gameObject.GetComponentInChildren<VisualEffect>();
-        }
-
-        public override void _set_visible() {
-            base._set_visible();
-            m_loader._set_visible();
-        }
-
-
         public override void Translate(MoveArgs args)
         {
 
             if (args.translate != Vector3.zero) transform.Translate(args.translate, Space.World);
-            changed = true;
-        }
-
-
-        // https://answers.unity.com/questions/14170/scaling-an-object-from-a-different-center.html
-        protected override void _moveAxis(MoveArgs args)
-        {
-            if (args.translate != Vector3.zero) transform.Translate(args.translate, Space.World);
-            args.rotate.ToAngleAxis(out float angle, out Vector3 axis);
-            transform.RotateAround(args.pos, axis, angle);
-            Vector3 A = transform.localPosition;
-            Vector3 B = transform.parent.InverseTransformPoint(args.pos);
-            Vector3 C = A - B;
-            float RS = args.scale;
-            Vector3 FP = B + C * RS;
-            if (FP.magnitude < float.MaxValue)
-            {
-                transform.localScale = transform.localScale * RS;
-                transform.localPosition = FP;
-                for (int i = 0; i < transform.childCount; i++)
-                {
-                    Transform T = transform.GetChild(i);
-                    if (T.GetComponent<Datapoint>() != null)
-                    {
-                        T.localScale /= RS;
-                    }
-                }
-                m_vfx.SetVector3("_scale", transform.localScale);
-            }
             changed = true;
         }
     }
