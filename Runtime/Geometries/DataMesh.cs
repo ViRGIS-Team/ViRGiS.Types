@@ -34,7 +34,7 @@ namespace Virgis {
         protected DMesh3 m_mesh;
         protected DMeshAABBTree3 m_aabb; // AABB Tree for current mesh
 
-        public NetworkVariable<SerializableMesh> umesh = new();
+        public SerializableMesh umesh = new();
         public NetworkVariable<SerializableColorArray> colorArray = new();
 
 
@@ -42,7 +42,7 @@ namespace Virgis {
         {
             base.OnNetworkSpawn();
             umesh.OnValueChanged += SetMesh;
-            if (umesh.Value != null && umesh.Value.IsMesh) SetMesh(new SerializableMesh(), umesh.Value);
+            if (umesh.Value != null && umesh.IsMesh) SetMesh (umesh.Value);
             colorArray.OnValueChanged += OnColorisation;
             if (colorArray.Value.Colors != null) OnColorisation(new SerializableColorArray(), colorArray.Value);
         }
@@ -68,9 +68,8 @@ namespace Virgis {
         }
 
 
-        private void SetMesh(SerializableMesh previousValue, SerializableMesh newValue)
+        private void SetMesh(DMesh3 newValue)
         {
-            if (newValue == previousValue || !newValue.IsMesh) return;
             MeshFilter mf = GetComponent<MeshFilter>();
             MeshCollider[] mc = GetComponents<MeshCollider>();
 
