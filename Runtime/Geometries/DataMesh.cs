@@ -42,7 +42,7 @@ namespace Virgis {
         {
             base.OnNetworkSpawn();
             umesh.OnValueChanged += SetMesh;
-            if (umesh.Value != null && umesh.IsMesh) SetMesh (umesh.Value);
+            if (umesh.Value != null && umesh.IsMesh) SetMesh ((Mesh)umesh);
             colorArray.OnValueChanged += OnColorisation;
             if (colorArray.Value.Colors != null) OnColorisation(new SerializableColorArray(), colorArray.Value);
         }
@@ -57,34 +57,37 @@ namespace Virgis {
         public void OnColorisation(SerializableColorArray previousValue, SerializableColorArray newValue)
         {
             if (newValue.Colors == null) return;
-            Vector2[] uv = new Vector2[newValue.Colors.Length];
-            for (int i = 0; i < newValue.Colors.Length; i++)
-            {
-                uv[i] = new Vector2(newValue.Colors[i], 0);
-            };
+            Vector2[] uv = newValue.ToUV();
             if (TryGetComponent<MeshFilter>(out MeshFilter mf))
-                mf.sharedMesh.uv4 = uv;
-            Debug.Log($"Mesh Colorisation set : mesh {GetId()} ");
+                if (mf.sharedMesh != null)
+                {
+                    mf.sharedMesh.uv4 = uv;
+                    Debug.Log($"Mesh Colorisation set : mesh {GetId()} ");
+                }
         }
 
 
-        private void SetMesh(DMesh3 newValue)
+        private void SetMesh(Mesh newValue)
         {
             MeshFilter mf = GetComponent<MeshFilter>();
             MeshCollider[] mc = GetComponents<MeshCollider>();
 
-            // load mesh as dmesh and process
-            m_mesh = newValue;
-            m_aabb = new DMeshAABBTree3(m_mesh, true);
 
             // load mesh as unity mesh and add to MeshFilter
-            Mesh mesh = (Mesh)m_mesh;
-            mesh.RecalculateTangents();
+            Mesh mesh = newValue;
+            if (colorArray.Value.Colors != null)
+            {
+                mesh.uv4 = colorArray.Value.ToUV();
+                Debug.Log($"Mesh Colorisation set : mesh {GetId()} ");
+            }
+            mesh.RecalculateBounds();
             mf.mesh = mesh;
 
             NetworkManager nm = GetComponent<NetworkObject>().NetworkManager;
             if (nm.IsServer)
             {
+                m_mesh = umesh.Value;
+                m_aabb = new DMeshAABBTree3(m_mesh, true);
                 StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
                 {
                     colorArray.Value = new SerializableColorArray() { Colors = colors };

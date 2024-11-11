@@ -2,18 +2,24 @@ using System;
 using VirgisGeometry;
 using Unity.Netcode;
 using UnityEngine;
+using Draco;
+using Draco.Encoder;
+
 
 namespace Virgis
 {
     public class SerializableMesh : NetworkVariableBase, IEquatable<SerializableMesh>
     {
         private DMesh3 dmesh;
+        private Mesh umesh;
+
+        private byte[] data;
 
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
         /// <param name="newValue">The new value</param>
-        public delegate void OnValueChangedDelegate(DMesh3 newMesh);
+        public delegate void OnValueChangedDelegate(Mesh newMesh);
         /// <summary>
         /// The callback to be invoked when the value gets changed
         /// </summary>
@@ -25,8 +31,24 @@ namespace Virgis
             set {
                 value.CompactInPlace();
                 dmesh = value;
-                OnValueChanged.Invoke(value);
+                OnValueChanged.Invoke((Mesh)value);
+                MeshSerialize();
             }
+        }
+
+        public static explicit operator Mesh(SerializableMesh smesh) => smesh.umesh;
+
+        private void MeshSerialize()
+        {
+            EncodeResult[] serResult = DracoEncoder.EncodeMesh((Mesh)dmesh, Vector3.one, 0.01f);
+            data = serResult[0].data.ToArray();
+        }
+
+        private async void MeshDeserialize()
+        {
+            DracoMeshLoader decoder = new(false);
+            umesh = await decoder.ConvertDracoMeshToUnity(data, true, true);
+            OnValueChanged.Invoke(umesh);
         }
 
     
@@ -43,46 +65,13 @@ namespace Virgis
         public override void WriteField(FastBufferWriter writer)
         {
             Debug.Log("Serialize Mesh");
-            writer.WriteValueSafe(dmesh.VertexCount);
-            if (dmesh.VertexCount == 0) return;
-            writer.WriteValueSafe(dmesh.TriangleCount);
-            writer.WriteValueSafe(dmesh.Clockwise);
-            writer.WriteValueSafe(dmesh.HasVertexColors);
-            writer.WriteValueSafe(dmesh.HasVertexUVs);
-            writer.WriteValueSafe(dmesh.HasVertexNormals);
-
-            BytePacker.WriteValuePacked<AxisType>(writer, dmesh.axisOrder.Axis1);
-            BytePacker.WriteValuePacked<AxisType>(writer, dmesh.axisOrder.Axis2);
-            BytePacker.WriteValuePacked<AxisType>(writer, dmesh.axisOrder.Axis3);
-
-            foreach (NewVertexInfo vi in dmesh.VerticesAll())
+            if (data == null)
             {
-                writer.WriteValueSafe(vi.v.x);
-                writer.WriteValueSafe(vi.v.y);
-                writer.WriteValueSafe(vi.v.z);
-                if (dmesh.HasVertexColors)
-                {
-                    writer.WriteValueSafe(vi.c.x);
-                    writer.WriteValueSafe(vi.c.y);
-                    writer.WriteValueSafe(vi.c.z);
-                };
-                if (dmesh.HasVertexUVs)
-                {
-                    writer.WriteValueSafe(vi.uv.x);
-                    writer.WriteValueSafe(vi.uv.y);
-                };
-                if (dmesh.HasVertexNormals)
-                {
-                    writer.WriteValueSafe(vi.n.x);
-                    writer.WriteValueSafe(vi.n.y);
-                    writer.WriteValueSafe(vi.n.z);
-                }
-            };
-            foreach (Index3i tri in dmesh.Triangles())
+                writer.WriteValueSafe(0);
+            } else 
             {
-                writer.WriteValueSafe(tri.a);
-                writer.WriteValueSafe(tri.b);
-                writer.WriteValueSafe(tri.c);
+                writer.WriteValueSafe(data.Length);
+                writer.WriteValueSafe(data);
             }
         }
 
@@ -90,63 +79,13 @@ namespace Virgis
         {
             // De-Serialize the data being synchronized
             Debug.Log("Deserialize Mesh");
-            reader.ReadValueSafe(out int vertexCount);
-            if (vertexCount == 0) return;
-            reader.ReadValueSafe(out int triCount);
-            reader.ReadValueSafe(out bool clockwise);
-            reader.ReadValueSafe(out bool hasColors);
-            reader.ReadValueSafe(out bool hasUVs);
-            reader.ReadValueSafe(out bool hasNormals);
-
-            AxisOrder axisOrder = new();
-            ByteUnpacker.ReadValuePacked<AxisType>(reader, out axisOrder.Axis1);
-            ByteUnpacker.ReadValuePacked<AxisType>(reader, out axisOrder.Axis2);
-            ByteUnpacker.ReadValuePacked<AxisType>(reader, out axisOrder.Axis3);
-
-            dmesh = new(hasNormals, hasColors, hasUVs);
-            dmesh.axisOrder = axisOrder;
-            dmesh.Clockwise = clockwise;
-
-            for (int i = 0; i < vertexCount; i++)
+            reader.ReadValueSafe(out int size);
+            if (size != 0) 
             {
-                reader.ReadValueSafe(out double x);
-                reader.ReadValueSafe(out double y);
-                reader.ReadValueSafe(out double z);
-                NewVertexInfo vi = new(new(x, y, z));
-                if (hasColors)
-                {
-                    reader.ReadValueSafe(out float r);
-                    reader.ReadValueSafe(out float g);
-                    reader.ReadValueSafe(out float b);
-                    vi.c = new Vector3f(r, g, b);
-                    vi.bHaveC = true;
-                }
-                if (hasUVs)
-                {
-                    reader.ReadValueSafe(out float u);
-                    reader.ReadValueSafe(out float v);
-                    vi.uv = new(u, v);
-                    vi.bHaveUV = true;
-                }
-                if (hasNormals)
-                {
-                    reader.ReadValueSafe(out float nx);
-                    reader.ReadValueSafe(out float ny);
-                    reader.ReadValueSafe(out float nz);
-                    vi.n = new(nx, ny, nz);
-                    vi.bHaveN = true;
-                };
-                dmesh.AppendVertex(vi);
-            };
-
-            for (int i = 0; i < triCount; i++)
-            {
-                reader.ReadValueSafe(out int v0);
-                reader.ReadValueSafe(out int v1);
-                reader.ReadValueSafe(out int v2);
-                dmesh.AppendTriangle(v0, v1, v2);
+                data = new byte[size];
+                reader.ReadValueSafe(out data);
+                MeshDeserialize();
             }
-            OnValueChanged.Invoke(dmesh);
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
@@ -154,6 +93,6 @@ namespace Virgis
             // nothing
         }
 
-        public bool IsMesh { get { return dmesh != null; } }
+        public bool IsMesh { get { return umesh != null; } }
     }
 }

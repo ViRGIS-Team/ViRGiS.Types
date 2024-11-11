@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using System;
+using UnityEngine;
 
 namespace Virgis {
     public struct SerializableColorArray : INetworkSerializable, IEquatable<SerializableColorArray>
@@ -13,6 +14,16 @@ namespace Virgis {
                 m_Colors = value;
                 guid = Guid.NewGuid();
             }
+        }
+
+        public Vector2[] ToUV()
+        {
+            Vector2[] uv = new Vector2[Colors.Length];
+            for (int i = 0; i < Colors.Length; i++)
+            {
+                uv[i] = new Vector2(Colors[i], 0);
+            };
+            return uv;
         }
 
         public bool Equals(SerializableColorArray other)
