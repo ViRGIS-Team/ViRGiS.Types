@@ -231,6 +231,7 @@ namespace Virgis {
     {
 
         private static State m_inst = null;
+
         public static State instance
         {
             get
@@ -460,31 +461,26 @@ namespace Virgis {
         {
             SetZoom(1);
             NetworkObject no;
-            //Kill all map entities
-            if (Map != null && NetworkManager.Singleton.IsServer)
+
+
+            //If Server ...Kill all map entities
+            if (NetworkManager.Singleton.IsServer)
             {
-                for (int i = Map.transform.childCount - 1; i >= 0; i--)
+                if (Map != null)
                 {
-                    if (Map.transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer))
+                    for (int i = Map.transform.childCount - 1; i >= 0; i--)
                     {
-                        sublayer.Destroy();
-                        no = sublayer.GetComponent<NetworkObject>();
-                        no.Despawn();
+                        if (Map.transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer))
+                        {
+                            sublayer.Destroy();
+                            no = sublayer.GetComponent<NetworkObject>();
+                            no.Despawn();
+                        }
                     }
+                    no = Map.GetComponent<NetworkObject>();
+                    no.Despawn();
                 }
-                no = Map.GetComponent<NetworkObject>();
-                no.Despawn();
-            }
-
-            StartCoroutine(m_UnloadSceneCoroutine(callback));
-        }
-
-        public IEnumerator m_UnloadSceneCoroutine(Action callback)
-        {
-            if (SceneManager.GetSceneByName("Map").IsValid())
-            { 
-                yield return SceneManager.UnloadSceneAsync("Map");
-            }
+            } 
             if (callback != null) callback();
         }
 
