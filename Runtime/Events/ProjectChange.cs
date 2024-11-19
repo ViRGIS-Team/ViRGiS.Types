@@ -25,25 +25,34 @@ using System;
 
 namespace Virgis {
 
+    public enum ProjectEventType
+    {
+        Started,
+        Complete
+    }
+
     public class ProjectChange {
+
+        
 
         private GisProjectPrototype _project;
 
-        private readonly Subject<GisProjectPrototype> _projectEvent = new Subject<GisProjectPrototype>();
+        private readonly Subject<ProjectEventType> _projectEvent = new Subject<ProjectEventType>();
 
         public void Set(GisProjectPrototype project) {
             _project = project;
+            _projectEvent.OnNext(ProjectEventType.Started);
         }
 
         public void Complete() {
-            _projectEvent.OnNext(_project);
+            _projectEvent.OnNext(ProjectEventType.Complete);
         }
 
         public GisProjectPrototype Get() {
             return _project;
         }
 
-        public IObservable<GisProjectPrototype> Event {
+        public IObservable<ProjectEventType> Event {
             get {
                 return _projectEvent.AsObservable();
             }

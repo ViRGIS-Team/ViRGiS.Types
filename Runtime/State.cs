@@ -27,6 +27,7 @@ using UniRx;
 using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine.SceneManagement;
 
 namespace Virgis {
@@ -397,6 +398,25 @@ namespace Virgis {
             ServerEvent.OnNext(details);
         }
 
+        public ClientConnect Client { get; private set; } = new();
+
+        public virtual void ConnectClient(VirgisServerDetails details)
+        {
+            Client.Start();
+            NetworkManager nm = NetworkManager.Singleton;
+            UnityTransport unityTransport = nm.GetComponent<UnityTransport>();
+            if (!nm.IsConnectedClient)
+            {
+                unityTransport.ConnectionData.Address = details.Endpoint.Address.ToString();
+                unityTransport.ConnectionData.Port = (ushort)details.Endpoint.Port;
+                nm.NetworkConfig.ClientConnectionBufferTimeout = 120;
+                if (!nm.StartClient())
+                {
+                    Client.Failed();
+                } 
+            }
+        }
+
         public void ClearServers()
         {
             Servers = new();
@@ -446,10 +466,6 @@ namespace Virgis {
         public virtual void SetScale(float scale)
         {
             MapScale.OnNext(scale);
-            if (scale != 0 && instance.Map != null)
-            {
-                instance.Map.transform.localScale = Vector3.one / scale;
-            }
         }
 
         public bool LoadProject(string path)

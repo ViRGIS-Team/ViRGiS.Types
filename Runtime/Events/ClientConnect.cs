@@ -1,6 +1,6 @@
 /* MIT License
 
-Copyright (c) 2020 - 23 Runette Software
+Copyright (c) 2020 - 21 Runette Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,49 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using UnityEngine;
+using UniRx;
+using System;
 
 namespace Virgis
 {
-    public abstract class DataLayerPrototype : ContainerLayer
+
+    public enum ClientEventType
     {
-        // The prefab for the data points to be instantiated
-        public GameObject PointLayer;
-        public GameObject LineLayer;
-        public GameObject AreaLayer;
-        public GameObject ManifoldLayer;
-        public GameObject PointCloudLayer;
-        public GameObject ContainerLayer;
+        Started,
+        Complete,
+        Failed
     }
+
+    public class ClientConnect
+    {
+        public int ClientID;
+        private readonly Subject<ClientEventType> _clientEvent = new ();
+
+        public void Start()
+        {
+            _clientEvent.OnNext(ClientEventType.Started);
+        }
+
+        public void Complete(int clientID)
+        {
+            ClientID = clientID;
+            _clientEvent.OnNext(ClientEventType.Complete);
+        }
+
+        public void Failed()
+        {
+            ClientID = 0;
+            _clientEvent.OnNext (ClientEventType.Failed);
+        }
+
+        public IObservable<ClientEventType> Event
+        {
+            get
+            {
+                return _clientEvent.AsObservable();
+            }
+        }
+
+    }
+
 }
