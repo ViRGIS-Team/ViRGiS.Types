@@ -1,7 +1,11 @@
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Linq;
+using System;
+using UnityEngine;
 
 namespace Virgis
 {
@@ -24,6 +28,77 @@ namespace Virgis
         MultibandColor,
         SinglebandColor,
         SinglebandGrey
+    }
+
+    /// <summary>
+    /// Type of Color Interpretation as per OGC SE
+    /// </summary>
+    public enum ColorMapType
+    {
+        Categorize,
+        Interpolate
+    }
+
+    /// <summary>
+    /// An Element of a Color Map Definition
+    /// </summary>
+    public class ColorMapElement
+    {
+        /// <summary>
+        /// Color used for the element.
+        /// 
+        /// Can be in either integer[0 .. 255] format or float[0..1] format
+        /// </summary>
+        [JsonProperty(PropertyName = "color", Required = Required.Always)]
+        [JsonConverter(typeof(VectorConverter<SerializableColor>))]
+        public SerializableColor Color = new();
+
+        /// <summary>
+        /// Threshold as defined in OGC SE
+        /// 
+        /// NOTE = thresholds are always "succeeding and must be normalised to the interval [0..1]
+        /// </summary>
+        [JsonProperty(PropertyName = "threshold", Required = Required.AllowNull)]
+        public string Threshold;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class ColorMap : TestableObject
+    {
+        [JsonProperty(PropertyName = "type", Required = Required.Always)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public ColorMapType Type;
+
+        [JsonProperty(PropertyName = "values", Required = Required.AllowNull)]
+        [JsonConverter(typeof(ColorMapConverter))]
+        public List<ColorMapElement> Values = new();
+
+        public Gradient GetGradient()
+        {
+            //set up color gradient
+            Gradient grad = new();
+
+            GradientColorKey[] colors = new GradientColorKey[Values.Count];
+            GradientAlphaKey[] alphas = new GradientAlphaKey[Values.Count];
+
+            float threshold = 0;
+
+            for(int i = 0; i < Values.Count; i++)
+            {
+                ColorMapElement el = Values[i];
+                colors[i] = new(el.Color, threshold);
+                alphas[i] = new(el.Color.a, threshold);
+
+                if (el.Threshold != null) threshold = float.Parse(el.Threshold);
+            }
+
+
+            grad.SetKeys(colors, alphas);
+            grad.mode = GradientMode.PerceptualBlend;
+            return grad;
+        }
     }
 
     public class UnitPrototype : TestableObject
@@ -64,6 +139,10 @@ namespace Virgis
         [JsonConverter(typeof(StringEnumConverter))]
         [DefaultValue("SinglebandGrey")]
         public ColorMode ColorMode;
+
+        [JsonProperty(PropertyName = "color-map")]
+        public ColorMap ColorMap;
+
         /// <summary>
         /// PDAL Colorinterp string
         /// </summary>
@@ -82,6 +161,45 @@ namespace Virgis
             }
             ci = null;
             return false;
+        }
+    }
+
+    public class ColorMapConverter : JsonConverter
+    {
+        public ColorMapConverter()
+        {
+
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            return typeof(ColorMapElement).IsAssignableFrom(objectType);
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            switch (reader.TokenType)
+            {
+                case JsonToken.Null:
+                    return null;
+                case JsonToken.StartArray:
+                    JArray jarray = JArray.Load(reader);
+                    IList<JObject> sets = jarray.Select(c => (JObject)c).ToList();
+                    List<ColorMapElement> result = new List<ColorMapElement>();
+                    foreach (JObject set in sets)
+                    {
+                        result.Add(set.ToObject(typeof(ColorMapElement)) as ColorMapElement);
+                    }
+                    return result;
+            }
+
+            throw new JsonReaderException("expected null, object or array token but received " + reader.TokenType);
+        }
+
+
+        public override void WriteJson(JsonWriter writer, object vector, JsonSerializer serializer)
+        {
+            serializer.Serialize(writer, vector);
         }
     }
 }
