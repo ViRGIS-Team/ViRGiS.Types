@@ -68,11 +68,22 @@ namespace Virgis
     
     public class VirgisLoader<S> : NetworkBehaviour, IVirgisLoader
     {
+        protected enum e_ColorInterp
+        {
+            Interpolate,
+            CategoryValue,
+            CategoryList,
+            None
+        }
+
         public S features; // holds the feature data for this layer
+        public Gradient Grad;
+
         protected VirgisLayer m_parent; // holds the parent VirgisLayer
         protected object m_crs;
         protected Dictionary<string, SerializableMaterialHash> m_materials = new();
         protected float m_displacement;
+        protected e_ColorInterp m_ColorInterp = e_ColorInterp.None;
 
         public RecordSetPrototype _layer
         {
@@ -92,6 +103,7 @@ namespace Virgis
         {
             get { return m_parent?.subLayers;}
             }
+
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -346,6 +358,33 @@ namespace Virgis
         public void Loaded(VirgisLayer layer)
         {
             throw new NotImplementedException();
+        }
+
+        public void SetupColormap(UnitPrototype unit)
+        {
+            if (unit.ColorMap != null)
+            {
+                if (unit.ColorMode == ColorMode.SinglebandColor)
+                {
+                    if (unit.ColorMap.Type == ColorMapType.Interpolate)
+                    {
+                        Grad = unit.ColorMap.GetGradient();
+                        m_ColorInterp = e_ColorInterp.Interpolate;
+                    }
+                    else
+                    {
+                        m_ColorInterp = e_ColorInterp.CategoryValue;
+                    }
+                }
+                else if (unit.ColorMode == ColorMode.Category)
+                {
+                    if (unit.ColorMap.Type == ColorMapType.Categorize)
+                    {
+                        Grad = unit.ColorMap.GetGradient();
+                        m_ColorInterp = e_ColorInterp.CategoryList;
+                    }
+                }
+            }
         }
     }
 }

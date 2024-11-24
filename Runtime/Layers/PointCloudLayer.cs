@@ -49,11 +49,6 @@ namespace Virgis
             m_vfx = gameObject.GetComponentInChildren<VisualEffect>();
         }
 
-        public override void _set_visible() {
-            base._set_visible();
-            m_loader._set_visible();
-        }
-
         public override void Translate(MoveArgs args)
         {
 

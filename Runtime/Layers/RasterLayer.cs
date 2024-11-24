@@ -25,23 +25,12 @@ using UnityEngine;
 
 namespace Virgis
 {
-    public class RasterLayer : VirgisLayer
+    public class RasterLayer : PointCloudLayer
     {
-        // The prefab for the data points to be instantiated
-
-        public GameObject pointCloud;
-        public List<GameObject> meshes;
 
         new protected void Awake() {
             base.Awake();
             featureType = FeatureType.RASTER;
-        }
-
-        public override void Translate(MoveArgs args)
-        {
-
-            if (args.translate != Vector3.zero) transform.Translate(args.translate, Space.World);
-            changed = true;
         }
     }
 }

@@ -27,7 +27,8 @@ namespace Virgis
     {
         MultibandColor,
         SinglebandColor,
-        SinglebandGrey
+        SinglebandGrey,
+        Category
     }
 
     /// <summary>
@@ -56,10 +57,10 @@ namespace Virgis
         /// <summary>
         /// Threshold as defined in OGC SE
         /// 
-        /// NOTE = thresholds are always "succeeding and must be normalised to the interval [0..1]
+        /// NOTE = thresholds must be normalised to the interval [0..1]
         /// </summary>
         [JsonProperty(PropertyName = "threshold", Required = Required.AllowNull)]
-        public string Threshold;
+        public object Threshold;
     }
 
     /// <summary>
@@ -75,6 +76,13 @@ namespace Virgis
         [JsonConverter(typeof(ColorMapConverter))]
         public List<ColorMapElement> Values = new();
 
+        /// <summary>
+        /// As per OGC SE - values are null, "succeeding" or "preceeding"
+        /// </summary>
+        [JsonProperty(PropertyName = "thresholds-belong")]
+        public string ThresholdsBelong;
+
+
         public Gradient GetGradient()
         {
             //set up color gradient
@@ -85,19 +93,42 @@ namespace Virgis
 
             float threshold = 0;
 
-            for(int i = 0; i < Values.Count; i++)
+            for (int i = 0; i < Values.Count; i++)
             {
                 ColorMapElement el = Values[i];
+                if (ThresholdsBelong == "preceeding")
+                {
+                    if (el.Threshold != null) threshold = Convert.ToSingle(el.Threshold);
+                }
                 colors[i] = new(el.Color, threshold);
                 alphas[i] = new(el.Color.a, threshold);
 
-                if (el.Threshold != null) threshold = float.Parse(el.Threshold);
+                if (ThresholdsBelong != "preceeding")
+                    if (el.Threshold != null) threshold = Convert.ToSingle(el.Threshold);
             }
 
 
             grad.SetKeys(colors, alphas);
             grad.mode = GradientMode.PerceptualBlend;
             return grad;
+        }
+
+        public Color GetCategoryValue(float value)
+        {
+            for (int i = 0; i < Values.Count; i++)
+            {
+                if (ThresholdsBelong == "preceeding")
+                {
+                    if (i == Values.Count - 1) return (Color)Values[i].Color;
+                    if (Convert.ToSingle(Values[i+ 1].Threshold) > value ) return (Color)Values[i].Color;
+                }
+                else
+                {
+                    if (Values[i].Threshold == null) return (Color)Values[i].Color;
+                    if (Convert.ToSingle(Values[i].Threshold) > value) return (Color)Values[i].Color;
+                }
+            }
+            throw new Exception("Incorect ColorMap detected");
         }
     }
 
