@@ -87,12 +87,15 @@ namespace Virgis {
             if (nm.IsServer)
             {
                 m_mesh = umesh.Value;
-                m_aabb = new DMeshAABBTree3(m_mesh, true);
-                StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
+                if (GetLayer().IsWriteable)
                 {
-                    colorArray.Value = new SerializableColorArray() { Colors = colors };
+                    m_aabb = new DMeshAABBTree3(m_mesh, true);
+                    StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
+                        {
+                            colorArray.Value = new SerializableColorArray() { Colors = colors };
+                        }
+                    ));
                 }
-                ));
             };
 
             // create the mesh colliders
