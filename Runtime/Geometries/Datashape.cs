@@ -98,7 +98,7 @@ namespace Virgis
             base.AddVertexRpc(position);
         }
 
-        public override void RemoveVertexRpc(VirgisFeature vertex) {
+        public override void RemoveVertexRpc(byte[] vertex) {
             if (m_State.BlockMove) {
                 Destroy(gameObject);
             } else {

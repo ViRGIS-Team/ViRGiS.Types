@@ -22,6 +22,8 @@ SOFTWARE. */
 
 using System.Linq;
 using UnityEngine;
+using VirgisGeometry;
+using Unity.Netcode;
 
 namespace Virgis
 {
@@ -63,6 +65,13 @@ namespace Virgis
                     }
                 }
             }
+        }
+
+        [Rpc(SendTo.Server)]
+        public void AddFeatureRpc(Vector3[] verteces, int[] tris, Vector3[] normals)
+        {
+            DMesh3 mesh = DMesh3Builder.Build<Vector3, int, Vector3>(verteces, tris, normals, null, AxisOrder.EUN);
+            m_loader._addFeature(mesh);
         }
     }
 }

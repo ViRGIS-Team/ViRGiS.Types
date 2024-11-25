@@ -293,8 +293,8 @@ namespace Virgis {
         /// call this to remove a vertxe from a feature
         /// </summary>
         /// <param name="vertex">Vertex to remove</param>
-        //[Rpc(SendTo.Server)]
-        public virtual void RemoveVertexRpc(VirgisFeature vertex) {
+        [Rpc(SendTo.Server)]
+        public virtual void RemoveVertexRpc(byte[] vertex) {
             throw new System.NotImplementedException();
         }
 

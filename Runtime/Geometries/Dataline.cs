@@ -280,11 +280,12 @@ namespace Virgis
             return vertex;
         }
 
-        public override void RemoveVertexRpc(VirgisFeature vertex) {
+        public override void RemoveVertexRpc(byte[] vertex) {
+            Guid guid = new Guid(vertex);
             if (m_State.BlockMove) {
                 Destroy(gameObject);
             } else {
-                VertexLookup vLookup = VertexTable.Find(item => item.Com == vertex);
+                VertexLookup vLookup = VertexTable.Find(item => item.Com.GetId() == guid);
                 if (vLookup.isVertex) {
                     int thisVertex = vLookup.Vertex;
                     if (vLookup.Line != null) {

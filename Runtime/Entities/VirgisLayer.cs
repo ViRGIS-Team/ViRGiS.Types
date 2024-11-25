@@ -244,28 +244,6 @@ namespace Virgis
         }
 
         /// <summary>
-        /// Call this to create a new feature
-        /// </summary>
-        /// <param name="position">Vector3 or DMesh3</param>
-        public IVirgisFeature AddFeature<T>(T geometry) {
-            if (State.instance.InEditSession() && IsWriteable) {
-                if (m_loader != null)
-                {
-                    changed = true;
-                    switch (geometry)
-                    {
-                        case Vector3[] v:
-                            return m_loader._addFeature(v);
-                        case DMesh3 d:
-                            return m_loader._addFeature(d);
-                        default: return null;
-                    }
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
         /// Draw the layer based upon the features in the features RecordSet
         /// </summary>
         public virtual async Task Draw() {
@@ -442,7 +420,10 @@ namespace Virgis
             return m_FeatureShape.Value;
         }
 
-
+        public virtual SerializableMaterialHash GetFeatureDefaultColor()
+        {
+            return m_DefaultCol.Value;
+        }
 
         /// <summary>
         /// Change the layer visibility
@@ -515,11 +496,11 @@ namespace Virgis
             // do nothing
         }
 
-        protected virtual void _onEditLayerChange(IVirgisLayer layer)
+        protected virtual void _onEditLayerChange((IVirgisLayer, IVirgisLayer) args)
         {
             if (IsWriteable)
             {
-                if (layer as VirgisLayer == this )
+                if (args.Item2 as VirgisLayer == this )
                 {
                     if (IsWriteable)
                     {
@@ -589,10 +570,6 @@ namespace Virgis
             transform.SendMessageUpwards(method, args, SendMessageOptions.DontRequireReceiver);
         }
 
-        VirgisFeature IVirgisLayer.AddFeature<T>(T geometry) {
-            throw new NotImplementedException();
-        }
-
         VirgisFeature IVirgisLayer.GetFeature(Guid id) {
             throw new NotImplementedException();
         }
@@ -606,6 +583,12 @@ namespace Virgis
         }
 
         public void SetInfo(Dictionary<string, object> meta) {
+            throw new NotImplementedException();
+        }
+
+        [Rpc(SendTo.Server)]
+        public virtual void AddFeatureRpc(Vector3[] verteces)
+        {
             throw new NotImplementedException();
         }
     }

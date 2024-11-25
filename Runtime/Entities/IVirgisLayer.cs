@@ -24,6 +24,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Virgis
 {
@@ -78,7 +79,7 @@ namespace Virgis
         /// <typeparam name="T"> The type of the geometry - must match the type expected by the source loader</typeparam>
         /// <param name="geometry">The geometry of the new feature</param>
         /// <returns></returns>
-        VirgisFeature AddFeature<T>(T geometry);
+        void AddFeatureRpc(Vector3[] verteces);
 
         /// <summary>
         /// Life cycle hook that is called on all layers to load the source
@@ -131,6 +132,12 @@ namespace Virgis
         /// </summary>
         /// <returns></returns>
         Shapes GetFeatureShape();
+
+        /// <summary>
+        /// Fetch the default Feature Color
+        /// </summary>
+        /// <returns></returns>
+        SerializableMaterialHash GetFeatureDefaultColor();
 
         /// <summary>
         /// Get the layer definition as a RecordSet

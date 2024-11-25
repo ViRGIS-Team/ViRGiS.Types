@@ -53,7 +53,7 @@ namespace Virgis {
     public interface IVirgisFeature : IVirgisEntity
     {
         void AddVertexRpc(Vector3 position);
-        void RemoveVertexRpc(VirgisFeature vertex);
+        void RemoveVertexRpc(byte[] vertex);
         void SetFeatureState(VirgisFeatureState state);
         T GetGeometry<T>();
 

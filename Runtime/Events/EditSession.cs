@@ -51,14 +51,14 @@ namespace Virgis {
         /// </summary>
         /// 
         /// This event carries the new editable layer.
-        private readonly Subject<IVirgisLayer> _editableLayerChangedEvent;
+        private readonly Subject<(IVirgisLayer, IVirgisLayer)> _editableLayerChangedEvent;
         private EditMode _editMode;
 
         public EditSession() {
             _active = false;
             _startEditSessionEvent = new Subject<bool>();
             _endEditSessionEvent = new Subject<bool>();
-            _editableLayerChangedEvent = new Subject<IVirgisLayer>();
+            _editableLayerChangedEvent = new();
             _editMode = EditMode.None;
         }
 
@@ -67,7 +67,7 @@ namespace Virgis {
             set {
                 if (_active)
                 {
-                    _editableLayerChangedEvent.OnNext(_editableLayer);
+                    _editableLayerChangedEvent.OnNext((_editableLayer, value));
                     _editableLayer = value;
                     value?.SetEditable(true);
                 }
@@ -120,9 +120,9 @@ namespace Virgis {
             }
         }
 
-        public IObservable<IVirgisLayer> ChangeLayerEvent {
+        public IObservable<(IVirgisLayer, IVirgisLayer)> ChangeLayerEvent {
             get {
-                return _editableLayerChangedEvent.AsObservable<IVirgisLayer>();
+                return _editableLayerChangedEvent.AsObservable<(IVirgisLayer, IVirgisLayer)>();
             }
         }
     }

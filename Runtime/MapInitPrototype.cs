@@ -367,5 +367,15 @@ namespace Virgis {
         {
             throw new NotImplementedException();
         }
+
+        public SerializableMaterialHash GetFeatureDefaultColor()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddFeatureRpc(Vector3[] verteces)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
