@@ -31,16 +31,17 @@ namespace Virgis
             set {
                 value.CompactInPlace();
                 dmesh = value;
-                OnValueChanged.Invoke((Mesh)value);
-                MeshSerialize();
+                Mesh mesh = (Mesh)value;
+                OnValueChanged.Invoke(mesh);
+                MeshSerialize(mesh);
             }
         }
 
         public static explicit operator Mesh(SerializableMesh smesh) => smesh.umesh;
 
-        private void MeshSerialize()
+        private void MeshSerialize(Mesh mesh)
         {
-            EncodeResult[] serResult = DracoEncoder.EncodeMesh((Mesh)dmesh, Vector3.one, 0.01f);
+            EncodeResult[] serResult = DracoEncoder.EncodeMesh(mesh, Vector3.one, 0.01f);
             data = serResult[0].data.ToArray();
         }
 
