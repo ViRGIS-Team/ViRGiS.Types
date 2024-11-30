@@ -1,78 +1,97 @@
-using System;
 using VirgisGeometry;
 using Unity.Netcode;
 using UnityEngine;
 using Draco;
 using Draco.Encoder;
+using System.Linq;
 
 
 namespace Virgis
 {
-    public class SerializableMesh : NetworkVariableBase, IEquatable<SerializableMesh>
+    public class SerializableMesh : NetworkVariableBase
     {
-        private DMesh3 dmesh;
-        private Mesh umesh;
+        private DMesh3 m_Dmesh;
+        private Mesh m_Mesh;
 
-        private byte[] data;
+        private byte[] m_Data;
+
+        public DSubmesh3 SubMesh;
 
         /// <summary>
-        /// Delegate type for value changed event
+        /// Delegate type for Mesh changed event
         /// </summary>
         /// <param name="newValue">The new value</param>
-        public delegate void OnValueChangedDelegate(Mesh newMesh);
+        public delegate void OnMeshChangedDelegate(Mesh newMesh);
         /// <summary>
         /// The callback to be invoked when the value gets changed
         /// </summary>
-        public OnValueChangedDelegate OnValueChanged;
+        public OnMeshChangedDelegate OnMeshChanged;
 
-        public DMesh3 Value
+        /// <summary>
+        /// Delegate type for Mesh Vertex changed event
+        /// </summary>
+        /// <param name="vID">the array of vertex IDs</param>
+        /// <param name="values">the array of new Vector3 positions</param>
+        public delegate void OnVertexChangedDelegate(int[] vIDs, Vector3[] values);
+
+        /// <summary>
+        /// The callback to be invoked when the vertex gets changed
+        /// </summary>
+        public OnVertexChangedDelegate OnVertexChanged;
+
+        public DMesh3 DMesh3
         {
-            get { return dmesh; }
+            get { return m_Dmesh; }
             set {
                 value.CompactInPlace();
-                dmesh = value;
-                Mesh mesh = (Mesh)value;
-                OnValueChanged.Invoke(mesh);
-                MeshSerialize(mesh);
+                m_Dmesh = value;
+                m_Mesh = (Mesh)value;
+                SubMesh = new(value);
+                OnMeshChanged.Invoke(m_Mesh);
+                MeshSerialize();
             }
         }
 
-        public static explicit operator Mesh(SerializableMesh smesh) => smesh.umesh;
+        public static explicit operator Mesh(SerializableMesh smesh) => smesh.m_Mesh;
 
-        private void MeshSerialize(Mesh mesh)
+        public void MeshSerialize()
         {
-            EncodeResult[] serResult = DracoEncoder.EncodeMesh(mesh, Vector3.one, 0.01f);
-            data = serResult[0].data.ToArray();
+            EncodeResult[] serResult = DracoEncoder.EncodeMesh(m_Mesh, Vector3.one, 0.01f);
+            m_Data = serResult[0].data.ToArray();
         }
 
         private async void MeshDeserialize()
         {
             DracoMeshLoader decoder = new(false);
-            umesh = await decoder.ConvertDracoMeshToUnity(data, true, true);
-            OnValueChanged.Invoke(umesh);
-        }
-
-    
-        public bool Equals(SerializableMesh other)
-        {
-            return dmesh.IsSameMesh(other.dmesh, false, false, true, true, true, false);
+            m_Mesh = await decoder.ConvertDracoMeshToUnity(m_Data, true, true);
+            OnMeshChanged.Invoke(m_Mesh);
         }
 
         public override void WriteDelta(FastBufferWriter writer)
         {
-            // nothing
+            int[] vIDs = SubMesh.VertexIndices().ToArray();
+            writer.WriteValueSafe(vIDs);
+            Vector3[] vertices = new Vector3[vIDs.Length];
+            foreach (int vID in vIDs)
+            {
+                Vector3d v3d = SubMesh.GetVertex(vID);
+                v3d.ChangeAxisOrderTo(AxisOrder.EUN);
+                writer.WriteValueSafe((float)v3d.x);
+                writer.WriteValueSafe((float)v3d.y);
+                writer.WriteValueSafe((float)v3d.z);
+            }
         }
 
         public override void WriteField(FastBufferWriter writer)
         {
             Debug.Log("Serialize Mesh");
-            if (data == null)
+            if (m_Data == null)
             {
                 writer.WriteValueSafe(0);
             } else 
             {
-                writer.WriteValueSafe(data.Length);
-                writer.WriteValueSafe(data);
+                writer.WriteValueSafe(m_Data.Length);
+                writer.WriteValueSafe(m_Data);
             }
         }
 
@@ -83,17 +102,26 @@ namespace Virgis
             reader.ReadValueSafe(out int size);
             if (size != 0) 
             {
-                data = new byte[size];
-                reader.ReadValueSafe(out data);
+                m_Data = new byte[size];
+                reader.ReadValueSafe(out m_Data);
                 MeshDeserialize();
             }
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
-            // nothing
+            reader.ReadValueSafe(out int[] vIDs);
+            Vector3[] vertices = new Vector3[vIDs.Length];
+            for (int i = 0; i < vIDs.Length; i++)
+            {
+                reader.ReadValueSafe(out float x);
+                reader.ReadValueSafe(out float y);
+                reader.ReadValueSafe(out float z);
+                vertices[i] = new Vector3(x, y, z);
+            }
+            OnVertexChanged.Invoke(vIDs, vertices);
         }
 
-        public bool IsMesh { get { return umesh != null; } }
+        public bool IsMesh { get { return m_Mesh != null; } }
     }
 }

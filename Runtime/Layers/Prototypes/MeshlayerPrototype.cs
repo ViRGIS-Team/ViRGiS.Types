@@ -71,6 +71,7 @@ namespace Virgis
         public void AddFeatureRpc(Vector3[] verteces, int[] tris, Vector3[] normals)
         {
             DMesh3 mesh = DMesh3Builder.Build<Vector3, int, Vector3>(verteces, tris, normals, null, AxisOrder.EUN);
+            mesh.Clockwise = true;
             m_loader._addFeature(mesh);
         }
     }

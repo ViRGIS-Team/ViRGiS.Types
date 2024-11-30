@@ -31,7 +31,6 @@ namespace Virgis {
 
     public class DataMesh : VirgisFeature
     {
-        protected DMesh3 m_mesh;
         protected DMeshAABBTree3 m_aabb; // AABB Tree for current mesh
 
         public SerializableMesh umesh = new();
@@ -41,8 +40,8 @@ namespace Virgis {
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            umesh.OnValueChanged += SetMesh;
-            if (umesh.Value != null && umesh.IsMesh) SetMesh ((Mesh)umesh);
+            umesh.OnMeshChanged += SetMesh;
+            if (umesh.IsMesh) SetMesh ((Mesh)umesh);
             colorArray.OnValueChanged += OnColorisation;
             if (colorArray.Value.Colors != null) OnColorisation(new SerializableColorArray(), colorArray.Value);
         }
@@ -50,7 +49,7 @@ namespace Virgis {
         public override void OnNetworkDespawn()
         {
             base.OnNetworkSpawn();
-            umesh.OnValueChanged -= SetMesh;
+            umesh.OnMeshChanged -= SetMesh;
             colorArray.OnValueChanged -= OnColorisation;
         }
 
@@ -86,11 +85,10 @@ namespace Virgis {
             NetworkManager nm = GetComponent<NetworkObject>().NetworkManager;
             if (nm.IsServer)
             {
-                m_mesh = umesh.Value;
                 if (GetLayer().IsWriteable)
                 {
-                    m_aabb = new DMeshAABBTree3(m_mesh, true);
-                    StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
+                    m_aabb = new DMeshAABBTree3(umesh.DMesh3, true);
+                    StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
                         {
                             colorArray.Value = new SerializableColorArray() { Colors = colors };
                         }
@@ -123,12 +121,12 @@ namespace Virgis {
         }
 
         public DMesh3 GetMesh() {
-            return m_mesh;
+            return umesh.DMesh3;
         }
 
         public override Dictionary<string, object> GetInfo() {
-            if (m_mesh != null)
-                return m_mesh.FindMetadata("properties") as Dictionary<string, object>;
+            if (umesh.IsMesh)
+                return umesh.DMesh3.FindMetadata("properties") as Dictionary<string, object>;
             else
                 return transform.parent.GetComponent<IVirgisFeature>().GetInfo();
         }

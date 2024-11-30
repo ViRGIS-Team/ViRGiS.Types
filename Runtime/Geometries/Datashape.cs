@@ -90,7 +90,7 @@ namespace Virgis
 
             DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, m_Polygon[0].axisOrder);
             dmesh.CalculateUVs();
-            Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
+            Shape.GetComponent<DataMesh>().umesh.DMesh3 = dmesh;
         }
 
         public override void AddVertexRpc(Vector3 position) {

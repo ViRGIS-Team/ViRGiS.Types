@@ -203,7 +203,7 @@ namespace Virgis {
         /// Sent by the UI to request this component to move.
         /// </summary>
         /// <param name="args">MoveArgs : Either a translation vector OR a Vector position to move to, both in World space coordinates</param>
-        public void MoveTo(MoveArgs args)
+        public virtual void MoveTo(MoveArgs args)
         {
             MoveToRpc(args, m_State, ! IsServer);
         }
