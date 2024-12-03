@@ -41,6 +41,7 @@ namespace Virgis
         void MoveTo(MoveArgs args);
         void VertexMove(MoveArgs args);
         IVirgisLayer GetLayer();
+        bool GetParent(out IVirgisEntity parent);
         void OnEdit(bool inSession);
         void Destroy();
         Dictionary<string, string> GetInfo();

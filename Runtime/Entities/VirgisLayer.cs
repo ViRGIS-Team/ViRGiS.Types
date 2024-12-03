@@ -20,12 +20,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using VirgisGeometry;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.IO;
 using UniRx;
 using Unity.Netcode;
 using UnityEngine;
@@ -553,6 +553,18 @@ namespace Virgis
             return this;
         }
 
+        public bool GetParent(out IVirgisEntity parent)
+        {
+            Transform temp = transform.parent;
+            if (temp != null)
+            {
+                parent = transform.parent.GetComponent<IVirgisEntity>();
+                return true;
+            }
+            parent = default;
+            return false;
+        }
+
         public IVirgisLoader GetLoader()
         {
             return m_loader;
@@ -560,10 +572,6 @@ namespace Virgis
 
         public void OnEdit(bool inSession) {
             // do nothing
-        }
-
-        public virtual Dictionary<string, object> GetInfo(VirgisFeature feat) {
-            return default;
         }
 
         public void MessageUpwards(string method, object args) {
@@ -578,12 +586,12 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, string> GetInfo() {
+        public virtual Dictionary<string, string> GetInfo() {
             Dictionary<string, string> ret = new();
             RecordSetPrototype recordSet = GetMetadata();
             ret.Add("Name", recordSet.DisplayName);
-            ret.Add("Source", recordSet.Source);
-            ret.Add("Editable?", IsEditable && IsWriteable? "Yes" : "No");
+            ret.Add("Source", Path.GetFileName(recordSet.Source));
+            ret.Add("Editable?", IsWriteable? "Yes" : "No");
             return ret;
         }
 

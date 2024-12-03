@@ -111,9 +111,5 @@ namespace Virgis
         public void Delete() {
             transform.parent.SendMessage("RemoveVertex", this, SendMessageOptions.DontRequireReceiver);
         }
-
-        public override Dictionary<string, string> GetInfo() {
-            return GetComponentInParent<Dataline>().GetInfo();
-        }
     }
 }

@@ -3,6 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using Draco;
 using Draco.Encoder;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -58,6 +59,7 @@ namespace Virgis
             OnMeshChanged.Invoke(m_Mesh);
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(m_Mesh, Vector3.one, 0.01f);
             m_Data = serResult[0].data.ToArray();
+            Array.ForEach(serResult, res => res.Dispose());
         }
 
         private async void MeshDeserialize()

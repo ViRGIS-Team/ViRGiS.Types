@@ -315,7 +315,11 @@ namespace Virgis {
 
         public virtual Dictionary<string, string> GetInfo()
         {
-            return GetLayer().GetInfo();
+            if (GetParent(out IVirgisEntity parent))
+            {
+                return parent.GetInfo();
+            }
+            return default;
         }
 
         public virtual void SetInfo(Dictionary<string, object> meta)
@@ -361,12 +365,23 @@ namespace Virgis {
         }
 
         public IVirgisLayer GetLayer() {
-            Transform parent = transform.parent; 
-            if (parent != null)
+            if (GetParent(out IVirgisEntity parent))
             {
-                return transform.parent.GetComponent<IVirgisEntity>()?.GetLayer();
+                return parent.GetLayer();
             }
             return null;
+        }
+
+        public bool GetParent( out IVirgisEntity parent)
+        {
+            Transform temp = transform.parent;
+            if (temp != null)
+            {
+                parent = transform.parent.GetComponent<IVirgisEntity>();
+                return true;
+            }
+            parent = default;
+            return false;
         }
 
         public virtual void OnEdit(bool inSession) {

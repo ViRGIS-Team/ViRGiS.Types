@@ -61,7 +61,15 @@ namespace Virgis
             m_Polygon[0].Closed = true;
 
             // call the generic polygon draw function from DataShape
-            _redraw();
+            try
+            {
+                _redraw();
+            }
+            catch (Exception e)
+            {
+                RecordSetPrototype temp = GetLayer().GetMetadata();
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {gisId as string}");
+            }
 
             com.SetMaterial(m_Col.Value);
             com.Texture.Set(tex);

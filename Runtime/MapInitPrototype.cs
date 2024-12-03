@@ -367,5 +367,10 @@ namespace Virgis {
         {
             throw new NotImplementedException();
         }
+
+        public bool GetParent(out IVirgisEntity parent)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

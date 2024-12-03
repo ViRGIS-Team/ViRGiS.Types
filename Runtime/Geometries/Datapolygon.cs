@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using UnityEditor;
 
 namespace Virgis
 {
@@ -85,9 +86,15 @@ namespace Virgis
             m_Lines = polygon;
 
             // call the generic polygon draw function in DataShape
-            _redraw();
-
-            //mr.material.SetVector("_Tiling", new Vector2(scaleX / tiling_size, scaleY / tiling_size));
+            try
+            {
+                _redraw();
+            }
+            catch (Exception e)
+            {
+                RecordSetPrototype temp = GetLayer().GetMetadata();
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {GetFID<object>()}");
+            }
             return gameObject;
         }
     }

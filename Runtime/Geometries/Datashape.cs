@@ -85,20 +85,17 @@ namespace Virgis
             IEnumerable<Vector3d> verticesItr;
             GeneralPolygon2d polygon2d = new(m_Polygon, out frame, out verticesItr );
 
+            //Traingulate The Polygon
             Index3i[] trianglesItr = polygon2d.GetMesh();
 
-
+            //Build a DMesh3 from the result
             DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, m_Polygon[0].axisOrder);
             dmesh.CalculateUVs();
+
+            //Add DMesh to the component
             DataMesh mesh = Shape.GetComponent<DataMesh>();
             mesh.umesh.DMesh3 = dmesh;
             mesh.umesh.MeshFinalize();
-            //StartCoroutine(mesh.umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
-            //{
-            //    mesh.umesh.Mesh.uv4 = DataMesh.ToUV(colors);
-            //    mesh.umesh.MeshSerialize();
-            //}
-            //));
         }
 
         public override void AddVertexRpc(Vector3 position) {
