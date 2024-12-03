@@ -56,25 +56,18 @@ namespace Virgis
                 m_Polygon[0].AppendVertex(bottom[i]);
             }
             Shape = Instantiate(shapePrefab, transform);
-            if (!Shape.GetComponent<VirgisFeature>().Spawn(transform)) throw new Exception("reparenting failed");
+            DataMesh com = Shape.GetComponent<DataMesh>();
+            if (!com.Spawn(transform)) throw new Exception("reparenting failed");
             m_Polygon[0].Closed = true;
 
             // call the generic polygon draw function from DataShape
             _redraw();
 
-            GetComponentInChildren<DataMesh>().Texture.Set(tex);
+            com.SetMaterial(m_Col.Value);
+            com.Texture.Set(tex);
+
 
             return gameObject;
-        }
-
-        public override Dictionary<string, object> GetInfo() {
-            Dictionary<string, object> temp = new Dictionary<string, object>(gisProperties);
-            temp.Add("ID", gisId);
-            return temp;
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new System.NotImplementedException();
         }
     }
 }

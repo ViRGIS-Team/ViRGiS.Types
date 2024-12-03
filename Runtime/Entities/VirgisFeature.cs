@@ -91,7 +91,7 @@ namespace Virgis {
             base.OnDestroy();
         }
 
-        public void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
+        public virtual void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
         {
             if (newValue.Equals(previousValue)) return;
             m_Material.SetColor("_BaseColor", newValue.Color);
@@ -111,6 +111,7 @@ namespace Virgis {
         {
             m_Material.SetColor("_BaseColor", Color.white);
             m_Material.SetTexture("_BaseMap", tex);
+            m_Material.SetFloat("_TextureSwitch", 1f);
         }
 
         /// <summary>
@@ -140,7 +141,7 @@ namespace Virgis {
             }
             catch (Exception e)
             {
-                Debug.Log(e.Message);
+                Debug.LogError(e.Message);
                 return false;
             }
             return no.TrySetParent(parent);
@@ -312,9 +313,15 @@ namespace Virgis {
             return m_Id;
         }
 
-        public abstract Dictionary<string, object> GetInfo();
+        public virtual Dictionary<string, string> GetInfo()
+        {
+            return GetLayer().GetInfo();
+        }
 
-        public abstract void SetInfo(Dictionary<string, object> meta);
+        public virtual void SetInfo(Dictionary<string, object> meta)
+        {
+            throw new NotImplementedException();
+        }
 
         public override bool Equals(object obj) {
             if (obj == null)
@@ -337,9 +344,9 @@ namespace Virgis {
         /// <summary>
         /// Called when the pointer hovers on this feature
         /// </summary>
-        public void Hover(Vector3 hit) {
-            m_State.LastHit = hit;
-            Dictionary<string, object> meta = GetInfo();
+        public void Hover() {
+            m_State.LastHit = State.instance.lastHit.point;
+            Dictionary<string, string> meta = GetInfo();
             if (meta != null && meta.Count > 0) {
                 string output = string.Join("\n", meta.Select(x => $"{x.Key}:\t{x.Value}"));
                 State.instance.Info.Set(output);
@@ -347,10 +354,10 @@ namespace Virgis {
         }
 
         /// <summary>
-        /// called when the pointer stops hoveringon this feature
+        /// called when the pointer stops hovering on this feature
         /// </summary>
         public void UnHover() {
-            State.instance.Info.Set("");
+            //do nothing
         }
 
         public IVirgisLayer GetLayer() {

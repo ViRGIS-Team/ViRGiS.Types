@@ -25,85 +25,81 @@ using VirgisGeometry;
 using System.Collections.Generic;
 using System;
 using System.Linq;
-using Unity.Netcode;
 
 namespace Virgis {
 
-    public class DataMesh : VirgisFeature
-    {
-        protected DMeshAABBTree3 m_aabb; // AABB Tree for current mesh
+    public class DataMesh : VirgisFeature{
 
         public SerializableMesh umesh = new();
-        public NetworkVariable<SerializableColorArray> colorArray = new();
+        public MeshFilter MeshFilter;
+        public MeshCollider[] MeshColliders;
+
+        protected int[] m_VertexMap; // holds the map between the DMesh vertex ids and the Unity Mesh vertex ids
 
 
-        public override void OnNetworkSpawn()
-        {
+        public override void OnNetworkSpawn(){
             base.OnNetworkSpawn();
             umesh.OnMeshChanged += SetMesh;
-            if (umesh.IsMesh) SetMesh ((Mesh)umesh);
-            colorArray.OnValueChanged += OnColorisation;
-            if (colorArray.Value.Colors != null) OnColorisation(new SerializableColorArray(), colorArray.Value);
+            if (umesh.IsMesh) SetMesh (umesh.Mesh);
         }
 
-        public override void OnNetworkDespawn()
-        {
+        public override void OnNetworkDespawn(){
             base.OnNetworkSpawn();
             umesh.OnMeshChanged -= SetMesh;
-            colorArray.OnValueChanged -= OnColorisation;
         }
 
-        public void OnColorisation(SerializableColorArray previousValue, SerializableColorArray newValue)
-        {
-            if (newValue.Colors == null) return;
-            Vector2[] uv = newValue.ToUV();
-            if (TryGetComponent<MeshFilter>(out MeshFilter mf))
-                if (mf.sharedMesh != null)
-                {
-                    mf.sharedMesh.uv4 = uv;
-                    Debug.Log($"Mesh Colorisation set : mesh {GetId()} ");
-                }
-        }
-
-
-        private void SetMesh(Mesh newValue)
-        {
-            MeshFilter mf = GetComponent<MeshFilter>();
-            MeshCollider[] mc = GetComponents<MeshCollider>();
-
+        private void SetMesh(Mesh newValue){
 
             // load mesh as unity mesh and add to MeshFilter
-            Mesh mesh = newValue;
-            if (colorArray.Value.Colors != null)
+            if (!NetworkManager.IsServer)
             {
-                mesh.uv4 = colorArray.Value.ToUV();
-                Debug.Log($"Mesh Colorisation set : mesh {GetId()} ");
-            }
-            mesh.RecalculateBounds();
-            mf.mesh = mesh;
-
-            NetworkManager nm = GetComponent<NetworkObject>().NetworkManager;
-            if (nm.IsServer)
-            {
-                if (GetLayer().IsWriteable)
+                Vector2[] uv = newValue.uv2;
+                for (int i = 0; i < uv.Length; i++)
                 {
-                    m_aabb = new DMeshAABBTree3(umesh.DMesh3, true);
-                    StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
-                        {
-                            colorArray.Value = new SerializableColorArray() { Colors = colors };
-                        }
-                    ));
+                    uv[i].x = Mathf.Round(uv[i].x);
+                    uv[i].y = Mathf.Round(uv[i].y);
                 }
+                newValue.uv4 = uv;
+            }
+            newValue.RecalculateBounds();
+            MeshFilter.mesh = newValue;
+            UpdateUnityMesh();
+        }
+
+        /// <summary>
+        /// Helper to create a UV from the Colors - the v component is set to the vertex ID since this gets scrambled through draco
+        /// </summary>
+        /// <param name="colors"></param>
+        /// <returns></returns>
+        public static Vector2[] ToUV(byte[] colors)
+        {
+            Vector2[] uv = new Vector2[colors.Length];
+            for (int i = 0; i < colors.Length; i++)
+            {
+                uv[i] = new Vector2(colors[i], i);
             };
+            return uv;
+        }
+
+        protected void UpdateUnityMesh() {
+            Mesh mesh = MeshFilter.sharedMesh;
+
+            // create a map between the Unity Mesh vertices and the DMesh vertices on the server using UV4
+            Vector2[] uvs = mesh.uv4;
+            m_VertexMap = new int[uvs.Length];
+            for (int i = 0; i < uvs.Length; i++)
+            {
+                m_VertexMap[(int)uvs[i].y] = i;
+            }
 
             // create the mesh colliders
             Mesh imesh = new()
             {
                 indexFormat = mesh.indexFormat,
-
                 vertices = mesh.vertices,
                 triangles = mesh.triangles.Reverse().ToArray(),
-                uv = mesh.uv
+                uv = mesh.uv,
+                uv4 = mesh.uv4,
             };
 
             imesh.RecalculateBounds();
@@ -111,12 +107,12 @@ namespace Virgis {
 
             try
             {
-                mc[0].sharedMesh = mesh;
-                mc[1].sharedMesh = imesh;
+                MeshColliders[0].sharedMesh = mesh;
+                MeshColliders[1].sharedMesh = imesh;
             }
             catch (Exception e)
             {
-                Debug.Log(e.ToString());
+                Debug.LogError(e.ToString());
             }
         }
 
@@ -124,26 +120,12 @@ namespace Virgis {
             return umesh.DMesh3;
         }
 
-        public override Dictionary<string, object> GetInfo() {
-            if (umesh.IsMesh)
-                return umesh.DMesh3.FindMetadata("properties") as Dictionary<string, object>;
-            else
-                return transform.parent.GetComponent<IVirgisFeature>().GetInfo();
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new System.NotImplementedException();
-        }
-
         public void MakeConvex() {
-            MeshCollider[] mcs = gameObject.GetComponents<MeshCollider>();
-            mcs.ToList().ForEach(item => item.convex = true);
+            MeshColliders.ToList().ForEach(item => item.convex = true);
         }
 
-        public void MakeKinematic()
-        {
-            MeshCollider[] mcs = gameObject.GetComponents<MeshCollider>();
-            mcs.ToList().ForEach(item => Destroy(item));
+        public void MakeKinematic(){
+            MeshColliders.ToList().ForEach(item => Destroy(item));
         }
     }
 }

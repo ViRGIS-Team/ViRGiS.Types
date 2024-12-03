@@ -45,6 +45,7 @@ namespace Virgis
         [JsonProperty(PropertyName = "default_proj", Required = Required.Always)]
         public string projectCrs;
 
+        [Obsolete("Map Scale is not used in Virgis 3.0")]
         [JsonProperty(PropertyName = "map_scale", Required = Required.Always)]
         public float MapScale;
 

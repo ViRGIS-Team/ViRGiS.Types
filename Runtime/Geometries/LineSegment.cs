@@ -112,12 +112,8 @@ namespace Virgis
             transform.parent.SendMessage("RemoveVertex", this, SendMessageOptions.DontRequireReceiver);
         }
 
-        public override Dictionary<string, object> GetInfo() {
-            return GetComponentInParent<Dataline>().GetInfo(this);
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new System.NotImplementedException();
+        public override Dictionary<string, string> GetInfo() {
+            return GetComponentInParent<Dataline>().GetInfo();
         }
     }
 }

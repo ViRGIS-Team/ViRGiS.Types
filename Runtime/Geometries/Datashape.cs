@@ -90,7 +90,15 @@ namespace Virgis
 
             DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, m_Polygon[0].axisOrder);
             dmesh.CalculateUVs();
-            Shape.GetComponent<DataMesh>().umesh.DMesh3 = dmesh;
+            DataMesh mesh = Shape.GetComponent<DataMesh>();
+            mesh.umesh.DMesh3 = dmesh;
+            mesh.umesh.MeshFinalize();
+            //StartCoroutine(mesh.umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
+            //{
+            //    mesh.umesh.Mesh.uv4 = DataMesh.ToUV(colors);
+            //    mesh.umesh.MeshSerialize();
+            //}
+            //));
         }
 
         public override void AddVertexRpc(Vector3 position) {
@@ -106,12 +114,12 @@ namespace Virgis
             }
         }
 
-        public override Dictionary<string, object> GetInfo() {
-            return default;
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
+        public override void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
+        {
+            if (Shape != null)
+            {
+                Shape.SendMessage("SetMaterial", newValue);
+            }
         }
     }
 }

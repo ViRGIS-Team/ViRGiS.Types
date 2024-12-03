@@ -21,14 +21,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using System.Collections.Generic;
-using System.Collections;
 using UnityEngine;
 using UniRx;
 using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
-using UnityEngine.SceneManagement;
 
 namespace Virgis {
 
@@ -38,7 +36,6 @@ namespace Virgis {
     // Singleton pattern taken from https://learn.unity.com/tutorial/level-generation
     public interface IState  {
         static IState instance;
-        Vector3 lastHitPosition { get; set; }
         int editScale { get; set; } // holds the current Edit Svcal
         int currentView { get; set; } // holds the current view number
         string UserID { get; set; } // holds a user identity
@@ -242,10 +239,9 @@ namespace Virgis {
 
             protected set { m_inst = value; }
         }
-        public Vector3 lastHitPosition
-        {
-            get; set;
-        }
+
+        public RaycastHit lastHit = new();
+
         public int editScale
         {
             get; set;

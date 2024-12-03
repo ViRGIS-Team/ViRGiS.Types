@@ -21,7 +21,7 @@ namespace Virgis {
             Vector2[] uv = new Vector2[Colors.Length];
             for (int i = 0; i < Colors.Length; i++)
             {
-                uv[i] = new Vector2(Colors[i], 0);
+                uv[i] = new Vector2(Colors[i], i);
             };
             return uv;
         }

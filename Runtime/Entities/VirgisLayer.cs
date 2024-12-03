@@ -578,12 +578,13 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, object> GetInfo() {
-            throw new NotImplementedException();
-        }
-
-        public void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
+        public Dictionary<string, string> GetInfo() {
+            Dictionary<string, string> ret = new();
+            RecordSetPrototype recordSet = GetMetadata();
+            ret.Add("Name", recordSet.DisplayName);
+            ret.Add("Source", recordSet.Source);
+            ret.Add("Editable?", IsEditable && IsWriteable? "Yes" : "No");
+            return ret;
         }
 
         [Rpc(SendTo.Server)]

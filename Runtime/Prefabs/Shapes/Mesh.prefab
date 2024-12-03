@@ -155,6 +155,10 @@ MonoBehaviour:
   Texture:
     tex: {fileID: 0}
   MeshRenderer: {fileID: 3276856896238180303}
+  MeshFilter: {fileID: 9060489498783114513}
+  MeshColliders:
+  - {fileID: 498371961168992419}
+  - {fileID: 7725777815200932537}
 --- !u!64 &7725777815200932537
 MeshCollider:
   m_ObjectHideFlags: 0

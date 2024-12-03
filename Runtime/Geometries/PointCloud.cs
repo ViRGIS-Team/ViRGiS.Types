@@ -37,16 +37,6 @@ namespace Virgis
             VFX.SetVector3("_size", Vector3.one * PixelSize);
             VFX.Play();
         }
-        
-        public override Dictionary<string, object> GetInfo()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta)
-        {
-            throw new System.NotImplementedException();
-        }
 
         public override T GetGeometry<T>()
         {

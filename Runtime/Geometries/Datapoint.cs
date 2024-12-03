@@ -129,13 +129,5 @@ namespace Virgis
             transform.parent.SendMessage("RemoveVertexRpc", this, SendMessageOptions.DontRequireReceiver);
         }
 
-
-        public override Dictionary<string, object> GetInfo() {
-            return GetLayer().GetInfo(this);
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
-        }
     }
 }

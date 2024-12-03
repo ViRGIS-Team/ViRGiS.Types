@@ -359,13 +359,5 @@ namespace Virgis
         private Vector3 _labelPosition() {
             return Center() + transform.TransformVector(Vector3.up) * Symbology["line"].Transform.Scale.magnitude;
         }
-
-        public override Dictionary<string, object> GetInfo() {
-            return transform.parent.GetComponent<IVirgisEntity>().GetInfo(this);
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
-        }
     }
 }

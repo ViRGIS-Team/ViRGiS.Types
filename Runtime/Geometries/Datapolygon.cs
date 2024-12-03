@@ -90,14 +90,6 @@ namespace Virgis
             //mr.material.SetVector("_Tiling", new Vector2(scaleX / tiling_size, scaleY / tiling_size));
             return gameObject;
         }
-
-        public override Dictionary<string, object> GetInfo() {
-            return transform.parent.GetComponent<IVirgisEntity>().GetInfo(this);
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
-        }
     }
 }
 

@@ -24,7 +24,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Virgis {
+namespace Virgis
+{
 
     /// <summary>
     /// Abstract parent for all in game entities
@@ -42,9 +43,7 @@ namespace Virgis {
         IVirgisLayer GetLayer();
         void OnEdit(bool inSession);
         void Destroy();
-        Dictionary<string, object> GetInfo();
-        void SetInfo(Dictionary<string, object> meta);
-        Dictionary<string, object> GetInfo(VirgisFeature feat);
+        Dictionary<string, string> GetInfo();
     }
 
     /// <summary>
@@ -57,7 +56,7 @@ namespace Virgis {
         void SetFeatureState(VirgisFeatureState state);
         T GetGeometry<T>();
 
-        void Hover(Vector3 hit);
+        void Hover();
         void UnHover();
         void SetFID<T>(T FID);
         T GetFID<T>();

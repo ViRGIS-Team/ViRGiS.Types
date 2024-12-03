@@ -4,6 +4,7 @@ using UnityEngine;
 using Draco;
 using Draco.Encoder;
 using System.Linq;
+using System.Collections.Generic;
 
 
 namespace Virgis
@@ -45,17 +46,16 @@ namespace Virgis
             set {
                 value.CompactInPlace();
                 m_Dmesh = value;
-                m_Mesh = (Mesh)value;
                 SubMesh = new(value);
-                OnMeshChanged.Invoke(m_Mesh);
-                MeshSerialize();
+                m_Mesh = (Mesh)m_Dmesh;
             }
         }
 
-        public static explicit operator Mesh(SerializableMesh smesh) => smesh.m_Mesh;
+        public Mesh Mesh { get { return m_Mesh; } }
 
-        public void MeshSerialize()
+        public void MeshFinalize()
         {
+            OnMeshChanged.Invoke(m_Mesh);
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(m_Mesh, Vector3.one, 0.01f);
             m_Data = serResult[0].data.ToArray();
         }
@@ -65,6 +65,14 @@ namespace Virgis
             DracoMeshLoader decoder = new(false);
             m_Mesh = await decoder.ConvertDracoMeshToUnity(m_Data, true, true);
             OnMeshChanged.Invoke(m_Mesh);
+        }
+
+        public void SendUpdateSubmesh()
+        {
+            SetDirty(true);
+            List<Vector3> tmp = new();
+            foreach (Vector3d v in SubMesh.Vertices()) tmp.Add((Vector3)v);
+            OnVertexChanged.Invoke(SubMesh.VertexIndices().ToArray(), tmp.ToArray());
         }
 
         public override void WriteDelta(FastBufferWriter writer)

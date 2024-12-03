@@ -178,6 +178,10 @@ MonoBehaviour:
     tex: {fileID: 0}
   MeshRenderer: {fileID: 5564428276229868674}
   MeshFilter: {fileID: 3036340443698636139}
+  MeshColliders:
+  - {fileID: -5145617418750967625}
+  - {fileID: 5811791269081854521}
+  MarkerShape: {fileID: 1923084094124155616, guid: 1504e28aa6cc5994da8e4df941e17d2b, type: 3}
 --- !u!114 &3119746938837664644
 MonoBehaviour:
   m_ObjectHideFlags: 0

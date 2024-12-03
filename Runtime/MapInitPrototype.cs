@@ -184,7 +184,7 @@ namespace Virgis {
             }
             catch (Exception e)
             {
-                Debug.Log("Save failed : " + e.ToString());
+                Debug.LogError("Save failed : " + e.ToString());
                 return default;
             }
         }
@@ -333,17 +333,7 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, object> GetInfo()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetInfo(Dictionary<string, object> meta)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Dictionary<string, object> GetInfo(VirgisFeature feat)
+        public Dictionary<string, string> GetInfo()
         {
             throw new NotImplementedException();
         }
