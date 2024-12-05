@@ -60,16 +60,17 @@ namespace Virgis {
         }
 
         /// <summary>
-        /// Use this to Show text in the Infoi Panel
+        /// usde this to change the apparent scale of the model
         /// </summary>
-        InfoEvent Info {
+        public ZoomEvent MapScale
+        {
             get;
         }
 
         /// <summary>
-        /// Use this to change the Zoom Level
+        /// Use this to Show text in the Info Panel
         /// </summary>
-        ZoomEvent Zoom {
+        InfoEvent Info {
             get;
         }
 
@@ -215,8 +216,6 @@ namespace Virgis {
         /// <param name=""></param>
         /// <param name=""></param>
         /// <returns> a number representing the scale set</returns>
-        void SetZoom(float zoom);
-
         void SetScale(float scale);
 
         bool LoadProject(string path);
@@ -277,12 +276,6 @@ namespace Virgis {
         }
 
         public InfoEvent Info
-        {
-            get;
-            protected set;
-        }
-
-        public ZoomEvent Zoom
         {
             get;
             protected set;
@@ -455,10 +448,6 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public virtual void SetZoom(float zoom) { 
-            Zoom.OnNext(zoom);
-        }
-
         public virtual void SetScale(float scale)
         {
             MapScale.OnNext(scale);
@@ -471,7 +460,6 @@ namespace Virgis {
 
         public void UnloadProject(Action callback = null)
         {
-            SetZoom(1);
             NetworkObject no;
 
 
@@ -485,8 +473,6 @@ namespace Virgis {
                         if (Map.transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer))
                         {
                             sublayer.Destroy();
-                            no = sublayer.GetComponent<NetworkObject>();
-                            no.Despawn();
                         }
                     }
                     no = Map.GetComponent<NetworkObject>();

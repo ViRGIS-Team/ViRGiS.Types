@@ -25,6 +25,7 @@ using VirgisGeometry;
 using gs;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 using System.Diagnostics;
 using Unity.Netcode;
 
@@ -44,12 +45,10 @@ namespace Virgis
 
         public override void OnNetworkSpawn(){
             base.OnNetworkSpawn();
-            umesh.OnVertexChanged += UpdateSubmesh;
         }
 
         public override void OnNetworkDespawn(){
             base.OnNetworkDespawn();
-            umesh.OnVertexChanged -= UpdateSubmesh;
         }
 
         public override void Selected(SelectionType button){
@@ -183,11 +182,14 @@ namespace Virgis
                 }
                 timer.Stop();
                 UnityEngine.Debug.LogWarning($"Edit took : {timer.Elapsed.TotalSeconds} seconds");
-                umesh.SendUpdateSubmesh();
+                List<Vector3> tmp = new();
+                foreach (Vector3d v in umesh.SubMesh.Vertices()) tmp.Add((Vector3)v);
+                UpdateSubmeshRpc(umesh.SubMesh.VertexIndices().ToArray(), tmp.ToArray());
             }
         }
 
-        protected void UpdateSubmesh(int[] vIDs, Vector3[] values){
+        [Rpc(SendTo.ClientsAndHost)]
+        protected void UpdateSubmeshRpc(int[] vIDs, Vector3[] values){
             Mesh sm = MeshFilter.sharedMesh;
             Vector3[] vertices = sm.vertices;
 
@@ -274,8 +276,7 @@ namespace Virgis
             }
         }
 
-        [Rpc(SendTo.Server)]
-        public override void AddVertexRpc(Vector3 position){
+        public override void AddVertex(Vector3 position){
             Vector3d localPosition = (Vector3d)transform.InverseTransformPoint(position);
             DMesh3 mesh = GetMesh();
             //m_aabb = new DMeshAABBTree3(mesh, true);
@@ -316,8 +317,13 @@ namespace Virgis
         /// <summary>
         /// This is called when you want to delete the currently selected vertex
         /// </summary>
-        public void Delete(){
-            MeshFilter mf = GetComponent<MeshFilter>();
+        public override void RemoveVertex(Transform vertex = null)
+        {
+            RemoveVertexRpc();
+        }
+
+        [Rpc(SendTo.Server)]
+        public void RemoveVertexRpc() { 
             GetMesh().RemoveVertex(m_selectedVertex);
             if (m_oldDmesh.IsClosed())
             {

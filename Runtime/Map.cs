@@ -35,7 +35,7 @@ namespace Virgis
         {
             if (State.instance.Layers.Find(item => item == layer) == null)
             {
-                if (layer._layer.Value != null) Debug.Log($"Loaded Layer : {layer._layer.Value.DisplayName}");
+                if (layer.GetMetadata() != null) Debug.Log($"Loaded Layer : {layer.GetMetadata().DisplayName}");
                 State.instance.AddLayer(layer);
             }
         }

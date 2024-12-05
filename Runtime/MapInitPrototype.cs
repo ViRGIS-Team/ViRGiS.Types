@@ -288,7 +288,7 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public Guid GetId()
+        public ulong GetId()
         {
             throw new NotImplementedException();
         }
@@ -369,6 +369,16 @@ namespace Virgis {
         }
 
         public bool GetParent(out IVirgisEntity parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveVertex(Transform vertex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddVertex(Vector3 pos)
         {
             throw new NotImplementedException();
         }

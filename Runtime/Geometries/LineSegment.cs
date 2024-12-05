@@ -104,12 +104,8 @@ namespace Virgis
                 SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);
         }
 
-        public override void AddVertexRpc(Vector3 position) {
-            GetComponentInParent<Dataline>().AddVertex( this, position);
-        }
-
-        public void Delete() {
-            transform.parent.SendMessage("RemoveVertex", this, SendMessageOptions.DontRequireReceiver);
+        public override void AddVertex(Vector3 position) {
+            GetComponentInParent<Dataline>().AddVertexRpc( GetId(), position);
         }
     }
 }

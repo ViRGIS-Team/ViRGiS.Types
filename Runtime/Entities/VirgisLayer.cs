@@ -23,9 +23,9 @@ SOFTWARE. */
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.IO;
 using UniRx;
 using Unity.Netcode;
 using UnityEngine;
@@ -38,20 +38,21 @@ namespace Virgis
     /// </summary>
     public abstract class VirgisLayer : NetworkBehaviour, IVirgisLayer {
 
-        public NetworkVariable<RecordSetPrototype> _layer;
-        public NetworkVariable<bool> m_CheckedOut;
-        public NetworkVariable<bool> m_Writeable;
-        public NetworkVariable<int> m_SubLayersCount;
-        public NetworkVariable<Shapes> m_FeatureShape;
-        public NetworkVariable<SerializableMaterialHash> m_DefaultCol = new();
-
         public FeatureType featureType { get; protected set; }
-
         public string sourceName { get; set; }
 
+        [HideInInspector]
         public List<IVirgisLayer> subLayers
         { get; } = new List<IVirgisLayer>();
+        [HideInInspector]
+        public NetworkVariable<Shapes> FeatureShape = new();
+        [HideInInspector]
+        public NetworkVariable<SerializableMaterialHash> DefaultCol = new();
 
+        protected NetworkVariable<RecordSetPrototype> _layer = new();
+        protected NetworkVariable<bool> m_CheckedOut = new();
+        protected NetworkVariable<bool> m_Writeable = new();
+        protected NetworkVariable<int> m_SubLayersCount = new();
 
         public void AddSubLayer(IVirgisLayer layer)
         {
@@ -79,7 +80,6 @@ namespace Virgis
 
         protected int m_SubLayersLoaded;
 
-        protected Guid m_id;
         protected IVirgisLoader m_loader;
 
         protected Task m_loaderTask;
@@ -89,7 +89,6 @@ namespace Virgis
         private readonly List<IDisposable> m_subs = new();
 
         protected void Awake() {
-            m_id = Guid.NewGuid();
             changed = true;
             isContainer = false;
         }
@@ -145,12 +144,11 @@ namespace Virgis
             {
                 if ( transform.GetChild(i).TryGetComponent(out VirgisFeature com)) {
                     com.Destroy();
-                    DeSpawn(com.transform);
                 } else if ( transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer)) {
                     sublayer.Destroy();
-                    DeSpawn(sublayer.transform);
                 }
             }
+            DeSpawn();
         }
 
         public bool Spawn(Transform parent){
@@ -231,11 +229,11 @@ namespace Virgis
                 SetMetadata(layer);
                 if (m_loader != null) {
                     await m_loader._init();
-                    m_FeatureShape.Value = m_loader.GetFeatureShape();
+                    FeatureShape.Value = m_loader.GetFeatureShape();
                 }
                 else
                 {
-                    m_FeatureShape.Value = Shapes.None;
+                    FeatureShape.Value = Shapes.None;
                 }
                 gameObject.SetActive(layer.Visible);
             } catch (Exception e) {
@@ -368,7 +366,7 @@ namespace Virgis
         /// </summary>
         /// <param name="coords"> coordinates </param>
         /// <returns>returns the featue contained in an enitity of type S</returns>
-        public IVirgisFeature GetClosest(Vector3 coords, Guid[] exclude) {
+        public IVirgisFeature GetClosest(Vector3 coords, ulong[] exclude) {
             List<VirgisFeature> list = transform.GetComponentsInChildren<VirgisFeature>().ToList();
             list = list.FindAll(item => !exclude.Contains(item.GetId()));
             KdTree<VirgisFeature> tree = new();
@@ -381,7 +379,7 @@ namespace Virgis
         /// </summary>
         /// <param name="id"> ID</param>
         /// <returns>returns the featue contained in an enitity of type S</returns>
-        public IVirgisFeature GetFeature(Guid id) {
+        public IVirgisFeature GetFeature(ulong id) {
             return GetComponents<VirgisFeature>().ToList().Find(item => item.GetId() == id);
         }
 
@@ -389,10 +387,8 @@ namespace Virgis
         /// Fecth the layer GUID
         /// </summary>
         /// <returns>GUID</returns>
-        public Guid GetId() {
-            if (m_id == Guid.Empty)
-                m_id = Guid.NewGuid();
-            return m_id;
+        public ulong GetId() {
+            return NetworkObject.NetworkObjectId;
         }
 
         /// <summary>
@@ -417,12 +413,12 @@ namespace Virgis
         /// <returns></returns>
         public virtual Shapes GetFeatureShape()
         {
-            return m_FeatureShape.Value;
+            return FeatureShape.Value;
         }
 
         public virtual SerializableMaterialHash GetFeatureDefaultColor()
         {
-            return m_DefaultCol.Value;
+            return DefaultCol.Value;
         }
 
         /// <summary>
@@ -541,12 +537,12 @@ namespace Virgis
         }
 
         public override int GetHashCode() {
-            return m_id.GetHashCode();
+            return (int)GetId();
         }
         public bool Equals(VirgisLayer other) {
             if (other == null)
                 return false;
-            return m_id.Equals(other.GetId());
+            return GetId().Equals(other.GetId());
         }
 
         public IVirgisLayer GetLayer() {
@@ -599,6 +595,16 @@ namespace Virgis
         public virtual void AddFeatureRpc(Vector3[] verteces)
         {
             throw new NotImplementedException();
+        }
+
+        public virtual void RemoveVertex(Transform vertex) 
+        {
+            vertex.GetComponent<VirgisFeature>().RemoveFeatureRpc();
+        }
+
+        public virtual void AddVertex(Vector3 position) 
+        {
+            //do nothing
         }
     }
 }

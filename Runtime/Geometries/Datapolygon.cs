@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
-using UnityEditor;
 
 namespace Virgis
 {

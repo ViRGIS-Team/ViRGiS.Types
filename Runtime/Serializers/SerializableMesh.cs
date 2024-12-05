@@ -4,8 +4,6 @@ using UnityEngine;
 using Draco;
 using Draco.Encoder;
 using System;
-using System.Linq;
-using System.Collections.Generic;
 
 
 namespace Virgis
@@ -29,25 +27,13 @@ namespace Virgis
         /// </summary>
         public OnMeshChangedDelegate OnMeshChanged;
 
-        /// <summary>
-        /// Delegate type for Mesh Vertex changed event
-        /// </summary>
-        /// <param name="vID">the array of vertex IDs</param>
-        /// <param name="values">the array of new Vector3 positions</param>
-        public delegate void OnVertexChangedDelegate(int[] vIDs, Vector3[] values);
-
-        /// <summary>
-        /// The callback to be invoked when the vertex gets changed
-        /// </summary>
-        public OnVertexChangedDelegate OnVertexChanged;
-
         public DMesh3 DMesh3
         {
             get { return m_Dmesh; }
             set {
                 value.CompactInPlace();
-                m_Dmesh = value;
                 SubMesh = new(value);
+                m_Dmesh = value;
                 m_Mesh = (Mesh)m_Dmesh;
             }
         }
@@ -60,6 +46,7 @@ namespace Virgis
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(m_Mesh, Vector3.one, 0.01f);
             m_Data = serResult[0].data.ToArray();
             Array.ForEach(serResult, res => res.Dispose());
+            SetDirty(true);
         }
 
         private async void MeshDeserialize()
@@ -69,27 +56,15 @@ namespace Virgis
             OnMeshChanged.Invoke(m_Mesh);
         }
 
-        public void SendUpdateSubmesh()
-        {
-            SetDirty(true);
-            List<Vector3> tmp = new();
-            foreach (Vector3d v in SubMesh.Vertices()) tmp.Add((Vector3)v);
-            OnVertexChanged.Invoke(SubMesh.VertexIndices().ToArray(), tmp.ToArray());
-        }
+        //public void SendUpdateSubmesh()
+        //{
+        //    SetDirty(true);
+
+        //}
 
         public override void WriteDelta(FastBufferWriter writer)
         {
-            int[] vIDs = SubMesh.VertexIndices().ToArray();
-            writer.WriteValueSafe(vIDs);
-            Vector3[] vertices = new Vector3[vIDs.Length];
-            foreach (int vID in vIDs)
-            {
-                Vector3d v3d = SubMesh.GetVertex(vID);
-                v3d.ChangeAxisOrderTo(AxisOrder.EUN);
-                writer.WriteValueSafe((float)v3d.x);
-                writer.WriteValueSafe((float)v3d.y);
-                writer.WriteValueSafe((float)v3d.z);
-            }
+            WriteField(writer);
         }
 
         public override void WriteField(FastBufferWriter writer)
@@ -120,16 +95,7 @@ namespace Virgis
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
-            reader.ReadValueSafe(out int[] vIDs);
-            Vector3[] vertices = new Vector3[vIDs.Length];
-            for (int i = 0; i < vIDs.Length; i++)
-            {
-                reader.ReadValueSafe(out float x);
-                reader.ReadValueSafe(out float y);
-                reader.ReadValueSafe(out float z);
-                vertices[i] = new Vector3(x, y, z);
-            }
-            OnVertexChanged.Invoke(vIDs, vertices);
+            ReadField(reader);
         }
 
         public bool IsMesh { get { return m_Mesh != null; } }

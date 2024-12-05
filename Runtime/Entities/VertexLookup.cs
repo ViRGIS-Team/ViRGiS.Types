@@ -8,12 +8,10 @@ namespace Virgis
     /// </summary>
     public class VertexLookup
     {
-        public Guid Id;
+        public ulong Id;
         public int Vertex;
-        public bool isVertex;
         public VirgisFeature Com;
         public LineSegment Line;
-        public int pVertex;
 
         public override bool Equals(object obj)
         {

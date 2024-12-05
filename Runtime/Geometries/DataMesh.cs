@@ -22,7 +22,6 @@ SOFTWARE. */
 
 using UnityEngine;
 using VirgisGeometry;
-using System.Collections.Generic;
 using System;
 using System.Linq;
 

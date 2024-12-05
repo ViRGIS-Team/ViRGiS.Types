@@ -34,6 +34,7 @@ namespace Virgis {
         /// <summary>
         /// The Symbology for this Feature
         /// </summary>
+        [HideInInspector]
         public Dictionary<string, UnitPrototype> Symbology = new();
         /// <summary>
         /// The Label object for this feature
@@ -50,14 +51,7 @@ namespace Virgis {
             NullifyHitPos = true,
             BlockMove = false
         };
-
-        private Guid m_Id; // internal ID for this component - used when it is part of a larger structure
         private object m_FID;
-
-        void Awake()
-        {
-            m_Id = Guid.NewGuid();
-        }
 
         public virtual void Start()
         {
@@ -126,10 +120,10 @@ namespace Virgis {
             {
                 if(transform.GetChild(i).TryGetComponent(out VirgisFeature com )){
                     com.Destroy();
-                    DeSpawn(com.transform);
                 }
             }
             DeSpawn(transform);
+            Destroy(gameObject);
         }
 
         public bool Spawn(Transform parent)
@@ -285,18 +279,25 @@ namespace Virgis {
         /// </summary>
         /// <param name="position">Vector3</param>
         /// <returns>VirgisComponent The new vertex</returns>
-        [Rpc(SendTo.Server)]
-        public virtual void AddVertexRpc(Vector3 position) {
-            throw new System.NotImplementedException();
+        /// 
+        public virtual void AddVertex(Vector3 position)
+        {
+            //do nothing
         }
 
         /// <summary>
-        /// call this to remove a vertxe from a feature
+        /// call this to remove this vertex from a feature
         /// </summary>
-        /// <param name="vertex">Vertex to remove</param>
+        public virtual void RemoveVertex(Transform vertex = null)
+        {
+            if (vertex == null) vertex = transform;
+            GetParent(out IVirgisEntity parent);
+            parent.RemoveVertex(vertex);
+        }
+
         [Rpc(SendTo.Server)]
-        public virtual void RemoveVertexRpc(byte[] vertex) {
-            throw new System.NotImplementedException();
+        public virtual void RemoveFeatureRpc() {
+            Destroy();
         }
 
 
@@ -309,8 +310,8 @@ namespace Virgis {
             throw new System.NotImplementedException();
         }
 
-        public Guid GetId() {
-            return m_Id;
+        public ulong GetId() {
+            return NetworkObject.NetworkObjectId;
         }
 
         public virtual Dictionary<string, string> GetInfo()
@@ -337,12 +338,12 @@ namespace Virgis {
                 return Equals(com);
         }
         public override int GetHashCode() {
-            return m_Id.GetHashCode();
+            return (int)GetId();
         }
         public bool Equals(VirgisFeature other) {
             if (other == null)
                 return false;
-            return (this.m_Id.Equals(other.GetId()));
+            return (this.GetId().Equals(other.GetId()));
         }
 
         /// <summary>

@@ -34,12 +34,14 @@ namespace Virgis
     {
         void Selected(SelectionType button);
         void UnSelected(SelectionType button);
-        Guid GetId();
+        ulong GetId();
         VirgisFeature GetClosest(Vector3 coords, Guid[] exclude);
         void MoveAxis(MoveArgs args);
         void Translate(MoveArgs args);
         void MoveTo(MoveArgs args);
         void VertexMove(MoveArgs args);
+        void RemoveVertex(Transform vertex);
+        void AddVertex(Vector3 pos);
         IVirgisLayer GetLayer();
         bool GetParent(out IVirgisEntity parent);
         void OnEdit(bool inSession);
@@ -52,8 +54,9 @@ namespace Virgis
     /// </summary>
     public interface IVirgisFeature : IVirgisEntity
     {
-        void AddVertexRpc(Vector3 position);
-        void RemoveVertexRpc(byte[] vertex);
+        void AddVertex(Vector3 position);
+        void RemoveFeatureRpc();
+
         void SetFeatureState(VirgisFeatureState state);
         T GetGeometry<T>();
 

@@ -10,7 +10,7 @@ namespace Virgis
     /// </summary>
     public class MoveArgs: INetworkSerializable
     {
-        public Guid id;
+        public ulong id;
         public Vector3 pos; // OPTIONAL point to move TO in world space coordinates
         public Vector3 translate; // OPTIONSAL translation in world units to be applied to target
         public Quaternion rotate; // OPTIONAL rotation to be applied to target

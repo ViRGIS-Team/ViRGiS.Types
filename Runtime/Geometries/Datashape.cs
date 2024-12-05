@@ -98,14 +98,14 @@ namespace Virgis
             mesh.umesh.MeshFinalize();
         }
 
-        public override void AddVertexRpc(Vector3 position) {
+        public override void AddVertex(Vector3 position) {
             _redraw();
-            base.AddVertexRpc(position);
+            base.AddVertex(position);
         }
 
-        public override void RemoveVertexRpc(byte[] vertex) {
+        public override void RemoveVertex(Transform vertex) {
             if (m_State.BlockMove) {
-                Destroy(gameObject);
+                RemoveFeatureRpc();
             } else {
                 _redraw();
             }

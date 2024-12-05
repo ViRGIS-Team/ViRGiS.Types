@@ -63,5 +63,10 @@ namespace Virgis
         {
             m_loader._addFeature(verteces);
         }
+
+        public override void RemoveVertex(Transform vertex)
+        {
+            //do nothing
+        }
     }
 }
