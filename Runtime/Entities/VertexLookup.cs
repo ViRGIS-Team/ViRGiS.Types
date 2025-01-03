@@ -10,8 +10,8 @@ namespace Virgis
     {
         public ulong Id;
         public int Vertex;
-        public VirgisFeature Com;
-        public LineSegment Line;
+        public Datapoint VertexComp;
+        public LineSegment LineComp;
 
         public override bool Equals(object obj)
         {

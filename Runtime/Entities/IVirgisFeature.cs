@@ -54,7 +54,6 @@ namespace Virgis
     /// </summary>
     public interface IVirgisFeature : IVirgisEntity
     {
-        void AddVertex(Vector3 position);
         void RemoveFeatureRpc();
 
         void SetFeatureState(VirgisFeatureState state);

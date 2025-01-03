@@ -24,6 +24,7 @@ using UnityEngine;
 using VirgisGeometry;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Virgis {
 
@@ -33,7 +34,7 @@ namespace Virgis {
         public MeshFilter MeshFilter;
         public MeshCollider[] MeshColliders;
 
-        protected int[] m_VertexMap; // holds the map between the DMesh vertex ids and the Unity Mesh vertex ids
+        protected Dictionary<int, int> m_VertexMap; // holds the map between the DMesh vertex ids and the Unity Mesh vertex ids
 
 
         public override void OnNetworkSpawn(){
@@ -47,18 +48,29 @@ namespace Virgis {
             umesh.OnMeshChanged -= SetMesh;
         }
 
-        private void SetMesh(Mesh newValue){
+        protected void SetMesh(Mesh newValue){
 
             // load mesh as unity mesh and add to MeshFilter
+
             if (!NetworkManager.IsServer)
             {
                 Vector2[] uv = newValue.uv2;
+                m_VertexMap = new();
                 for (int i = 0; i < uv.Length; i++)
                 {
                     uv[i].x = Mathf.Round(uv[i].x);
                     uv[i].y = Mathf.Round(uv[i].y);
+                    m_VertexMap.Add((int)uv[i].y, i);
                 }
                 newValue.uv4 = uv;
+            } else
+            {
+                Vector2[] uv = newValue.uv4;
+                m_VertexMap = new ();
+                for (int i = 0; i < uv.Length; i++)
+                {
+                    m_VertexMap.Add((int)uv[i].y,i);
+                }
             }
             newValue.RecalculateBounds();
             MeshFilter.mesh = newValue;
@@ -70,12 +82,12 @@ namespace Virgis {
         /// </summary>
         /// <param name="colors"></param>
         /// <returns></returns>
-        public static Vector2[] ToUV(byte[] colors)
+        public static Vector2[] ToUV(byte[] colors, int[] map)
         {
             Vector2[] uv = new Vector2[colors.Length];
             for (int i = 0; i < colors.Length; i++)
             {
-                uv[i] = new Vector2(colors[i], i);
+                uv[i] = new Vector2(colors[i], map[i]);
             };
             return uv;
         }
@@ -85,11 +97,6 @@ namespace Virgis {
 
             // create a map between the Unity Mesh vertices and the DMesh vertices on the server using UV4
             Vector2[] uvs = mesh.uv4;
-            m_VertexMap = new int[uvs.Length];
-            for (int i = 0; i < uvs.Length; i++)
-            {
-                m_VertexMap[(int)uvs[i].y] = i;
-            }
 
             // create the mesh colliders
             Mesh imesh = new()

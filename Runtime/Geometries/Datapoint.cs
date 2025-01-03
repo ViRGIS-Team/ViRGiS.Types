@@ -92,17 +92,17 @@ namespace Virgis
 
         protected override void _move(MoveArgs args)
         {
-            if (args.translate != Vector3.zero)
-            {
+            //if (args.translate != Vector3.zero)
+            //{
                 args.id = GetId();
                 transform.parent.SendMessage("Translate", args, SendMessageOptions.DontRequireReceiver);
-            }
-            else if (args.pos != Vector3.zero && args.pos != transform.position)
-            {
-                args.id = GetId();
-                args.translate = args.pos - transform.position;
-                transform.parent.SendMessage("Translate", args, SendMessageOptions.DontRequireReceiver);
-            }
+            //}
+            //else if (args.pos != Vector3.zero && args.pos != transform.position)
+            //{
+            //    args.id = GetId();
+            //    args.translate = args.pos - transform.position;
+            //    transform.parent.SendMessage("Translate", args, SendMessageOptions.DontRequireReceiver);
+            //}
 
         }
 

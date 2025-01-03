@@ -22,8 +22,6 @@ SOFTWARE. */
 
 using UnityEngine;
 using VirgisGeometry;
-using gs;
-using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Diagnostics;
@@ -44,6 +42,7 @@ namespace Virgis
         private bool m_selectOn = false;
 
         public override void OnNetworkSpawn(){
+            umesh.KeepDmeshUpdatedOnClient = true;
             base.OnNetworkSpawn();
         }
 
@@ -61,14 +60,16 @@ namespace Virgis
             int triangle = lastHit.triangleIndex;
             Vector3 bary = lastHit.barycentricCoordinate;
             int[] triangles = (lastHit.collider as MeshCollider).sharedMesh.triangles;
-            if (bary.x >= bary.y && bary.x >= bary.z) m_selectedVertex = triangles[triangle * 3]; 
-            else if (bary.y >= bary.x && bary.y >= bary.z) m_selectedVertex = triangles[triangle * 3 + 1];
-            else if (bary.z >= bary.x && bary.z >= bary.y) m_selectedVertex = triangles[triangle * 3 + 2];
+            int selectedUVertex = 0;
+            if (bary.x >= bary.y && bary.x >= bary.z) selectedUVertex = triangles[triangle * 3]; 
+            else if (bary.y >= bary.x && bary.y >= bary.z) selectedUVertex = triangles[triangle * 3 + 1];
+            else if (bary.z >= bary.x && bary.z >= bary.y) selectedUVertex = triangles[triangle * 3 + 2];
             
             
             // get the collider mesh to get the verticesMesh and get the DMesh3 vertex id
-            Mesh cmesh = (lastHit.collider as MeshCollider).sharedMesh;
-            Vector2 uv = cmesh.uv4[ m_selectedVertex];
+            Mesh cmesh = (State.instance.lastHit.collider as MeshCollider).sharedMesh;
+            Vector2 uv = cmesh.uv4[ selectedUVertex];
+            m_selectedVertex = (int)uv.y;
 
             //send to server
             SelectedRpc(button, (int)uv.y);
@@ -107,6 +108,7 @@ namespace Virgis
             UnSelectedRpc(button);
             Destroy(marker);
             UpdateUnityMesh();
+            n = -1;
         }
 
         [Rpc(SendTo.Server)]
@@ -121,24 +123,8 @@ namespace Virgis
         /// This is called by the Avatar on the client to move the current vertex
         /// </summary>
         /// <param name="args"></param>
-        public override void MoveTo(MoveArgs args){
-            if (!m_BlockMove)
-            {
-                Vector3 localTranslate = transform.InverseTransformVector(args.translate);
-                marker.transform.localPosition += localTranslate;//= transform.InverseTransformPoint(args.pos);
-                Mesh sm = MeshFilter.sharedMesh;
-                Vector3[] vertices = MeshFilter.sharedMesh.vertices;
-                vertices[m_selectedVertex] += localTranslate;
-                sm.vertices = vertices;
-            }
-            MoveToRpc(args, m_State, !IsServer);
-        }
-
-        /// <summary>
-        /// This is run on the server whenever there is a movbe event
-        /// </summary>
-        /// <param name="args"></param>
-        protected override void _move(MoveArgs args){
+        public override void MoveTo(MoveArgs args) {
+            if (!m_selectOn) return;
             Stopwatch timer = new();
             timer.Start();
             if (m_BlockMove)
@@ -151,11 +137,11 @@ namespace Virgis
             }
             else
             {
+                Vector3 localTranslate = transform.InverseTransformVector(args.translate);
+                if (marker != null) marker.transform.localPosition += localTranslate;
                 if (args.translate != Vector3.zero && m_selectOn)
                 {
-                    Vector3 localTranslate = transform.InverseTransformVector(args.translate);
                     Vector3d target = umesh.DMesh3.GetVertex(m_selectedVertex) + localTranslate;
-                    target.axisOrder = AxisOrder.EUN;
 
                     // check the current submesh is still correct
                     if (n != (int)args.scale)
@@ -165,6 +151,7 @@ namespace Virgis
                         //
                         // create an n-ring Sub Mesh
                         //
+                        umesh.SubMesh = new(umesh.DMesh3);
                         umesh.SubMesh.Compute(m_selectedVertex, n);
                     }
                     //
@@ -172,35 +159,53 @@ namespace Virgis
                     // set the constraint that the selected vertex is moved to position
                     // set the contraint that the n-ring remains stationary
                     //
-                    LaplacianMeshDeformer deform = new LaplacianMeshDeformer(GetMesh());
+                    LaplacianMeshDeformer deform = new LaplacianMeshDeformer(umesh.SubMesh);
                     deform.SetConstraint(m_selectedVertex, target, 1, true);
                     foreach (int v in MeshIterators.BoundaryVertices(umesh.SubMesh))
                     {
-                        deform.SetConstraint(v, umesh.SubMesh.GetVertex(v), 10, false);
+                        if (v == m_selectedVertex) continue;
+                        if (umesh.SubMesh.IsSubmeshInternalBoundaryVertex(v))
+                        {
+                            deform.SetConstraint(v, umesh.SubMesh.GetVertex(v), 1, true);
+                        } else
+                        {
+                            deform.SetConstraint(v, umesh.SubMesh.GetVertex(v), 3, false);
+                        }
                     }
                     deform.SolveAndUpdateMesh();
+                    Mesh sm = MeshFilter.sharedMesh;
+                    Vector3[] vertices = sm.vertices;
+
+                    foreach (int vert in umesh.SubMesh.VertexIndices())
+                    {
+                        int vID = m_VertexMap[vert];
+                        vertices[vID] = (Vector3)umesh.SubMesh.GetVertex(vert);
+                    }
+                    sm.vertices = vertices;
+                    sm.UploadMeshData(false);
+                    if (!NetworkManager.Singleton.IsHost)
+                    {
+                        MoveToRpc(
+                            umesh.SubMesh.VertexIndices().ToArray(),
+                            umesh.SubMesh.VertexValues().ToArray(),
+                            umesh.SubMesh.axisOrder.ToArray()
+                            );
+                    };
                 }
-                timer.Stop();
-                UnityEngine.Debug.LogWarning($"Edit took : {timer.Elapsed.TotalSeconds} seconds");
-                List<Vector3> tmp = new();
-                foreach (Vector3d v in umesh.SubMesh.Vertices()) tmp.Add((Vector3)v);
-                UpdateSubmeshRpc(umesh.SubMesh.VertexIndices().ToArray(), tmp.ToArray());
             }
+            timer.Stop();
+            UnityEngine.Debug.LogWarning($"Edit took : {timer.Elapsed.TotalSeconds} seconds");
         }
 
-        [Rpc(SendTo.ClientsAndHost)]
-        protected void UpdateSubmeshRpc(int[] vIDs, Vector3[] values){
-            Mesh sm = MeshFilter.sharedMesh;
-            Vector3[] vertices = sm.vertices;
-
-            // map all of the change
-            for (int i = 0; i< vIDs.Length; i++)
+        [Rpc(SendTo.Server)]
+        public void MoveToRpc(int[] vIDs, double[] values, byte[] axisOrder)
+        {
+            for (int i = 0; i < vIDs.Length; i++)
             {
-                int vID = m_VertexMap[vIDs[i]];
-                if (m_selectOn && vID == m_selectedVertex) continue;
-                vertices[vID] = values[i];
+                int pointer = 0;
+                Vector3d val = new Vector3d(values[pointer++], values[pointer++], values[pointer++]) { axisOrder = new AxisOrder(axisOrder) };
+                umesh.DMesh3.SetVertex(vIDs[i], val);
             }
-            sm.vertices = vertices;
         }
 
         /// <summary>
@@ -257,7 +262,7 @@ namespace Virgis
             umesh.DMesh3 = dmeshin;
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
-                umesh.Mesh.uv4 = DataMesh.ToUV(colors);
+                umesh.Mesh.uv4 = DataMesh.ToUV(colors, umesh.DMesh3.VertexMap);
                 umesh.MeshFinalize();
             }
             ));
@@ -276,65 +281,76 @@ namespace Virgis
             }
         }
 
-        public override void AddVertex(Vector3 position){
+        public override void AddVertex(Vector3 position)
+        {
             Vector3d localPosition = (Vector3d)transform.InverseTransformPoint(position);
-            DMesh3 mesh = GetMesh();
-            //m_aabb = new DMeshAABBTree3(mesh, true);
-            //currentHitTri = m_aabb.FindNearestTriangle(localPosition);
-            //m_aabb.Build();
-            //Vector3d V0 = new Vector3d();
-            //Vector3d V1 = new Vector3d();
-            //Vector3d V2 = new Vector3d();
-            //mesh.GetTriVertices(currentHitTri, ref V0, ref V1, ref V2);
 
-            int currentHitTri = State.instance.lastHit.triangleIndex;
-            Index3i tri = mesh.GetTriangle(currentHitTri);
-            Vector3 currentBari = State.instance.lastHit.barycentricCoordinate; //MathUtil.BarycentricCoords(localPosition, V0, V1, V2);
+            // get the hit triangle
+            RaycastHit lastHit = State.instance.lastHit;
+            int triangle = lastHit.triangleIndex;
 
-            int edgeId = 0;
+            // get the collision mesh and find the DMesh vertices for the hit triangle
+            Mesh cmesh = (State.instance.lastHit.collider as MeshCollider).sharedMesh;
+            Vector2[] uv = cmesh.uv4;
+
+            int vIDa = (int)uv[cmesh.triangles[3 * triangle]].y;
+            int vIDb = (int)uv[cmesh.triangles[3 * triangle + 1]].y;
+            int vIDc = (int)uv[cmesh.triangles[3 * triangle + 2]].y;
+
+            DMesh3 dmesh = GetMesh();
+            int currentHitTri = dmesh.FindTriangle(vIDa, vIDb, vIDc);
+            if (!dmesh.IsTriangle(currentHitTri)) throw new Exception("Bad Triangle when adding vertex to mesh");
+            Index3i tri = dmesh.GetTriangle(currentHitTri);
+            Vector3d v0 = dmesh.GetVertex(vIDa);
+            Vector3d v1 = dmesh.GetVertex(vIDa);
+            Vector3d v2 = dmesh.GetVertex(vIDa);
+
+            Vector3d currentBari = MathUtil.BarycentricCoords(ref localPosition, ref v0 , ref v1, ref v2);
+
+            int edgeId = -1;
             if (currentBari.x > currentBari.y && currentBari.x > currentBari.z)
                 if (currentBari.y < currentBari.z)
-                    edgeId = mesh.FindEdgeFromTri(tri.a, tri.c, currentHitTri);
-                else
-                    edgeId = mesh.FindEdgeFromTri(tri.a, tri.b, currentHitTri);
+                    edgeId = dmesh.FindEdgeFromTri(tri.a, tri.b, currentHitTri);
             if (currentBari.y > currentBari.x && currentBari.y > currentBari.z)
                 if (currentBari.x < currentBari.z)
-                    edgeId = mesh.FindEdgeFromTri(tri.b, tri.c, currentHitTri);
-                else
-                    edgeId = mesh.FindEdgeFromTri(tri.b, tri.a, currentHitTri);
+                    edgeId = dmesh.FindEdgeFromTri(tri.b, tri.c, currentHitTri);
             if (currentBari.z > currentBari.y && currentBari.z > currentBari.x)
                 if (currentBari.y < currentBari.x)
-                    edgeId = mesh.FindEdgeFromTri(tri.c, tri.a, currentHitTri);
-                else
-                    edgeId = mesh.FindEdgeFromTri(tri.c, tri.b, currentHitTri);
-
-            mesh.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
-            mesh.SetVertex(result.vNew, localPosition);
-            umesh.DMesh3 = mesh;
+                    edgeId = dmesh.FindEdgeFromTri(tri.c, tri.a, currentHitTri);
+            if (!dmesh.IsEdge(edgeId)) throw new Exception("Could not find the edge when adding vertex to mesh");
+            UnityEngine.Debug.Log($"Number of Verteces before edge split {dmesh.VertexCount} ");
+            dmesh.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
+            UnityEngine.Debug.Log($"Number of Verteces after edge split {dmesh.VertexCount} ");
+            dmesh.SetVertex(result.vNew, localPosition);
+            umesh.RefreshUnityMesh();
+            StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
+            {
+                umesh.Mesh.uv4 = DataMesh.ToUV(colors, umesh.DMesh3.VertexMap);
+                UpdateUnityMesh();
+            }
+            ));
             UnSelected(SelectionType.SELECT);
         }
-
         /// <summary>
         /// This is called when you want to delete the currently selected vertex
         /// </summary>
         public override void RemoveVertex(Transform vertex = null)
         {
-            RemoveVertexRpc();
-        }
-
-        [Rpc(SendTo.Server)]
-        public void RemoveVertexRpc() { 
+            bool isClosed = GetMesh().CachedIsClosed;
             GetMesh().RemoveVertex(m_selectedVertex);
-            if (m_oldDmesh.IsClosed())
+            if (isClosed)
             {
-                MeshAutoRepair mr = new MeshAutoRepair(GetMesh());
+                MeshAutoRepair mr = new (GetMesh());
                 mr.Apply();
                 umesh.DMesh3 = mr.Mesh;
             }
-            else
+            umesh.RefreshUnityMesh();
+            StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
-                GetMesh().CompactInPlace();
+                umesh.Mesh.uv4 = DataMesh.ToUV(colors, umesh.DMesh3.VertexMap);
+                umesh.OnMeshChanged.Invoke(umesh.Mesh);
             }
+            ));
             UnSelected(SelectionType.SELECT);
         }
     }

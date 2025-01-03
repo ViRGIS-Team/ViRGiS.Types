@@ -394,12 +394,12 @@ namespace Virgis
 
         public void RemoveVertex(Transform vertex)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public void AddVertex(Vector3 pos)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
     }
 }

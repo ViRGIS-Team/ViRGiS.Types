@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Virgis
@@ -38,6 +37,8 @@ namespace Virgis
         public int m_vStart; // Vertex ID of the start of the line
         public int m_vEnd; // Vertex ID of the end of the line
         private Transform m_Shape;
+        private Datapoint m_SelectedVertex;
+
 
         public new void Start()
         {
@@ -106,6 +107,37 @@ namespace Virgis
 
         public override void AddVertex(Vector3 position) {
             GetComponentInParent<Dataline>().AddVertexRpc( GetId(), position);
+        }
+
+        public override void Selected(SelectionType button)
+        {
+            base.Selected(button);
+            float dist1 = (m_State.LastHit - m_Start).sqrMagnitude;
+            float dist2 = (m_State.LastHit - m_End).sqrMagnitude;
+            int selected = -1;
+            if (dist1 < dist2 * .5f) selected = m_vStart;
+            if (dist2 < dist1 * .5f) selected = m_vEnd;
+            if (selected == -1) return;
+            if (GetParent(out IVirgisEntity parent)) {
+                m_SelectedVertex = (parent as Dataline).GetVertexById(selected) as Datapoint;
+                m_SelectedVertex.Selected(button);
+            }
+        }
+
+        public override void MoveTo(MoveArgs args)
+        {
+            if (m_SelectedVertex != null)
+            {
+                m_SelectedVertex.MoveTo(args);
+            }
+        }
+
+        public override void RemoveVertex(Transform vertex = null)
+        {
+            if (m_SelectedVertex != null)
+            {
+                m_SelectedVertex.RemoveVertex(m_SelectedVertex.transform);
+            }
         }
     }
 }

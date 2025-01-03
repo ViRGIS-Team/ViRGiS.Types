@@ -68,7 +68,7 @@ namespace Virgis
             catch (Exception e)
             {
                 RecordSetPrototype temp = GetLayer().GetMetadata();
-                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {gisId as string}");
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {gisId as string} : {e.Message}");
             }
 
             com.SetMaterial(m_Col.Value);

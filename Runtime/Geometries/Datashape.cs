@@ -108,7 +108,8 @@ namespace Virgis
                 RemoveFeatureRpc();
             } else {
                 _redraw();
-            }
+            };
+            base.RemoveVertex(vertex);
         }
 
         public override void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)

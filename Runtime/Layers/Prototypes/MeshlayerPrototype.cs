@@ -68,10 +68,15 @@ namespace Virgis
         }
 
         [Rpc(SendTo.Server)]
-        public void AddFeatureRpc(Vector3[] verteces, int[] tris, Vector3[] normals)
+        public void AddFeatureRpc(Vector3[] verteces, int[] tris, Vector3[] normals, bool close)
         {
             DMesh3 mesh = DMesh3Builder.Build<Vector3, int, Vector3>(verteces, tris, normals, null, AxisOrder.EUN);
             mesh.Clockwise = true;
+            if (close)
+            {
+                MeshAutoRepair mr = new(mesh);
+                mr.Apply();
+            }
             m_loader._addFeature(mesh);
         }
     }

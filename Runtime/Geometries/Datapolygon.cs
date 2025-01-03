@@ -92,7 +92,7 @@ namespace Virgis
             catch (Exception e)
             {
                 RecordSetPrototype temp = GetLayer().GetMetadata();
-                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {GetFID<object>()}");
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {GetFID<object>()} : {e.Message}");
             }
             return gameObject;
         }
