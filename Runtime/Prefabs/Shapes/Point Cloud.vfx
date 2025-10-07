@@ -20,7 +20,7 @@ MonoBehaviour:
     x: 691
     y: -133
     width: 675
-    height: 2058
+    height: 2055
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -949,7 +949,7 @@ MonoBehaviour:
   attribute: position
   Composition: 0
   SampleMode: 2
-  mode: 0
+  mode: 1
   channels: 6
   usePointCount: 0
 --- !u!114 &8926484042661614610
