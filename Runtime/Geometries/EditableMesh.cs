@@ -297,15 +297,22 @@ namespace Virgis
             int vIDb = (int)uv[cmesh.triangles[3 * triangle + 1]].y;
             int vIDc = (int)uv[cmesh.triangles[3 * triangle + 2]].y;
 
+            Vector3 uVert0 = cmesh.vertices[vIDa];
+            Vector3 uVert1 = cmesh.vertices[vIDb];
+            Vector3 uVert2 = cmesh.vertices[vIDc];
+
             DMesh3 dmesh = GetMesh();
             int currentHitTri = dmesh.FindTriangle(vIDa, vIDb, vIDc);
             if (!dmesh.IsTriangle(currentHitTri)) throw new Exception("Bad Triangle when adding vertex to mesh");
             Index3i tri = dmesh.GetTriangle(currentHitTri);
             Vector3d v0 = dmesh.GetVertex(vIDa);
-            Vector3d v1 = dmesh.GetVertex(vIDa);
-            Vector3d v2 = dmesh.GetVertex(vIDa);
+            Vector3d v1 = dmesh.GetVertex(vIDb);
+            Vector3d v2 = dmesh.GetVertex(vIDc);
 
             Vector3d currentBari = MathUtil.BarycentricCoords(ref localPosition, ref v0 , ref v1, ref v2);
+
+            if ((currentBari.x + currentBari.y + currentBari.z) != 1)
+                UnityEngine.Debug.Log("invalid barycentric coords" + currentBari.ToString());
 
             int edgeId = -1;
             if (currentBari.x > currentBari.y && currentBari.x > currentBari.z)
@@ -326,7 +333,7 @@ namespace Virgis
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
                 umesh.Mesh.uv4 = DataMesh.ToUV(colors, umesh.DMesh3.VertexMap);
-                UpdateUnityMesh();
+                umesh.OnMeshChanged.Invoke(umesh.Mesh);
             }
             ));
             UnSelected(SelectionType.SELECT);
