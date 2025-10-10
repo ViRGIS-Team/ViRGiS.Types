@@ -36,7 +36,7 @@ namespace Virgis
         private GameObject marker;
 
         private bool m_BlockMove = false; // is entity in a block-move state
-        private DMesh3 m_oldDmesh; // holds the previous mesh during editing
+
         private int m_selectedVertex; // holds the current Unity Mesh vertex ID for the selected vertex - note that in clients this NOT the same as the DMesh vertex id
         private int n = -1; //indicator that the n-ring is built
         private bool m_selectOn = false;
@@ -87,7 +87,6 @@ namespace Virgis
 
         [Rpc(SendTo.Server)]
         public void SelectedRpc(SelectionType button, int hitPosition){
-            m_oldDmesh = new DMesh3(umesh.DMesh3);
             m_selectOn = true;
             transform.parent.SendMessage("Selected", button, SendMessageOptions.DontRequireReceiver);
             m_selectedVertex = hitPosition;
@@ -107,7 +106,6 @@ namespace Virgis
             m_BlockMove = false;
             UnSelectedRpc(button);
             Destroy(marker);
-            UpdateUnityMesh();
             n = -1;
         }
 
@@ -141,7 +139,15 @@ namespace Virgis
                 if (marker != null) marker.transform.localPosition += localTranslate;
                 if (args.translate != Vector3.zero && m_selectOn)
                 {
-                    Vector3d target = umesh.DMesh3.GetVertex(m_selectedVertex) + localTranslate;
+                    Vector3d target;
+                    if (umesh.DMesh3.IsVertex(m_selectedVertex))
+                    {
+                        target = umesh.DMesh3.GetVertex(m_selectedVertex) + localTranslate;
+                    } else 
+                    {
+                        UnityEngine.Debug.Log("Selected Vertex is not a Vertex");
+                        return;
+                    }
 
                     // check the current submesh is still correct
                     if (n != (int)args.scale)
@@ -193,6 +199,7 @@ namespace Virgis
                     };
                 }
             }
+            UpdateUnityMesh();
             timer.Stop();
             UnityEngine.Debug.LogWarning($"Edit took : {timer.Elapsed.TotalSeconds} seconds");
         }
@@ -301,34 +308,49 @@ namespace Virgis
             Vector3 uVert1 = cmesh.vertices[vIDb];
             Vector3 uVert2 = cmesh.vertices[vIDc];
 
-            DMesh3 dmesh = GetMesh();
-            int currentHitTri = dmesh.FindTriangle(vIDa, vIDb, vIDc);
-            if (!dmesh.IsTriangle(currentHitTri)) throw new Exception("Bad Triangle when adding vertex to mesh");
-            Index3i tri = dmesh.GetTriangle(currentHitTri);
-            Vector3d v0 = dmesh.GetVertex(vIDa);
-            Vector3d v1 = dmesh.GetVertex(vIDb);
-            Vector3d v2 = dmesh.GetVertex(vIDc);
+            int currentHitTri = umesh.DMesh3.FindTriangle(vIDa, vIDb, vIDc);
+            if (!umesh.DMesh3.IsTriangle(currentHitTri))
+            {
+                UnityEngine.Debug.Log("Bad Triangle when adding vertex to mesh");
+                return;
+            }
+            Index3i tri = umesh.DMesh3.GetTriangle(currentHitTri);
+            Vector3d v0 = umesh.DMesh3.GetVertex(vIDa);
+            Vector3d v1 = umesh.DMesh3.GetVertex(vIDb);
+            Vector3d v2 = umesh.DMesh3.GetVertex(vIDc);
 
             Vector3d currentBari = MathUtil.BarycentricCoords(ref localPosition, ref v0 , ref v1, ref v2);
 
             if ((currentBari.x + currentBari.y + currentBari.z) != 1)
+            {
                 UnityEngine.Debug.Log("invalid barycentric coords" + currentBari.ToString());
-
+                return;
+            }
             int edgeId = -1;
             if (currentBari.x > currentBari.y && currentBari.x > currentBari.z)
                 if (currentBari.y < currentBari.z)
-                    edgeId = dmesh.FindEdgeFromTri(tri.a, tri.b, currentHitTri);
+                    edgeId = umesh.DMesh3.FindEdgeFromTri(tri.a, tri.c, currentHitTri);
+                else
+                    edgeId = umesh.DMesh3.FindEdgeFromTri(tri.a, tri.b, currentHitTri);
             if (currentBari.y > currentBari.x && currentBari.y > currentBari.z)
-                if (currentBari.x < currentBari.z)
-                    edgeId = dmesh.FindEdgeFromTri(tri.b, tri.c, currentHitTri);
+                    if (currentBari.x < currentBari.z)
+                        edgeId = umesh.DMesh3.FindEdgeFromTri(tri.b, tri.c, currentHitTri);
+                    else
+                        edgeId = umesh.DMesh3.FindEdgeFromTri(tri.b, tri.a, currentHitTri);
             if (currentBari.z > currentBari.y && currentBari.z > currentBari.x)
                 if (currentBari.y < currentBari.x)
-                    edgeId = dmesh.FindEdgeFromTri(tri.c, tri.a, currentHitTri);
-            if (!dmesh.IsEdge(edgeId)) throw new Exception("Could not find the edge when adding vertex to mesh");
-            UnityEngine.Debug.Log($"Number of Verteces before edge split {dmesh.VertexCount} ");
-            dmesh.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
-            UnityEngine.Debug.Log($"Number of Verteces after edge split {dmesh.VertexCount} ");
-            dmesh.SetVertex(result.vNew, localPosition);
+                    edgeId = umesh.DMesh3.FindEdgeFromTri(tri.c, tri.a, currentHitTri);
+                else
+                    edgeId = umesh.DMesh3.FindEdgeFromTri(tri.c, tri.b, currentHitTri);
+            if (!umesh.DMesh3.IsEdge(edgeId))
+            {
+                UnityEngine.Debug.Log("Could not find the edge when adding vertex to mesh");
+                return;
+            }
+            UnityEngine.Debug.Log($"Number of Verteces before edge split {umesh.DMesh3.VertexCount} ");
+            umesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
+            UnityEngine.Debug.Log($"Number of Verteces after edge split {umesh.DMesh3.VertexCount} ");
+            umesh.DMesh3.SetVertex(result.vNew, localPosition);
             umesh.RefreshUnityMesh();
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
@@ -343,14 +365,34 @@ namespace Virgis
         /// </summary>
         public override void RemoveVertex(Transform vertex = null)
         {
-            bool isClosed = GetMesh().CachedIsClosed;
-            GetMesh().RemoveVertex(m_selectedVertex);
-            if (isClosed)
-            {
-                MeshAutoRepair mr = new (GetMesh());
-                mr.Apply();
-                umesh.DMesh3 = mr.Mesh;
+            //if (!umesh.DMesh3.CheckValidity(out MeshResult result))
+            //{
+            //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex given a defective mesh " + result.ToString());
+            //    return;
+            //}
+            //bool isClosed = umesh.DMesh3.CachedIsClosed;
+            MeshResult res = umesh.DMesh3.RemoveVertex(m_selectedVertex, true, false);
+            if (res != MeshResult.Ok) {
+                UnityEngine.Debug.Log(res.ToString());
+                return;
             }
+            int timestamp = umesh.DMesh3.Timestamp;
+            MeshAutoRepair mr = new (umesh.DMesh3);
+            if (!mr.Apply()) 
+            {
+                UnityEngine.Debug.Log("Mesh AutoRepair Failed");
+                return;
+            }
+            if (timestamp == umesh.DMesh3.Timestamp)
+            {
+                UnityEngine.Debug.Log("Remove Vertex - MeshAutoRepair did nothing");
+                return;
+            }
+            //if ( ! umesh.DMesh3.CheckValidity(out MeshResult res2))
+            //{
+            //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
+            //    return;
+            //}
             umesh.RefreshUnityMesh();
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {

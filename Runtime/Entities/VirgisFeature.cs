@@ -362,7 +362,7 @@ namespace Virgis {
         /// called when the pointer stops hovering on this feature
         /// </summary>
         public void UnHover() {
-            //do nothing
+            State.instance.Info.UnSet();
         }
 
         public IVirgisLayer GetLayer() {

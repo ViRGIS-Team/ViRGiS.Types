@@ -95,9 +95,6 @@ namespace Virgis {
         protected void UpdateUnityMesh() {
             Mesh mesh = MeshFilter.sharedMesh;
 
-            // create a map between the Unity Mesh vertices and the DMesh vertices on the server using UV4
-            Vector2[] uvs = mesh.uv4;
-
             // create the mesh colliders
             Mesh imesh = new()
             {
