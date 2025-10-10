@@ -40,7 +40,7 @@ namespace Virgis
 
         private bool m_BlockMove = false; // is entity in a block-move state
 
-        private int m_selectedVertex; // holds the current Unity Mesh vertex ID for the selected vertex - note that in clients this NOT the same as the DMesh vertex id
+        private int m_selectedVertex; // holds the current DMesh vertex ID for the selected vertex - note that in clients this NOT the same as the DMesh vertex id
         private int m_selectedTriangle; // holds the current Unity Mesh triangle ID - note that in clients this is not the same as the DMesh ytriangle ID
         private int n = -1; //indicator that the n-ring is built
         private bool m_selectOn = false;
@@ -61,7 +61,7 @@ namespace Virgis
             }
             m_selectOn = true;
             RaycastHit lastHit = State.instance.lastHit;
-            int m_selectedTriangle = lastHit.triangleIndex;
+            m_selectedTriangle = lastHit.triangleIndex;
             Vector3 bary = lastHit.barycentricCoordinate;
             int[] triangles = (lastHit.collider as MeshCollider).sharedMesh.triangles;
             int selectedUVertex = 0;
@@ -146,10 +146,10 @@ namespace Virgis
             }
             else
             {
-                if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
-                {
-                    UnityEngine.Debug.Log("Move Vertex - Move Vertex given a defective mesh " + res1.ToString());
-                }
+                //if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
+                //{
+                //    UnityEngine.Debug.Log("Move Vertex - Move Vertex given a defective mesh " + res1.ToString());
+                //}
                 Vector3 localTranslate = transform.InverseTransformVector(args.translate);
                 if (marker != null) marker.transform.localPosition += localTranslate;
                 if (args.translate != Vector3.zero && m_selectOn)
@@ -216,11 +216,11 @@ namespace Virgis
             }
             UpdateUnityMesh();
             timer.Stop();
-            UnityEngine.Debug.LogWarning($"Edit took : {timer.Elapsed.TotalSeconds} seconds");
-            if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
-            {
-                UnityEngine.Debug.Log("Move Vertex - MOve Vertex created a defective mesh " + res2.ToString());
-            }
+            //UnityEngine.Debug.LogWarning($"Edit took : {timer.Elapsed.TotalSeconds} seconds");
+            //if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
+            //{
+            //    UnityEngine.Debug.Log("Move Vertex - MOve Vertex created a defective mesh " + res2.ToString());
+            //}
         }
 
         [Rpc(SendTo.Server)]
@@ -241,15 +241,15 @@ namespace Virgis
         /// <param name="args"></param>
         /// https://answers.unity.com/questions/14170/scaling-an-object-from-a-different-center.html
         public void MoveAxisAction(MoveArgs args){
-            if (GetComponent<MeshFilter>().sharedMesh.bounds.Contains(transform.InverseTransformPoint(args.pos)))
-            {
+            //if (GetComponent<MeshFilter>().sharedMesh.bounds.Contains(transform.InverseTransformPoint(args.pos)))
+            //{
                 Changed();
                 if (args.translate != Vector3.zero)
                     transform.Translate(args.translate, Space.World);
                 args.rotate.ToAngleAxis(out float angle, out Vector3 axis);
                 transform.RotateAround(args.pos, axis, angle);
                 Vector3 A = transform.localPosition;
-                Vector3 B = transform.parent.InverseTransformPoint(args.pos);
+                Vector3 B = transform.InverseTransformPoint(args.pos);
                 Vector3 C = A - B;
                 float RS = args.scale;
                 Vector3 FP = B + C * RS;
@@ -258,7 +258,7 @@ namespace Virgis
                     transform.localScale = transform.localScale * RS;
                     transform.localPosition = FP;
                 }
-            }
+            //}
         }
 
         /// <summary>
@@ -399,10 +399,10 @@ namespace Virgis
             umesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
             UnityEngine.Debug.Log($"Number of Verteces after edge split {umesh.DMesh3.VertexCount} ");
             umesh.DMesh3.SetVertex(result.vNew, localPosition);
-            if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
-            {
-                UnityEngine.Debug.Log("Add Vertex - Add Vertex created a defective mesh " + res2.ToString());
-            }
+            //if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
+            //{
+            //    UnityEngine.Debug.Log("Add Vertex - Add Vertex created a defective mesh " + res2.ToString());
+            //}
             umesh.RefreshUnityMesh();
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
@@ -418,32 +418,47 @@ namespace Virgis
         public override void RemoveVertex(Transform vertex = null)
         {
             Changed();
-            if (!umesh.DMesh3.CheckValidity(out MeshResult result))
+            //if (!umesh.DMesh3.CheckValidity(out MeshResult result))
+            //{
+            //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex given a defective mesh " + result.ToString());
+            //}
+            //bool isClosed = umesh.DMesh3.CachedIsClosed;
+
+            // get the collider mesh to get the triangle and get the DMesh3 vertex ids
+            Mesh cmesh = (State.instance.lastHit.collider as MeshCollider).sharedMesh;
+            int v1 = (int)cmesh.uv4[cmesh.triangles[m_selectedTriangle * 3]].y;
+            int v2 = (int)cmesh.uv4[cmesh.triangles[m_selectedTriangle * 3 + 1]].y;
+            int v3 = (int)cmesh.uv4[cmesh.triangles[m_selectedTriangle * 3 + 2]].y;
+
+            // get the DMesh3 triangle
+            int triangle = umesh.DMesh3.FindTriangle(v1, v2, v3);
+
+            MeshResult res = umesh.DMesh3.RemoveTriangle(triangle, true, false);
+            if (res != MeshResult.Ok)
             {
-                UnityEngine.Debug.Log("Remove Vertex - Remove Vertex given a defective mesh " + result.ToString());
-            }
-            bool isClosed = umesh.DMesh3.CachedIsClosed;
-            MeshResult res = umesh.DMesh3.RemoveVertex(m_selectedVertex, true, false);
-            if (res != MeshResult.Ok) {
                 UnityEngine.Debug.Log(res.ToString());
                 return;
             }
-            int timestamp = umesh.DMesh3.Timestamp;
-            MeshAutoRepair mr = new (umesh.DMesh3);
-            if (!mr.Apply()) 
-            {
-                UnityEngine.Debug.Log("Mesh AutoRepair Failed");
-                return;
-            }
-            if (timestamp == umesh.DMesh3.Timestamp)
-            {
-                UnityEngine.Debug.Log("Remove Vertex - MeshAutoRepair did nothing");
-                return;
-            }
-            if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
-            {
-                UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
-            }
+
+            //if (isClosed)
+            //{
+            //    int timestamp = umesh.DMesh3.Timestamp;
+            //    MeshAutoRepair mr = new(umesh.DMesh3);
+            //    if (!mr.Apply())
+            //    {
+            //        UnityEngine.Debug.Log("Mesh AutoRepair Failed");
+            //        return;
+            //    }
+            //    if (timestamp == umesh.DMesh3.Timestamp)
+            //    {
+            //        UnityEngine.Debug.Log("Remove Vertex - MeshAutoRepair did nothing");
+            //        return;
+            //    }
+            //}
+            //if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
+            //{
+            //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
+            //}
             umesh.RefreshUnityMesh();
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
