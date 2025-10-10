@@ -24,7 +24,8 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Virgis {
+namespace Virgis
+{
 
     /// <summary>
     /// Abstract parent for all in game entities
@@ -33,18 +34,20 @@ namespace Virgis {
     {
         void Selected(SelectionType button);
         void UnSelected(SelectionType button);
-        Guid GetId();
+        void Changed();
+        ulong GetId();
         VirgisFeature GetClosest(Vector3 coords, Guid[] exclude);
         void MoveAxis(MoveArgs args);
         void Translate(MoveArgs args);
         void MoveTo(MoveArgs args);
         void VertexMove(MoveArgs args);
+        void RemoveVertex(Transform vertex);
+        void AddVertex(Vector3 pos);
         IVirgisLayer GetLayer();
+        bool GetParent(out IVirgisEntity parent);
         void OnEdit(bool inSession);
         void Destroy();
-        Dictionary<string, object> GetInfo();
-        void SetInfo(Dictionary<string, object> meta);
-        Dictionary<string, object> GetInfo(VirgisFeature feat);
+        Dictionary<string, string> GetInfo();
     }
 
     /// <summary>
@@ -52,11 +55,14 @@ namespace Virgis {
     /// </summary>
     public interface IVirgisFeature : IVirgisEntity
     {
-        VirgisFeature AddVertex(Vector3 position);
-        void RemoveVertex(VirgisFeature vertex);
+        void RemoveFeatureRpc();
+
+        void SetFeatureState(VirgisFeatureState state);
         T GetGeometry<T>();
 
-        void Hover(Vector3 hit);
+        void Hover();
         void UnHover();
+        void SetFID<T>(T FID);
+        T GetFID<T>();
     }
 }

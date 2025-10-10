@@ -1,6 +1,6 @@
 /* MIT License
 
-Copyright (c) 2020 - 23 Runette Software
+Copyright (c) 2020 - 24 Runette Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using UnityEngine;
+using UniRx;
+using System;
 
 namespace Virgis
 {
-    public abstract class DataLayerPrototype : ContainerLayer
+
+    /// <summary>
+    /// Event type for Grid Change Events
+    /// </summary>
+    public class GridEvent
     {
-        // The prefab for the data points to be instantiated
-        public GameObject PointLayer;
-        public GameObject LineLayer;
-        public GameObject AreaLayer;
-        public GameObject ManifoldLayer;
-        public GameObject PointCloudLayer;
-        public GameObject ContainerLayer;
+
+        private readonly BehaviorSubject<float> _gridEvent = new BehaviorSubject<float>(0);
+
+        public GridEvent()
+        {
+            OnNext(1);
+        }
+
+        public IObservable<float> Event
+        {
+            get
+            {
+                return _gridEvent.AsObservable();
+            }
+        }
+
+        public void OnNext(float scale)
+        {
+            _gridEvent.OnNext(scale);
+        }
+
+        public float Get()
+        {
+            return _gridEvent.Value;
+        }
     }
 }

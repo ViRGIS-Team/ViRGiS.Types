@@ -22,11 +22,9 @@ SOFTWARE. */
 
 using System.Collections.Generic;
 using UnityEngine;
-using g3;
+using VirgisGeometry;
 using System.Linq;
 using System;
-
-
 
 namespace Virgis
 {
@@ -37,16 +35,20 @@ namespace Virgis
 
         public GameObject shapePrefab;
         protected GameObject Shape; // gameObject to be used for the shape
-        protected List<VertexLookup> VertexTable = new();
-        protected List<Dataline> lines = new();
-        protected List<DCurve3> Polygon = new();
-        protected float scaleX;
-        protected float scaleY;
+        protected List<Dataline> m_Lines = new();
+        protected List<DCurve3> m_Polygon = new();
+        protected float m_ScaleX;
+        protected float m_ScaleY;
+
+        public override void Start()
+        {
+            base.Start();
+        }
 
         public override void Selected(SelectionType button) {
             if (button == SelectionType.SELECTALL) {
                 gameObject.BroadcastMessage("Selected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = true;
+                m_SetBlockMove(true);
                 GetComponentsInChildren<Dataline>().ToList<Dataline>().ForEach(item => item.Selected(SelectionType.SELECTALL));
             }
         }
@@ -54,11 +56,11 @@ namespace Virgis
         public override void UnSelected(SelectionType button) {
             if (button != SelectionType.BROADCAST) {
                 gameObject.BroadcastMessage("UnSelected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = false;
+                m_SetBlockMove(false);
             }
         }
 
-        public override void MoveTo(MoveArgs args) {
+        protected override void _move(MoveArgs args) {
             throw new NotImplementedException();
         }
 
@@ -67,134 +69,55 @@ namespace Virgis
         /// </summary>
         protected void _redraw()
         {
-            if (lines.Count > 0)
+            if (m_Lines.Count > 0)
             {
-                Polygon = new List<DCurve3>();
-                foreach (Dataline ring in lines)
+                m_Polygon = new List<DCurve3>();
+                foreach (Dataline ring in m_Lines)
                 {
-                    foreach (VertexLookup v in ring.VertexTable)
-                    {
-                        VertexTable.Add(v);
-                    }
-                    DCurve3 curve = new(ring.GetVertexPositions(), true);
-                    Polygon.Add(curve);
+                    m_Polygon.Add(ring.Curve); // Note that Polygon is in World Coordinates
                 }
             }
-
 
             //
             // Map 3d Polygon to the bext fit 2d polygon and also return the frame used for the mapping
             //
             Frame3f frame;
-            IEnumerable<Vector3d> VerticesItr;
-            GeneralPolygon2d polygon2d = new(Polygon, out frame, out VerticesItr );
+            IEnumerable<Vector3d> verticesItr;
+            GeneralPolygon2d polygon2d = new(m_Polygon, out frame, out verticesItr );
 
-            Index3i[] triangles = polygon2d.GetMesh();
+            //Traingulate The Polygon
+            Index3i[] trianglesItr = polygon2d.GetMesh();
 
-            //
-            // for each vertex in the dalaunay triangulation - map back to a 3d point and also populate the vertex table
-            //
+            //Build a DMesh3 from the result
+            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, m_Polygon[0].axisOrder);
+            dmesh.CalculateUVs();
 
-            //List<Vector3d> vertices = VerticesItr.Select(vertex => Shape.transform.InverseTransformPoint(vertex)).ToList();
-
-            DMesh3 dmesh = new();
-            foreach (Vector3d vertex in VerticesItr) { dmesh.AppendVertex(vertex); };
-            foreach (Index3i tri in triangles) { dmesh.AppendTriangle(tri);  };
-            Shape.GetComponent<DataMesh>().umesh.Value = dmesh;
+            //Add DMesh to the component
+            DataMesh mesh = Shape.GetComponent<DataMesh>();
+            mesh.umesh.DMesh3 = dmesh;
+            mesh.umesh.MeshFinalize();
         }
 
-        public override VirgisFeature AddVertex(Vector3 position) {
+        public override void AddVertex(Vector3 position) {
             _redraw();
-            return base.AddVertex(position);
+            base.AddVertex(position);
         }
 
-        public override void RemoveVertex(VirgisFeature vertex) {
-            if (m_blockMove) {
-                Destroy(gameObject);
+        public override void RemoveVertex(Transform vertex) {
+            if (m_State.BlockMove) {
+                RemoveFeatureRpc();
             } else {
                 _redraw();
-            }
+            };
+            base.RemoveVertex(vertex);
         }
 
-        /// <summary>
-        /// Builds the UV values for thw mesh represented by the vertices 
-        /// </summary>
-        /// <param name="vertices"></param>
-        /// <returns></returns>
-        protected Vector2[] BuildUVs(Vector3[] vertices) {
-            List<Vector2> ret = new();
-            List<Vector3d> vertices3d = vertices.ToList<Vector3>().ConvertAll(item => (Vector3d)item);
-
-            //
-            // create a UV mapping plane
-            // to make image planes work  - we assume that the origin of UV plane is the last vertex
-            //
-            OrthogonalPlaneFit3 orth = new OrthogonalPlaneFit3(vertices3d);
-            Frame3f frame = new Frame3f( vertices[vertices.Length - 1], -1 * orth.Normal);
-
-            //
-            // check the orientation of the plane in UV space.
-            // for image planes  - we assume that the x direction from the first point to the second point should always be positive
-            // if not - reverse the frame
-            //
-            if (Math.Sign(
-                frame.ToPlaneUV((Vector3f) vertices3d[0], 2).x -
-                frame.ToPlaneUV((Vector3f) vertices3d[1], 2).x
-                ) > -1) {
-                frame = new Frame3f(vertices[vertices.Length - 1], orth.Normal);
+        public override void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
+        {
+            if (Shape != null)
+            {
+                Shape.SendMessage("SetMaterial", newValue);
             }
-
-            //
-            // map all of the points to UV space
-            //
-            foreach (Vector3d v in vertices3d) {
-                ret.Add(frame.ToPlaneUV((Vector3f)v,2));
-            }
-
-            //
-            // normalize UVs to [0..1, 0..1]
-            //
-            float maxX = float.NegativeInfinity;
-            float maxY = float.NegativeInfinity;
-            float minX = float.PositiveInfinity;
-            float minY = float.PositiveInfinity;
-
-            for (int i = 0; i < ret.Count; i++) {
-                Vector2 v = ret[i];
-                maxX = maxX > v.x ? maxX : v.x;
-                minX = minX < v.x ? minX : v.x;
-                maxY = maxY > v.y ? maxY : v.y;
-                minY = minY < v.y ? minY : v.y;
-            }
-
-            scaleX = maxX - minX;
-            scaleY = maxY - minY;
-
-
-            for (int i = 0; i < ret.Count; i++) {
-                ret[i] = new Vector2( (ret[i].x - minX) / scaleX, (ret[i].y - minY) / scaleY);
-            }
-            return ret.ToArray();
-        }
-
-        /// <summary>
-        /// Get an array of the Datapoint components for the vertexes
-        /// </summary>
-        /// <returns> Datapoint[]</returns>
-        public Datapoint[] GetVertexes() {
-            Datapoint[] result = new Datapoint[VertexTable.Count ];
-            for (int i = 0; i < result.Length; i++) {
-                result[i] = VertexTable.Find(item => item.isVertex && item.pVertex == i).Com as Datapoint;
-            }
-            return result;
-        }
-
-        public override Dictionary<string, object> GetInfo() {
-            return default;
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
         }
     }
 }

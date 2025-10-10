@@ -25,8 +25,9 @@ SOFTWARE. */
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using g3;
+using VirgisGeometry;
 using System.Linq;
+using Unity.Netcode;
 
 namespace Virgis
 {
@@ -40,18 +41,19 @@ namespace Virgis
 
 
         private bool m_Lr = false; // is this line a Linear Ring - i.e. used to define a polygon
-        public List<VertexLookup> VertexTable = new List<VertexLookup>();
+        public List<VertexLookup> VertexTable = new ();
+        public List<VertexLookup> SegmentTable = new();
         private GameObject m_handlePrefab;
         private SerializableMaterialHash m_Point_hash;
         private SerializableMaterialHash m_Line_hash;
-        public DCurve3 Curve;
+        public DCurve3 Curve; // The DCurve3 of the line. Is in world coordinates and kept updated
 
         /// <summary>
         /// Every frame - realign the billboard
         /// </summary>
         public void Update()
         {
-            if (label) label.LookAt(State.instance.mainCamera.transform);
+            if (Label) Label.LookAt(State.instance.mainCamera.transform);
         }
 
 
@@ -60,20 +62,15 @@ namespace Virgis
             if (VertexTable.Contains(new VertexLookup() { Id = data.id})) {
                 VertexLookup vdata = VertexTable.Find(item => item.Id == data.id);
                 foreach (VertexLookup vLookup in VertexTable) {
-                    if (vLookup.Line && vLookup.Line.m_vStart == vdata.Vertex)
-                        vLookup.Line.MoveStart(data.pos);
-                    if (vLookup.Line && vLookup.Line.m_vEnd == vdata.Vertex)
-                        vLookup.Line.MoveEnd(data.pos);
+                    if (vLookup.LineComp && vLookup.LineComp.m_vStart == vdata.Vertex)
+                        vLookup.LineComp.MoveStart(data.pos);
+                    if (vLookup.LineComp && vLookup.LineComp.m_vEnd == vdata.Vertex)
+                        vLookup.LineComp.MoveEnd(data.pos);
                 }
-                Curve = new(GetVertexPositions(), m_Lr);
-                if (label) label.position = _labelPosition();
+                if (Label) Label.position = _labelPosition();
+                Curve.SetVertex(vdata.Vertex, data.pos);
             }
-            Curve = new(GetVertexPositions(), m_Lr);
-        }
-
-        public override void MoveAxis(MoveArgs args) {
-
-            base.MoveAxis(args);
+            base.VertexMove(data);
         }
 
 
@@ -117,37 +114,33 @@ namespace Virgis
         /// <summary>
         /// Called to draw the line
         /// </summary>
-        /// <param name="geom"> A LineString in DCurve3 format in map space coordinates</param>
+        /// <param name="curve"> A LineString in DCurve3 format in world space coordinates</param>
         /// <param name="symbology">The symbo,logy to be applied to the line</param>
         /// <param name="handlePrefab"> The prefab to be used for the handle</param>
         /// <param name="labelPrefab"> the prefab to used for the label</param>
-        public void Draw(DCurve3 geom, Dictionary<string, SerializableMaterialHash> symbology,  GameObject handlePrefab, GameObject labelPrefab)
+        public void Draw(DCurve3 curve, Dictionary<string, SerializableMaterialHash> symbology,  GameObject handlePrefab, GameObject labelPrefab)
         {
-            Curve = geom;
-            m_Lr = geom.Closed;
+            Curve = curve;
+            m_Lr = curve.Closed;
             if (!symbology.TryGetValue("point", out m_Point_hash)) m_Point_hash = new();
             if (!symbology.TryGetValue("line", out m_Line_hash)) m_Line_hash = new();
             m_handlePrefab = handlePrefab;
 
-
-
-            Vector3[] line = Curve.ToVector3().ToArray();
-
-
+            List<Vector3d> line = curve.VertexItr().ToList();
             int i = 0;
-            foreach (Vector3 vertex in line)
+            foreach (Vector3d vertex3d in line)
             {
-                if (!(i + 1 == line.Length && m_Lr))
+                Vector3 vertex = (Vector3)vertex3d;
+                _createVertex(vertex, i);
+                if (i + 1 != line.Count)
                 {
-                    _createVertex(vertex, i);
-                }
-                if (i + 1 != line.Length)
-                {
-                    _createSegment(vertex, line[i + 1],i , (i + 2 == line.Length && m_Lr));
+                    _createSegment(vertex, (Vector3)line[i + 1],i , false);
+                } else {
+                    if (curve.Closed)
+                        _createSegment(vertex, (Vector3)line[0], i, true);
                 }
                 i++;
             }
-            Curve = new(GetVertexPositions(), m_Lr);
 
             //Set the label
             //if (labelPrefab != null)
@@ -172,40 +165,20 @@ namespace Virgis
             if (!m_Lr) {
                 VertexLookup First = VertexTable.Find(item => item.Vertex == 0);
                 VertexLookup Last = VertexTable.Find(item => item.Vertex == VertexTable.Count - 1);
-                if (First.Com.transform.position == Last.Com.transform.position) {
-                    Destroy(Last.Com.gameObject);
+                if (First.VertexComp.transform.position == Last.VertexComp.transform.position) {
+                    Destroy(Last.VertexComp.gameObject);
                     VertexTable.Remove(Last);
                     Last = VertexTable.Find(item => item.Vertex == Last.Vertex - 1);
-                    Last.Line.MoveEnd(First.Com.transform.position);
-                    Last.Line.m_vEnd = 0;
+                    Last.LineComp.MoveEnd(First.VertexComp.transform.position);
+                    Last.LineComp.m_vEnd = 0;
                 } else {
-                    VertexTable.Last().Line = _createSegment(VertexTable.Last().Com.transform.position, VertexTable.First().Com.transform.position, VertexTable.Count -1, true);
+                    VertexTable.Last().LineComp = _createSegment(VertexTable.Last().VertexComp.transform.position, VertexTable.First().VertexComp.transform.position, VertexTable.Count -1, true);
                 }
 
                 m_Lr = true;
             }
         }
 
-        /// <summary>
-        /// called to get the verteces of the LineString
-        /// </summary>
-        /// <returns>Vector3[] of vertices</returns>
-        public Vector3[] GetVertexPositions()
-        {
-            List<Vector3> result = new List<Vector3>();
-            for (int i = 0; i < VertexTable.Count ; i++) {
-                    result.Add(VertexTable.Find(item => item.isVertex && item.Vertex == i).Com.transform.position);
-                }
-            return result.ToArray();
-        }
-
-        public Datapoint[] GetVertexes() {
-            Datapoint[] result = new Datapoint[VertexTable.Count];
-            for (int i = 0; i < result.Length; i++) {
-                result[i] = VertexTable.Find(item => item.isVertex && item.Vertex == i).Com as Datapoint;
-            }
-            return result;
-        }
 
 
         public override void Selected(SelectionType button)
@@ -213,7 +186,7 @@ namespace Virgis
             if (button == SelectionType.SELECTALL)
             {
                 gameObject.BroadcastMessage("Selected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = true;
+                m_SetBlockMove(true);
             }
         }
 
@@ -222,15 +195,15 @@ namespace Virgis
             if (button != SelectionType.BROADCAST)
             {
                 gameObject.BroadcastMessage("UnSelected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
-                m_blockMove = false;
+                m_SetBlockMove(false);
             }
         }
 
         public override void Translate(MoveArgs args)
         {
-            if (!m_blockMove)
+            if (!m_State.BlockMove)
             {
-                gameObject.BroadcastMessage("TranslateHandle", args, SendMessageOptions.DontRequireReceiver);
+                BroadcastMessage("TranslateHandle", args, SendMessageOptions.DontRequireReceiver);
             }
             else
             {
@@ -239,15 +212,17 @@ namespace Virgis
             }
         }
 
-        public override void MoveTo(MoveArgs args)
+        protected override void _move(MoveArgs args)
         {
             throw new NotImplementedException();
         }
 
-        public override VirgisFeature AddVertex(Vector3 position) {
+        public override void AddVertex(Vector3 position) {
             int seg = Curve.NearestSegment(position);
-            LineSegment segment = VertexTable.Find(item => item.Vertex == seg).Line;
-            return AddVertex(segment, position);
+            ulong segment = VertexTable.Find(item => item.Vertex == seg).Id;
+            AddVertexRpc(segment, position);
+            Curve.InsertVertex(position, seg);
+            Curve.InsertData((long)Curve.VertexCount, seg);
         }
 
         /// <summary>
@@ -256,24 +231,28 @@ namespace Virgis
         /// <param name="segment"> Linesegement to add the vertex to </param>
         /// <param name="position"> Vertex Position in Wordl Space coordinates</param>
         /// <returns></returns>
-        public VirgisFeature AddVertex(LineSegment segment, Vector3 position) {
+        [Rpc(SendTo.Server)]
+        public void AddVertexRpc(ulong segmentId, Vector3 position) {
+            VertexLookup segmentLookup = SegmentTable.Find(seg => seg.Id == segmentId);
+            if (segmentLookup == null) return;
+            LineSegment segment = segmentLookup.LineComp;
             int start = segment.m_vStart;
             int next = segment.m_vEnd;
             VertexTable.ForEach(item => {
                 if (item.Vertex > start) {
                     item.Vertex++;
-                    if (item.Line != null) {
-                        item.Line.m_vStart++;
-                        if (item.Line.m_vEnd != 0) {
-                            item.Line.m_vEnd++;
+                    if (item.LineComp != null) {
+                        item.LineComp.m_vStart++;
+                        if (item.LineComp.m_vEnd != 0) {
+                            item.LineComp.m_vEnd++;
                         }
                     }
                 }
-                if (m_Lr && item.isVertex && item.Line.m_vStart == start) {
-                    item.Line.m_vEnd = start + 1;
+                if (m_Lr && item.LineComp.m_vStart == start) {
+                    item.LineComp.m_vEnd = start + 1;
                 }
-                if (m_Lr && item.isVertex && item.Line.m_vEnd > VertexTable.Count)
-                    item.Line.m_vEnd = 0;
+                if (m_Lr && item.LineComp.m_vEnd > VertexTable.Count)
+                    item.LineComp.m_vEnd = 0;
             });
             start++;
             int end = next;
@@ -281,56 +260,77 @@ namespace Virgis
                 end++;
             segment.MoveEnd(position);
             Datapoint vertex = _createVertex(position, start);
-            _createSegment(position, VertexTable.Find(item => item.Vertex == end).Com.transform.position, start, end == 0);
+            Curve.InsertVertex(position, start);
+            _createSegment(position, VertexTable.Find(item => item.Vertex == end).VertexComp.transform.position, start, end == 0);
             transform.parent.SendMessage("AddVertex", position, SendMessageOptions.DontRequireReceiver);
             vertex.UnSelected(SelectionType.SELECT);
-            Curve = new(GetVertexPositions(), m_Lr);
-            return vertex;
         }
 
-        public override void RemoveVertex(VirgisFeature vertex) {
-            if (m_blockMove) {
-                Destroy(gameObject);
-            } else {
-                VertexLookup vLookup = VertexTable.Find(item => item.Com == vertex);
-                if (vLookup.isVertex) {
-                    int thisVertex = vLookup.Vertex;
-                    if (vLookup.Line != null) {
-                        Destroy(vLookup.Line.gameObject);
-                    } else {
-                        Destroy(VertexTable.Find(item => item.Vertex == vLookup.Vertex - 1).Line.gameObject);
-                    }
-                    Destroy(vLookup.Com.gameObject);
-                    VertexTable.Remove(vLookup);
-                    VertexTable.ForEach(item => {
-                        if (item.Vertex >= thisVertex) {
-                            item.Vertex--;
-                            if (item.Line != null) {
-                                item.Line.m_vStart--;
-                                if (item.Line.m_vEnd != 0) {
-                                    item.Line.m_vEnd--;
-                                }
-                            }
-                        };
-                        if (m_Lr && item.isVertex  && item.Line.m_vEnd >= VertexTable.Count) {
-                            item.Line.m_vEnd = 0;
-                        };
-                    });
-                    int end = thisVertex;
-                    int start = thisVertex - 1;
-                    if (m_Lr && thisVertex >= VertexTable.Count ) 
-                        end = 0;
-                    if (m_Lr && thisVertex == 0)
-                        start = VertexTable.Count - 1;
-                    Debug.Log($"start : {start}, End : {end}");
-                    if (VertexTable.Count > 1) {
-                        VertexTable.Find(item => item.Vertex == start).Line.MoveEnd(VertexTable.Find(item => item.Vertex == end).Com.transform.position);
-                    } else {
-                        Destroy(gameObject);
-                    }
-                }
+        public override void RemoveVertex(Transform vertex)
+        {
+            ulong vID = vertex.GetComponent<VirgisFeature>().GetId();
+            if (m_State.BlockMove)
+            {
+                RemoveFeatureRpc();
             }
-            transform.parent.SendMessage("RemoveVertex", this, SendMessageOptions.DontRequireReceiver);
+            else
+            {
+                RemoveLineVertexRpc(vID);
+            }
+        }
+
+        [Rpc(SendTo.Server)]
+        public void RemoveLineVertexRpc(ulong vertex)
+        {
+            VertexLookup vLookup = VertexTable.Find(item => item.Id == vertex);
+            if (vLookup == null) return;
+            if (GetParent(out IVirgisEntity parent)) parent.RemoveVertex(vLookup.VertexComp.transform);
+            int thisVertex = vLookup.Vertex;
+            if (vLookup.LineComp != null)
+            {
+                vLookup.LineComp.RemoveFeatureRpc();
+            }
+            else
+            {
+                VertexTable.Find(item => item.Vertex == vLookup.Vertex - 1).LineComp.RemoveFeatureRpc();
+            }
+            vLookup.VertexComp.RemoveFeatureRpc();
+            VertexTable.Remove(vLookup);
+            Curve.RemoveVertex(thisVertex);
+            VertexTable.ForEach(item =>
+            {
+                if (item.Vertex >= thisVertex)
+                {
+                    item.Vertex--;
+                    if (item.LineComp != null)
+                    {
+                        item.LineComp.m_vStart--;
+                        if (item.LineComp.m_vEnd != 0)
+                        {
+                            item.LineComp.m_vEnd--;
+                        }
+                    }
+                };
+                if (m_Lr && item.LineComp.m_vEnd >= VertexTable.Count)
+                {
+                    item.LineComp.m_vEnd = 0;
+                };
+            });
+            int end = thisVertex;
+            int start = thisVertex - 1;
+            if (m_Lr && thisVertex >= VertexTable.Count)
+                end = 0;
+            if (m_Lr && thisVertex == 0)
+                start = VertexTable.Count - 1;
+            Debug.Log($"start : {start}, End : {end}");
+            if (VertexTable.Count > 1)
+            {
+                VertexTable.Find(item => item.Vertex == start).LineComp.MoveEnd(VertexTable.Find(item => item.Vertex == end).VertexComp.transform.position);
+            }
+            else
+            {
+                RemoveFeatureRpc();
+            }
         }
 
         private Datapoint _createVertex(Vector3 vertex, int i) {
@@ -338,7 +338,7 @@ namespace Virgis
             Datapoint com = handle.GetComponent<Datapoint>();
             com.Spawn(transform);
             com.SetMaterial(m_Point_hash);
-            VertexTable.Add(new VertexLookup() { Id = com.GetId(), Vertex = i, isVertex = true, Com = com });
+            VertexTable.Add(new VertexLookup() { Id = com.GetId(), Vertex = i, VertexComp = com });
             handle.transform.localScale = Symbology.ContainsKey("point") ? Symbology["point"].Transform.Scale : Vector3.one;
             return com;
         }
@@ -351,7 +351,8 @@ namespace Virgis
             com.Draw(start, end, i, i + 1, Symbology["line"].Transform.Scale.magnitude);
             if (close)
                 com.m_vEnd = 0;
-            VertexTable.Find(item => item.Vertex == i).Line = com;
+            VertexTable.Find(item => item.Vertex == i).LineComp = com;
+            SegmentTable.Add(new VertexLookup() { Id = com.GetId(), LineComp = com });
             return com;
         }
 
@@ -367,12 +368,17 @@ namespace Virgis
             return Center() + transform.TransformVector(Vector3.up) * Symbology["line"].Transform.Scale.magnitude;
         }
 
-        public override Dictionary<string, object> GetInfo() {
-            return transform.parent.GetComponent<IVirgisEntity>().GetInfo(this);
+        public VirgisFeature GetVertexById(int vID) 
+        {
+            VertexLookup vertex = VertexTable.Find(vertex => vertex.Vertex == vID);
+            if (vertex != null)
+                return vertex.VertexComp;
+            else
+            {
+                Debug.LogError($"DataLine GetVertexById : Could not find vertex {vID}");
+                return null;
+            }
         }
 
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
-        }
     }
 }

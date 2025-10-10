@@ -8,6 +8,7 @@ namespace Virgis
     public class SerializableTexture : NetworkVariableBase
     {
         public Texture2D tex;
+        private byte[] m_bytes;
 
         /// <summary> 
         /// Delegate type for value changed event
@@ -28,6 +29,7 @@ namespace Virgis
         {
             SetDirty(true);
             tex = value;
+            m_bytes = tex.EncodeToPNG();
             OnValueChanged?.Invoke( tex);
         }
 
@@ -44,7 +46,7 @@ namespace Virgis
             }
 
             // Serialize the data we need to synchronize
-            writer.WriteValueSafe(tex.EncodeToPNG());
+            writer.WriteValueSafe(m_bytes);
         }
 
         /// <summary>
@@ -54,10 +56,13 @@ namespace Virgis
         public override void ReadField(FastBufferReader reader)
         {
             // De-Serialize the data being synchronized
-            tex = new Texture2D(1, 1);
             reader.ReadValueSafe(out byte[] received);
-            tex.LoadImage(received);
-            OnValueChanged?.Invoke(tex);
+            if (received != null && received.Length > 0)
+            {
+                tex = new(1, 1);
+                tex.LoadImage(received);
+                OnValueChanged?.Invoke(tex);
+            }
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)

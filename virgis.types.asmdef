@@ -8,7 +8,9 @@
         "Unity.Netcode.Runtime",
         "andywiecko.BurstTriangulator",
         "Unity.Mathematics",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Draco",
+        "DracoEncoder"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

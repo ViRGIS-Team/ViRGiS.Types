@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UniRx;
 using System.Collections;
+using Unity.Netcode;
+using Unity.Mathematics;
 
 namespace Virgis {
 
@@ -65,17 +67,12 @@ namespace Virgis {
             }
         }
         public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
-        public bool isWriteable
-        { // only allow edit and save for layers that can be written
-            get;
-            set;
-        }
+        public bool IsEditable { get => false; }
+        public bool IsWriteable { get => false; set { } }
+
         protected Guid m_id;
-        protected bool m_editable;
         private bool m_changed;
         private readonly List<IDisposable> m_subs = new List<IDisposable>();
-
-
 
         protected void Start()
         {
@@ -104,20 +101,31 @@ namespace Virgis {
         /// <returns></returns>
         public abstract VirgisLayer CreateLayer(RecordSetPrototype thisLayer);
 
-
-        protected void initLayers(List<RecordSetPrototype> layers)
+        protected async Task initLayers(List<RecordSetPrototype> layers, Action callback)
         {
-            foreach (RecordSetPrototype thisLayer in layers)
+            try
             {
-                VirgisLayer temp = null;
-                Debug.Log("Loading Layer : " + thisLayer.DisplayName);
-                temp = CreateLayer(thisLayer);
-                if (temp == null) continue;
-                if (!temp.Spawn(State.instance.Map.transform)) Debug.Log("reparent failed");
-                StartCoroutine(temp.Init(thisLayer));
+                List<Task> tasks = new();
+                foreach (RecordSetPrototype thisLayer in layers)
+                {
+                    VirgisLayer temp = null;
+                    Debug.Log("Loading Layer : " + thisLayer.DisplayName);
+                    temp = CreateLayer(thisLayer);
+                    if (temp == null) continue;
+                    if (!temp.Spawn(State.instance.Map.transform)) Debug.Log("reparent failed");
+                    tasks.Add(temp.AsyncInit(thisLayer));
+                }
+                await Task.WhenAll(tasks);
             }
+            catch (Exception e)
+            {
+                Debug.LogError($"Project load failed :" + e.ToString());
+                callback();
+            }
+            OnLoad();
+            Debug.Log("Completed load Project File");
+            callback();
         }
-
 
         /// <summary>
         /// This call initiates the drawing of the virtual space and calls `Draw ` on each layer in turn.
@@ -132,7 +140,7 @@ namespace Virgis {
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Project Layer {layer.sourceName} hasfailed to draw :" + e.ToString());
+                    Debug.LogError($"Project Layer {layer.sourceName} has failed to draw :" + e.ToString());
                 }
             }
         }
@@ -159,28 +167,24 @@ namespace Virgis {
         /// </summary>
         /// <param name="all"></param>
         /// <returns></returns>
-        public virtual async Task<RecordSetPrototype> Save(bool all = true)
+        public virtual async Task<RecordSetPrototype> Save()
         {
             try
             {
                 Debug.Log("Save starts");
                 if (State.instance.project != null)
                 {
-                    if (all)
+                    foreach (IVirgisLayer com in State.instance.Layers)
                     {
-                        foreach (IVirgisLayer com in State.instance.Layers)
-                        {
-                            RecordSetPrototype alayer = await (com as VirgisLayer).Save();
-                            int index = State.instance.project.RecordSets.FindIndex(x => x.Id == alayer.Id);
-                            State.instance.project.RecordSets[index] = alayer;
-                        }
+                        RecordSetPrototype alayer = await (com as VirgisLayer).Save();
                     }
                 }
+                Debug.Log("Save Completed");
                 return default;
             }
             catch (Exception e)
             {
-                Debug.Log("Save failed : " + e.ToString());
+                Debug.LogError("Save failed : " + e.ToString());
                 return default;
             }
         }
@@ -193,7 +197,7 @@ namespace Virgis {
 
         protected void _onEditStart(bool ignore)
         {
-            CheckPoint();
+
         }
 
         /// <summary>
@@ -204,14 +208,19 @@ namespace Virgis {
         {
             if (!saved)
             {
-                Draw();
+                foreach (VirgisLayer layer in State.instance.Layers)
+                {
+                    layer.SetEditable(false);
+                }
+            } else
+            {
+                await Save();
             }
-            await Save(saved);
         }
 
-        public virtual GameObject GetFeatureShape()
+        public virtual Shapes GetFeatureShape()
         {
-            return null;
+            return Shapes.None;
         }
 
         public abstract VirgisFeature AddFeature<T>(T geometry);
@@ -259,12 +268,7 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public void SetEditableRpc(bool inSession)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool IsEditable()
+        public void SetEditable(bool checkout)
         {
             throw new NotImplementedException();
         }
@@ -284,7 +288,7 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public Guid GetId()
+        public ulong GetId()
         {
             throw new NotImplementedException();
         }
@@ -296,22 +300,22 @@ namespace Virgis {
 
         public void MoveAxis(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public void Translate(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public void MoveTo(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public void VertexMove(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public IVirgisLayer GetLayer()
@@ -329,17 +333,7 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, object> GetInfo()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetInfo(Dictionary<string, object> meta)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Dictionary<string, object> GetInfo(VirgisFeature feat)
+        public Dictionary<string, string> GetInfo()
         {
             throw new NotImplementedException();
         }
@@ -360,6 +354,36 @@ namespace Virgis {
         }
 
         public virtual void Loaded(VirgisLayer layer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public SerializableMaterialHash GetFeatureDefaultColor()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddFeatureRpc(Vector3[] verteces)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool GetParent(out IVirgisEntity parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveVertex(Transform vertex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddVertex(Vector3 pos)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Changed()
         {
             throw new NotImplementedException();
         }

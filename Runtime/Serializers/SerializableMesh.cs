@@ -1,114 +1,272 @@
-using System;
-using g3;
+using VirgisGeometry;
 using Unity.Netcode;
 using UnityEngine;
+using Draco;
+using Draco.Encoder;
+using System;
+using Unity.Collections;
+
 
 namespace Virgis
 {
-    public class SerializableMesh : INetworkSerializable, IEquatable<SerializableMesh>
+    public class SerializableMesh : NetworkVariableBase
     {
-        private Vector3[] vertices;
+        private DMesh3 m_Dmesh;
+        private Mesh m_Mesh;
 
-        private Color32[] colors;
-        private Vector2[] uvs;
-        private int[] tris;
-        private bool clockwise;
-        private bool hasColors;
-        private bool hasUVs;
+        private byte[] m_Data;
 
+        public DSubmesh3 SubMesh;
+        public bool KeepDmeshUpdatedOnClient = false;
 
-        // INetworkSerializable
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        /// <summary>
+        /// Delegate type for Mesh changed event
+        /// </summary>
+        /// <param name="newValue">The new value</param>
+        public delegate void OnMeshChangedDelegate(Mesh newMesh);
+        /// <summary>
+        /// The callback to be invoked when the value gets changed
+        /// </summary>
+        public OnMeshChangedDelegate OnMeshChanged;
+
+        public DMesh3 DMesh3
         {
-            if (serializer.IsReader) {
-                // De-Serialize the data being synchronized
-                var reader = serializer.GetFastBufferReader();
-                reader.ReadValueSafe(out int vertexCount);
-                if (vertexCount == 0) return;
-                reader.ReadValueSafe(out int triCount);
-                reader.ReadValueSafe(out clockwise);
-                reader.ReadValueSafe(out hasColors);
-                reader.ReadValueSafe(out hasUVs);
-                vertices = new Vector3[vertexCount];
-                reader.ReadValueSafe(out vertices);
-                tris = new int[triCount];
-                reader.ReadValueSafe(out tris);
-                colors = new Color32[vertexCount];
-                if (hasColors) reader.ReadValueSafe(out colors);
-                uvs = new Vector2[vertexCount];
-                if (hasUVs) reader.ReadValueSafe(out uvs);
-            } else {
-                var writer = serializer.GetFastBufferWriter();
-                writer.WriteValueSafe(vertices.Length);
-                if (vertices.Length == 0) return;
-                writer.WriteValueSafe(tris.Length);
-                writer.WriteValueSafe(clockwise);
-                writer.WriteValueSafe(hasColors);
-                writer.WriteValueSafe(hasUVs);
-                writer.WriteValueSafe(vertices);
-                writer.WriteValueSafe(tris);
-                if (hasColors) writer.WriteValueSafe(colors);
-                if (hasUVs) writer.WriteValueSafe(uvs);
+            get { return m_Dmesh; }
+            set {
+                m_Dmesh = value;
+                RefreshUnityMesh();
             }
         }
 
-        public static implicit operator DMesh3(SerializableMesh mesh)
+        public void RefreshUnityMesh()
         {
-            DMesh3 dmesh = new DMesh3(false, mesh.hasColors, mesh.hasUVs, false);
-            dmesh.Clockwise = mesh.clockwise;
-            for (int i=0; i<mesh.vertices.Length;i++)
-            {
-                NewVertexInfo info = new(mesh.vertices[i], (Color)mesh.colors[i], mesh.uvs[i]);
-                dmesh.AppendVertex(info);
-            }
-
-            int[] tris = mesh.tris;
-            for (int i = 0; i < tris.Length; i += 3)
-            {
-                dmesh.AppendTriangle(tris[i], tris[i + 1], tris[i + 2]);
-            }
-            return dmesh;
+            m_Mesh = (Mesh)m_Dmesh;
         }
 
-        public static implicit operator SerializableMesh(DMesh3 mesh)
+        public void Reset(DMesh3 dmesh, Mesh umesh)
         {
-            SerializableMesh smesh = new();
-            smesh.clockwise = mesh.Clockwise;
-            smesh.vertices = new Vector3[mesh.VertexCount];
-            smesh.colors = new Color32[mesh.VertexCount];
-            smesh.uvs = new Vector2[mesh.VertexCount];
-            smesh.hasColors = mesh.HasVertexColors;
-            smesh.hasUVs = mesh.HasVertexUVs;
-            NewVertexInfo data;
-            for (int i = 0; i < mesh.VertexCount; i++)
+            m_Mesh = umesh;
+            m_Dmesh = dmesh;
+        }
+
+        public Mesh Mesh { get { return m_Mesh; } }
+
+        public void MeshFinalize()
+        {
+            OnMeshChanged.Invoke(m_Mesh);
+            EncodeResult[] serResult = DracoEncoder.EncodeMesh(m_Mesh, Vector3.one, 0.01f);
+            m_Data = serResult[0].data.ToArray();
+            Array.ForEach(serResult, res => res.Dispose());
+            SetDirty(true);
+        }
+
+        private async void MeshDeserialize()
+        {
+            DracoMeshLoader decoder = new(false);
+            Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
+            Mesh.MeshData mesh = meshDataArray[0];
+            DracoMeshLoader.DecodeResult result = await decoder.ConvertDracoMeshToUnity(mesh, m_Data, true, true);
+            if (!result.success)
             {
-                if (mesh.IsVertex(i))
+                throw new Exception("Mesh Deserialization failed");
+            }
+            m_Mesh = new Mesh();
+            m_Mesh.MarkDynamic();
+            Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, m_Mesh, DracoMeshLoader.defaultMeshUpdateFlags);
+            if (result.calculateNormals)
+            {
+                m_Mesh.RecalculateNormals();
+            }
+            m_Mesh.RecalculateTangents();
+            OnMeshChanged.Invoke(m_Mesh);
+            if (KeepDmeshUpdatedOnClient) UpdateDMesh();
+        }
+
+        public override void WriteDelta(FastBufferWriter writer)
+        {
+            WriteField(writer);
+        }
+
+        public override void WriteField(FastBufferWriter writer)
+        {
+            Debug.Log("Serialize Mesh");
+            if (m_Data == null)
+            {
+                writer.WriteValueSafe(0);
+            } else 
+            {
+                writer.WriteValueSafe(m_Data.Length);
+                writer.WriteValueSafe(m_Data);
+            }
+        }
+
+        public override void ReadField(FastBufferReader reader)
+        {
+            // De-Serialize the data being synchronized
+            Debug.Log("Deserialize Mesh");
+            reader.ReadValueSafe(out int size);
+            if (size != 0) 
+            {
+                m_Data = new byte[size];
+                reader.ReadValueSafe(out m_Data);
+                MeshDeserialize();
+            }
+        }
+
+        public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
+        {
+            ReadField(reader);
+        }
+
+        public bool IsMesh { get { return m_Mesh != null; } }
+
+        protected void UpdateDMesh()
+        {
+            if (m_Dmesh == null) m_Dmesh = new();
+            using (Mesh.MeshDataArray mda = Mesh.AcquireReadOnlyMeshData(m_Mesh))
+            {
+                if (mda.Length > 1) throw new Exception("Too many submeshes");
+                Mesh.MeshData md = mda[0];
+                int buffers = md.vertexBufferCount;
+                int position = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.Position);
+                int pos_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.Position);
+                int color = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.Color);
+                int col_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.Color);
+                int normal = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.Normal);
+                int nor_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.Normal);
+                int uv1 = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.TexCoord0);
+                int uv1_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.TexCoord0);
+                int uv2 = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.TexCoord1);
+                int uv2_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.TexCoord1);
+                int uv3 = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.TexCoord2);
+                int uv3_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.TexCoord2);
+                int uv4 = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.TexCoord3);
+                int uv4_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.TexCoord3);
+                int uv = uv4;
+                int uv_buf = uv4_buf;
+
+                // find the uv layer that holds the dmesh vertex ids
+                if (uv4 == -1)
                 {
-                    data = mesh.GetVertexAll(i);
-                    smesh.vertices[i] = (Vector3)data.v;
-                    if (data.bHaveC)
-                        smesh.colors[i] = (Color)data.c;
-                    if (data.bHaveUV)
-                        smesh.uvs[i] = (Vector2)data.uv;
+                    uv = uv3;
+                    uv_buf = uv3_buf;
+                    if (uv3 == -1)
+                    {
+                        uv = uv2;
+                        uv_buf = uv2_buf;
+                        if (uv2 == -1)
+                        {
+                            uv = uv1;
+                            uv_buf = uv1_buf;
+                        }
+                    }
+                }
+
+                //Get Vertices and Update Dmesh
+                NativeArray<float>[] vertexBuffers = new NativeArray<float>[buffers];
+                int[] strides = new int[buffers];
+                for (int i = 0; i < buffers; i++)
+                {
+                    vertexBuffers[i] = mda[0].GetVertexData<float>(i);
+                    strides[i] = md.GetVertexBufferStride(i) / 4;
+                }
+
+                int pointer;
+                m_Dmesh.BeginUnsafeVerticesInsert();
+                for (int i = 0; i < md.vertexCount; i++)
+                {
+                    NewVertexInfo vertex = new();
+                    pointer = i * strides[pos_buf];
+                    position /= 4;
+                    vertex.v = new Vector3d(
+                        vertexBuffers[pos_buf][pointer + position],
+                        vertexBuffers[pos_buf][pointer + position + 1],
+                        vertexBuffers[pos_buf][pointer + position + 2]
+                        );
+                    if (color != -1)
+                    {
+                        color /= 4;
+                        pointer = i * strides[col_buf];
+                        vertex.c = new Vector3f(
+                            vertexBuffers[col_buf][pointer + color],
+                            vertexBuffers[col_buf][pointer + color + 1],
+                            vertexBuffers[col_buf][pointer + color + 2]
+                            );
+                        vertex.bHaveC = true;
+                    };
+                    if (normal != 0)
+                    {
+                        normal /= 4;
+                        pointer = i * strides[nor_buf];
+                        vertex.n = new Vector3f(
+                            vertexBuffers[nor_buf][pointer + normal],
+                            vertexBuffers[nor_buf][pointer + normal + 1],
+                            vertexBuffers[nor_buf][pointer + normal + 2]
+                            );
+                        vertex.bHaveN = true;
+                    }
+                    if (uv1 != -1)
+                    {
+                        uv1 /= 4;
+                        pointer = i * strides[uv1_buf];
+                        vertex.uv = new Vector2f(
+                            vertexBuffers[uv1_buf][pointer + uv1],
+                            vertexBuffers[uv1_buf][pointer + uv1 + 1]
+                            );
+                        vertex.bHaveUV = true;
+                    }
+                    pointer = i * strides[uv_buf];
+                    int vID = (int)vertexBuffers[uv_buf] [pointer + uv / 4 + 1];
+                    if (m_Dmesh.IsVertex(vID))
+                    {
+                        if (!m_Dmesh.SetVertex(vID, vertex, true, true, true)) throw new Exception("DMesh SetVertex Failed");
+                    } else
+                    {
+                        MeshResult mr = m_Dmesh.InsertVertex(vID, ref vertex, true);
+                        if (mr != MeshResult.Ok) throw new Exception($"DMesh InsertVertex Failed with : {mr.ToString()}");
+                    }
+                };
+                m_Dmesh.EndUnsafeVerticesInsert();
+
+                // Get Triangles and update DMesh
+                NativeArray<byte> triangles = mda[0].GetIndexData<byte>();
+                int indexStride = 4;
+                if (md.indexFormat == UnityEngine.Rendering.IndexFormat.UInt16)
+                {
+                    indexStride = 2;
+                }
+                int triangleCount = triangles.Length / (indexStride * 3);
+                int[] trimap = new int[triangleCount];
+                for (int i = 0; i < triangleCount; i++)
+                {
+                    pointer = i * indexStride * 3;
+                    int a, b, c;
+                    if (md.indexFormat == UnityEngine.Rendering.IndexFormat.UInt16)
+                    {
+                        a = BitConverter.ToInt16(triangles.GetSubArray(pointer, 2).AsReadOnlySpan());
+                        b = BitConverter.ToInt16(triangles.GetSubArray(pointer + 2, 2).AsReadOnlySpan());
+                        c = BitConverter.ToInt16(triangles.GetSubArray(pointer + 4, 2).AsReadOnlySpan());
+                    } else
+                    {
+                        a = BitConverter.ToInt32(triangles.GetSubArray(pointer, 4).AsReadOnlySpan());
+                        b = BitConverter.ToInt32(triangles.GetSubArray(pointer + 4, 4).AsReadOnlySpan());
+                        c = BitConverter.ToInt32(triangles.GetSubArray(pointer + 8, 4).AsReadOnlySpan());
+                    }
+                    int tID = m_Dmesh.FindTriangle(a, b, c);
+                    if (tID == DMesh3.InvalidID)
+                    {
+                        tID = m_Dmesh.AppendTriangle(a, b, c);
+                    }
+                    trimap[i] = tID;
+                }
+                foreach(int tri in m_Dmesh.TriangleIndices())
+                {
+                    if (Array.Find(trimap, item => item == tri) == default)
+                    {
+                        m_Dmesh.RemoveTriangle(tri, true, true);
+                    }
                 }
             }
-            smesh.tris = new int[mesh.TriangleCount * 3];
-            int j = 0;
-            foreach (Index3i tri in mesh.Triangles())
-            {
-                smesh.tris[j * 3] = tri.a;
-                smesh.tris[j * 3 + 1] = tri.b;
-                smesh.tris[j * 3 + 2] = tri.c;
-                j++;
-            }
-            return smesh;
         }
-    
-        public bool Equals(SerializableMesh other)
-        {
-            return vertices.Length == other.vertices.Length;
-        }
-
-        public bool IsMesh { get { return vertices != null && vertices.Length > 0; } }
     }
 }

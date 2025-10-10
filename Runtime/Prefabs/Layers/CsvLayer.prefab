@@ -48,6 +48,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2954933077
   InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -55,6 +57,8 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &-8798052653104897827
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -67,6 +71,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AuthorityMode: 0
+  TickSyncChildren: 0
   UseUnreliableDeltas: 0
   SyncPositionX: 1
   SyncPositionY: 1
@@ -84,6 +92,7 @@ MonoBehaviour:
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 0
   InLocalSpace: 1
+  SwitchTransformSpaceWhenParented: 0
   Interpolate: 0
   SlerpPosition: 0
 --- !u!114 &-7621745344552067066
@@ -98,12 +107,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4296df8512ea08d408b8e5238067b852, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Editable:
+  ShowTopMostFoldoutHeaderGroup: 1
+  m_CheckedOut:
+    m_InternalValue: 0
+  m_Writeable:
     m_InternalValue: 0
   m_SubLayersCount:
     m_InternalValue: 0
+  m_FeatureShape:
+    m_InternalValue: 0
+  m_changed: 0
   PointLayer: {fileID: 1789904940936214724, guid: 82c0b641d928a428981f4eb43e90e0f0, type: 3}
   LineLayer: {fileID: 2704245247459435307, guid: 968a18c3606dd4fe2b524dbb09bbf667, type: 3}
-  PolygonLayer: {fileID: 2235109999932220792, guid: 7e6435e0fe5f9814a831240691583944, type: 3}
-  TinLayer: {fileID: 3737294924804058695, guid: 0f6844b4d8207bd488f71df85573fc3d, type: 3}
+  AreaLayer: {fileID: 2235109999932220792, guid: 7e6435e0fe5f9814a831240691583944, type: 3}
+  ManifoldLayer: {fileID: 103705025751674337, guid: 7899972cde4ea4baea27a4eae07bf527, type: 3}
+  PointCloudLayer: {fileID: 5409354041263640922, guid: 8e3a472c987e849969e0e3af3e1a2c7d, type: 3}
   ContainerLayer: {fileID: 4755707030211363341, guid: e273bba9c2a9e3c47939b98919d668ab, type: 3}

@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.ComponentModel;
 using GeoJSON.Net.Geometry;
 using Unity.Netcode;
@@ -22,7 +23,15 @@ namespace Virgis
         [JsonProperty(PropertyName = "visible", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
         [DefaultValue(true)]
         public bool Visible;
-                /// <summary>
+        [JsonProperty(PropertyName = "source")]
+        public string m_source;
+        [JsonIgnore]
+        public virtual string Source
+        {
+            get { return m_source; }
+            set { m_source = value; }
+        }
+        /// <summary>
         /// Dictionary of symbology units for this layer
         /// </summary>
         [JsonProperty(PropertyName = "units")]
@@ -59,5 +68,72 @@ namespace Virgis
                 Visible = newS.Visible;
             }
         }
+    }
+
+    /// <summary>
+    /// Acceptable values for the Source field of a recordset
+    /// </summary>
+    public enum SourceType
+    {
+        File,
+        WFS,
+        OAPIF,
+        WMS,
+        WCS,
+        PG,
+        AWS,
+        GCS,
+        Azure,
+        Alibaba,
+        Openstack,
+        TCP,
+    }
+
+    /// <summary>
+    /// Prototype for the Recordset Properties field
+    /// </summary>
+    public class PropertiesPrototype
+    {
+        /// <summary>
+        /// DEM or DTM to map these values onto
+        /// </summary>
+        [JsonProperty(PropertyName = "dem")]
+        public string m_Dem;
+
+        [JsonIgnore]
+        public virtual string Dem
+        {
+            get
+            { return m_Dem; }
+        }
+        /// <summary>
+        /// Header string to be used when converting raster bands to point cloud data for vizualisation
+        /// identifies the properties names that the raster bands are mapped to in order
+        /// </summary>
+        [JsonProperty(PropertyName = "header-string")]
+        public string headerString;
+        /// <summary>
+        /// PDAL Filter String
+        /// </summary>
+        [JsonProperty(PropertyName = "filter")]
+        public List<Dictionary<string, object>> Filter;
+        /// <summary>
+        /// Bounding Box
+        /// </summary>
+        [JsonProperty(PropertyName = "bbox")]
+        public List<double> BBox;
+        /// <summary>
+        /// GDAL Source Type
+        /// </summary>
+        [JsonProperty(PropertyName = "source-type", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        [DefaultValue(SourceType.File)]
+        public SourceType SourceType;
+        /// <summary>
+        /// Open Read only ?
+        /// </summary>
+        [JsonProperty(PropertyName = "read-only", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        [DefaultValue(false)]
+        public bool ReadOnly;
     }
 }

@@ -20,7 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Virgis
@@ -37,20 +36,21 @@ namespace Virgis
         private float m_Diameter; // Diameter of the vertex in Map.local units
         public int m_vStart; // Vertex ID of the start of the line
         public int m_vEnd; // Vertex ID of the end of the line
-        private bool m_Selected; //used to hold if this is a valid selection for this line segment
         private Transform m_Shape;
+        private Datapoint m_SelectedVertex;
+
 
         public new void Start()
         {
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out MeshRenderer)) m_Material = MeshRenderer.material;
         }
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out mr)) mat = mr.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out MeshRenderer)) m_Material = MeshRenderer.material;
         }
 
         /// <summary>
@@ -69,24 +69,6 @@ namespace Virgis
             m_vStart = vertStart;
             m_vEnd = vertEnd;
             _draw();
-        }
-
-        public override void Selected(SelectionType button)
-        {
-            if (button == SelectionType.SELECTALL) {
-                transform.parent.SendMessageUpwards("Selected", button, SendMessageOptions.DontRequireReceiver);
-                m_Selected = true;
-            }
-        }
-
-        public override void UnSelected(SelectionType button)
-        {
-            m_Selected = false;
-            if (button != SelectionType.BROADCAST)
-            {
-                transform.parent.SendMessageUpwards("UnSelected", button, SendMessageOptions.DontRequireReceiver);
-                m_Selected = false;
-            }
         }
 
         // Move the start of line to newStart point in World Coords
@@ -113,31 +95,49 @@ namespace Virgis
             transform.localScale = new Vector3(m_Diameter / linescale.x, m_Diameter / linescale.y, length);
         }
 
-        public override void MoveAxis(MoveArgs args){
+        protected override void _moveAxis(MoveArgs args){
             args.pos = transform.position;
             transform.parent.GetComponent<IVirgisEntity>().MoveAxis(args);
         }
 
-        public override void MoveTo(MoveArgs args){
-            if (m_Selected)
+        protected override void _move(MoveArgs args){
+            if (m_State.BlockMove)
                 SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);
         }
 
-        public override VirgisFeature AddVertex(Vector3 position) {
-            GetComponentInParent<Dataline>().AddVertex( this, position);
-            return this;
+        public override void AddVertex(Vector3 position) {
+            GetComponentInParent<Dataline>().AddVertexRpc( GetId(), position);
         }
 
-        public void Delete() {
-            transform.parent.SendMessage("RemoveVertex", this, SendMessageOptions.DontRequireReceiver);
+        public override void Selected(SelectionType button)
+        {
+            base.Selected(button);
+            float dist1 = (m_State.LastHit - m_Start).sqrMagnitude;
+            float dist2 = (m_State.LastHit - m_End).sqrMagnitude;
+            int selected = -1;
+            if (dist1 < dist2 * .5f) selected = m_vStart;
+            if (dist2 < dist1 * .5f) selected = m_vEnd;
+            if (selected == -1) return;
+            if (GetParent(out IVirgisEntity parent)) {
+                m_SelectedVertex = (parent as Dataline).GetVertexById(selected) as Datapoint;
+                m_SelectedVertex.Selected(button);
+            }
         }
 
-        public override Dictionary<string, object> GetInfo() {
-            return GetComponentInParent<Dataline>().GetInfo(this);
+        public override void MoveTo(MoveArgs args)
+        {
+            if (m_SelectedVertex != null)
+            {
+                m_SelectedVertex.MoveTo(args);
+            }
         }
 
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new System.NotImplementedException();
+        public override void RemoveVertex(Transform vertex = null)
+        {
+            if (m_SelectedVertex != null)
+            {
+                m_SelectedVertex.RemoveVertex(m_SelectedVertex.transform);
+            }
         }
     }
 }

@@ -22,6 +22,8 @@ SOFTWARE. */
 
 using System.Linq;
 using UnityEngine;
+using VirgisGeometry;
+using Unity.Netcode;
 
 namespace Virgis
 {
@@ -42,7 +44,7 @@ namespace Virgis
             changed = true;
         }
 
-        public override void MoveAxis(MoveArgs args) {
+        protected override void _moveAxis(MoveArgs args) {
             changed = true;
             EditableMesh[] dataFeatures = gameObject.GetComponentsInChildren<EditableMesh>();
             dataFeatures.ToList<EditableMesh>().Find(item => args.id == item.GetId()).MoveAxisAction(args);
@@ -51,7 +53,7 @@ namespace Virgis
         protected override void _set_editable() {
             base._set_editable();
             if (State.instance.InEditSession()) {
-                if (IsEditable()) {
+                if (IsWriteable) {
                     EditableMesh[] meshes = GetComponentsInChildren<EditableMesh>();
                     foreach (EditableMesh mesh in meshes) {
                         mesh.OnEdit(true);
@@ -63,6 +65,32 @@ namespace Virgis
                     }
                 }
             }
+        }
+
+        protected override void _onEditStop(bool save)
+        {
+            m_Editing = false;
+            if (IsWriteable)
+            {
+                VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
+                foreach (VirgisFeature com in coms)
+                {
+                    com.OnEditEnd(save);
+                }
+            }
+        }
+
+        [Rpc(SendTo.Server)]
+        public void AddFeatureRpc(Vector3[] verteces, int[] tris, Vector3[] normals, bool close)
+        {
+            DMesh3 mesh = DMesh3Builder.Build<Vector3, int, Vector3>(verteces, tris, normals, null, AxisOrder.EUN);
+            mesh.Clockwise = true;
+            if (close)
+            {
+                MeshAutoRepair mr = new(mesh);
+                mr.Apply();
+            }
+            m_loader._addFeature(mesh);
         }
     }
 }

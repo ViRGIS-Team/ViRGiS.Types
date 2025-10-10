@@ -25,6 +25,7 @@ namespace Virgis
         [JsonProperty(PropertyName = "guid")]
         private string m_Guid;
 
+        [JsonIgnore]
         public Guid Guid
         {
             get
@@ -44,8 +45,9 @@ namespace Virgis
         [JsonProperty(PropertyName = "default_proj", Required = Required.Always)]
         public string projectCrs;
 
-        [JsonProperty(PropertyName = "grid-scale", Required = Required.Always)]
-        public float GridScale;
+        [Obsolete("Map Scale is not used in Virgis 3.0")]
+        [JsonProperty(PropertyName = "map_scale")]
+        public float MapScale;
 
         [JsonProperty(PropertyName = "recordsets", Required = Required.Always)]
         public List<RecordSetPrototype> RecordSets;

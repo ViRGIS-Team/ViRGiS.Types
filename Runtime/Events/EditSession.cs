@@ -51,25 +51,26 @@ namespace Virgis {
         /// </summary>
         /// 
         /// This event carries the new editable layer.
-        private readonly Subject<IVirgisLayer> _editableLayerChangedEvent;
+        private readonly Subject<(IVirgisLayer, IVirgisLayer)> _editableLayerChangedEvent;
         private EditMode _editMode;
 
         public EditSession() {
             _active = false;
             _startEditSessionEvent = new Subject<bool>();
             _endEditSessionEvent = new Subject<bool>();
-            _editableLayerChangedEvent = new Subject<IVirgisLayer>();
+            _editableLayerChangedEvent = new();
             _editMode = EditMode.None;
         }
 
         public IVirgisLayer editableLayer {
             get => _editableLayer;
             set {
-                if (value == null) return;
-                value.SetEditableRpc(true);
-                _editableLayer?.SetEditableRpc(false);
-                _editableLayer = value;
-                if (_active) _editableLayerChangedEvent.OnNext(_editableLayer);
+                if (_active)
+                {
+                    _editableLayerChangedEvent.OnNext((_editableLayer, value));
+                    _editableLayer = value;
+                    value?.SetEditable(true);
+                }
             }
         }
 
@@ -86,6 +87,7 @@ namespace Virgis {
 
         public void StopAndSave() {
             if (_active) {
+                editableLayer = null;
                 _active = false;
                 _endEditSessionEvent.OnNext(true);
             }
@@ -93,6 +95,7 @@ namespace Virgis {
 
         public void StopAndDiscard() {
             if (_active) {
+                editableLayer = null;
                 _active = false;
                 _endEditSessionEvent.OnNext(false);
             }
@@ -117,12 +120,10 @@ namespace Virgis {
             }
         }
 
-        public IObservable<IVirgisLayer> ChangeLayerEvent {
+        public IObservable<(IVirgisLayer, IVirgisLayer)> ChangeLayerEvent {
             get {
-                return _editableLayerChangedEvent.AsObservable<IVirgisLayer>();
+                return _editableLayerChangedEvent.AsObservable<(IVirgisLayer, IVirgisLayer)>();
             }
         }
-
-
     }
 }

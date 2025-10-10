@@ -68,10 +68,22 @@ namespace Virgis
     
     public class VirgisLoader<S> : NetworkBehaviour, IVirgisLoader
     {
+        protected enum e_ColorInterp
+        {
+            Interpolate,
+            CategoryValue,
+            CategoryList,
+            None
+        }
+
         public S features; // holds the feature data for this layer
+        public Gradient Grad;
+
         protected VirgisLayer m_parent; // holds the parent VirgisLayer
         protected object m_crs;
         protected Dictionary<string, SerializableMaterialHash> m_materials = new();
+        protected float m_displacement;
+        protected e_ColorInterp m_ColorInterp = e_ColorInterp.None;
 
         public RecordSetPrototype _layer
         {
@@ -91,6 +103,7 @@ namespace Virgis
         {
             get { return m_parent?.subLayers;}
             }
+
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -113,17 +126,17 @@ namespace Virgis
             { return m_parent?.isContainer ?? false; }
         }
 
-        public bool isWriteable
-        {
-            get
-            { return m_parent?.isWriteable ?? false; }
-            set 
-            { if (m_parent != null) m_parent.isWriteable= value; }
-        }
-
         public FeatureType featureType => throw new NotImplementedException();
 
-        bool IVirgisLayer.isWriteable { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool IsEditable { get => m_parent?.IsEditable ?? false; }
+
+        public bool IsWriteable { 
+            get {
+                return m_parent?.IsWriteable ?? false;
+            } 
+            set {
+                if (m_parent != null) m_parent.IsWriteable = value;
+            } }
 
         protected IVirgisLoader m_loader;
 
@@ -216,7 +229,7 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public virtual Task<RecordSetPrototype> Save(bool flag)
+        public virtual Task<RecordSetPrototype> Save()
         {
             throw new NotImplementedException();
         }
@@ -226,9 +239,9 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public virtual GameObject GetFeatureShape()
+        public virtual Shapes GetFeatureShape()
         {
-            return default;
+            return Shapes.None;
         }
 
         public virtual RecordSetPrototype GetMetadata()
@@ -251,15 +264,11 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public virtual void SetEditableRpc(bool inSession)
+        public virtual void SetEditable(bool inSession)
         {
             throw new NotImplementedException();
         }
 
-        public virtual bool IsEditable()
-        {
-            throw new NotImplementedException();
-        }
 
         public void MessageUpwards(string method, object args)
         {
@@ -268,17 +277,17 @@ namespace Virgis
 
         public void Selected(SelectionType button)
         {
-            throw new NotImplementedException();
+            //Do Nothing
         }
 
         public void UnSelected(SelectionType button)
         {
-            throw new NotImplementedException();
+            // Do Nothing
         }
 
-        public Guid GetId()
+        public ulong GetId()
         {
-            return m_parent?.GetId() ?? Guid.Empty;
+            return m_parent.GetId();
         }
 
         public VirgisFeature GetClosest(Vector3 coords, Guid[] exclude)
@@ -288,22 +297,22 @@ namespace Virgis
 
         public void MoveAxis(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public void Translate(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public void MoveTo(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public void VertexMove(MoveArgs args)
         {
-            throw new NotImplementedException();
+            // do nothing
         }
 
         public IVirgisLayer GetLayer()
@@ -321,17 +330,7 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public Dictionary<string, object> GetInfo()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void SetInfo(Dictionary<string, object> meta)
-        {
-            m_parent?.SetInfo(meta);
-        }
-
-        public Dictionary<string, object> GetInfo(VirgisFeature feat)
+        public Dictionary<string, string> GetInfo()
         {
             throw new NotImplementedException();
         }
@@ -347,6 +346,63 @@ namespace Virgis
         }
 
         public void Loaded(VirgisLayer layer)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetupColormap(UnitPrototype unit)
+        {
+            if (unit.ColorMap != null)
+            {
+                if (unit.ColorMode == ColorMode.SinglebandColor)
+                {
+                    if (unit.ColorMap.Type == ColorMapType.Interpolate)
+                    {
+                        Grad = unit.ColorMap.GetGradient();
+                        m_ColorInterp = e_ColorInterp.Interpolate;
+                    }
+                    else
+                    {
+                        m_ColorInterp = e_ColorInterp.CategoryValue;
+                    }
+                }
+                else if (unit.ColorMode == ColorMode.Category)
+                {
+                    if (unit.ColorMap.Type == ColorMapType.Categorize)
+                    {
+                        Grad = unit.ColorMap.GetGradient();
+                        m_ColorInterp = e_ColorInterp.CategoryList;
+                    }
+                }
+            }
+        }
+
+        public SerializableMaterialHash GetFeatureDefaultColor()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void AddFeatureRpc(Vector3[] verteces)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool GetParent(out IVirgisEntity parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveVertex(Transform vertex)
+        {
+            // do nothing
+        }
+
+        public void AddVertex(Vector3 pos)
+        {
+            // do nothing
+        }
+
+        public void Changed()
         {
             throw new NotImplementedException();
         }

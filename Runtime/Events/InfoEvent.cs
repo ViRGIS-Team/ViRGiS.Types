@@ -33,6 +33,11 @@ namespace Virgis {
             _infoEvent.OnNext(info);
         }
 
+        public void UnSet()
+        {
+            _infoEvent.OnNext("");
+        }
+
         public IObservable<string> Event {
             get {
                 return _infoEvent.AsObservable();

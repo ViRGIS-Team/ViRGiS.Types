@@ -20,10 +20,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
-using g3;
-using System.Linq;
+using VirgisGeometry;
 
 namespace Virgis
 {
@@ -35,36 +35,47 @@ namespace Virgis
         public string gisId;
         public Dictionary<string, object> gisProperties;
 
+        public override void Start() 
+        { 
+            base.Start();
+            DataMesh com = GetComponentInChildren<DataMesh>();
+            if (Texture.tex != null) com.SetTexture(Texture.tex);
+        }
+
         /// <summary>
         /// Called to draw the Polygon based upon the 
         /// </summary>
         /// <param name="perimeter">LineString defining the perimter of the polygon</param>
-        /// <param name="mat"> Material to be used</param>
         /// <returns></returns>
-        public GameObject Draw( Vector3[] top, Vector3[] bottom,  Material mat = null)
+        public GameObject Draw( DCurve3 top, DCurve3 bottom, Texture2D tex)
         {
-            Polygon = new List<DCurve3>();
-            lines = new List<Dataline>();
-            Polygon.Add(new DCurve3(top.ToList<Vector3>().ConvertAll(item => (Vector3d)item), true));
-            for (int i = 0; i < bottom.Length; i++) {
-                Polygon[0].AppendVertex(bottom[bottom.Length - i - 1]);
+            m_Polygon = new List<DCurve3>();
+            m_Lines = new List<Dataline>();
+            m_Polygon.Add(top);
+            for (int i = bottom.VertexCount - 1; i >=0; i--) {
+                m_Polygon[0].AppendVertex(bottom[i]);
+            }
+            Shape = Instantiate(shapePrefab, transform);
+            DataMesh com = Shape.GetComponent<DataMesh>();
+            if (!com.Spawn(transform)) throw new Exception("reparenting failed");
+            m_Polygon[0].Closed = true;
+
+            // call the generic polygon draw function from DataShape
+            try
+            {
+                _redraw();
+            }
+            catch (Exception e)
+            {
+                RecordSetPrototype temp = GetLayer().GetMetadata();
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {gisId as string} : {e.Message}");
             }
 
-            Shape = Instantiate(shapePrefab, transform);
-            
-            // call the generic polygon draw function from DataShape
-            _redraw();
+            com.SetMaterial(m_Col.Value);
+            com.Texture.Set(tex);
+
+
             return gameObject;
-        }
-
-        public override Dictionary<string, object> GetInfo() {
-            Dictionary<string, object> temp = new Dictionary<string, object>(gisProperties);
-            temp.Add("ID", gisId);
-            return temp;
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new System.NotImplementedException();
         }
     }
 }

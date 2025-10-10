@@ -26,6 +26,7 @@ using UniRx;
 using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 
 namespace Virgis {
 
@@ -35,7 +36,6 @@ namespace Virgis {
     // Singleton pattern taken from https://learn.unity.com/tutorial/level-generation
     public interface IState  {
         static IState instance;
-        Vector3 lastHitPosition { get; set; }
         int editScale { get; set; } // holds the current Edit Svcal
         int currentView { get; set; } // holds the current view number
         string UserID { get; set; } // holds a user identity
@@ -60,16 +60,17 @@ namespace Virgis {
         }
 
         /// <summary>
-        /// Use this to Show text in the Infoi Panel
+        /// usde this to change the apparent scale of the model
         /// </summary>
-        InfoEvent Info {
+        public ZoomEvent MapScale
+        {
             get;
         }
 
         /// <summary>
-        /// Use this to change the Zoom Level
+        /// Use this to Show text in the Info Panel
         /// </summary>
-        ZoomEvent Zoom {
+        InfoEvent Info {
             get;
         }
 
@@ -215,11 +216,11 @@ namespace Virgis {
         /// <param name=""></param>
         /// <param name=""></param>
         /// <returns> a number representing the scale set</returns>
-        float SetScale(float zoom);
+        void SetScale(float scale);
 
         bool LoadProject(string path);
 
-        void UnloadProject();
+        void UnloadProject(Action callback);
 
     }
 
@@ -227,6 +228,7 @@ namespace Virgis {
     {
 
         private static State m_inst = null;
+
         public static State instance
         {
             get
@@ -236,10 +238,9 @@ namespace Virgis {
 
             protected set { m_inst = value; }
         }
-        public Vector3 lastHitPosition
-        {
-            get; set;
-        }
+
+        public RaycastHit lastHit = new();
+
         public int editScale
         {
             get; set;
@@ -280,7 +281,13 @@ namespace Virgis {
             protected set;
         }
 
-        public ZoomEvent Zoom
+        public ZoomEvent MapScale
+        {
+            get;
+            protected set;
+        }
+
+        public GridEvent GridScale
         {
             get;
             protected set;
@@ -380,6 +387,25 @@ namespace Virgis {
             ServerEvent.OnNext(details);
         }
 
+        public ClientConnect Client { get; private set; } = new();
+
+        public virtual void ConnectClient(VirgisServerDetails details)
+        {
+            Client.Start();
+            NetworkManager nm = NetworkManager.Singleton;
+            UnityTransport unityTransport = nm.GetComponent<UnityTransport>();
+            if (!nm.IsConnectedClient)
+            {
+                unityTransport.ConnectionData.Address = details.Endpoint.Address.ToString();
+                unityTransport.ConnectionData.Port = (ushort)details.Endpoint.Port;
+                nm.NetworkConfig.ClientConnectionBufferTimeout = 120;
+                if (!nm.StartClient())
+                {
+                    Client.Failed();
+                } 
+            }
+        }
+
         public void ClearServers()
         {
             Servers = new();
@@ -422,41 +448,38 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
-        public virtual float SetScale(float zoom)
+        public virtual void SetScale(float scale)
         {
-            if (zoom != 0 && instance.Map != null)
-            {
-                instance.Map.transform.localScale = Vector3.one / zoom;
-                float scale = instance.Map.transform.InverseTransformVector(Vector3.right).magnitude;
-                Zoom.OnNext(scale);
-                return scale;
-            }
-            return 0;
+            MapScale.OnNext(scale);
         }
-
-
 
         public bool LoadProject(string path)
         {
             return MapInitialize.Load(path);
         }
 
-        public void UnloadProject()
+        public void UnloadProject(Action callback = null)
         {
+            NetworkObject no;
 
-            //Kill all map entities
-            if (Map != null && NetworkManager.Singleton.IsServer)
+
+            //If Server ...Kill all map entities
+            if (NetworkManager.Singleton.IsServer)
             {
-                for (int i = Map.transform.childCount - 1; i >= 0; i--)
+                if (Map != null)
                 {
-                    if (Map.transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer))
+                    for (int i = Map.transform.childCount - 1; i >= 0; i--)
                     {
-                        sublayer.Destroy();
-                        NetworkObject no = sublayer.GetComponent<NetworkObject>();
-                        no.Despawn();
+                        if (Map.transform.GetChild(i).TryGetComponent(out VirgisLayer sublayer))
+                        {
+                            sublayer.Destroy();
+                        }
                     }
+                    no = Map.GetComponent<NetworkObject>();
+                    no.Despawn();
                 }
-            }
+            } 
+            if (callback != null) callback();
         }
 
         public async Task Exit()

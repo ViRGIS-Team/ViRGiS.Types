@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
-using g3;
 
 namespace Virgis
 {
@@ -33,28 +32,24 @@ namespace Virgis
     /// </summary>
     public class Datapolygon : Datashape {
 
-        private float m_tiling_size;
-
-        public override void OnDestroy()
-        {
-            base.OnDestroy();
-        }
-
         public override void VertexMove(MoveArgs data) {
-            if (!m_blockMove) {
-                ShapeMoveVertex(data);
+            if (!m_State.BlockMove) {
+                _redraw();
             }
+            base.VertexMove(data);
         }
 
         public override void Translate(MoveArgs args) {
-            if (m_blockMove) {
+            if (m_State.BlockMove) {
                 transform.Translate(args.translate, Space.World);
+            } else
+            {
+                BroadcastMessage("TranslateHandle", args, SendMessageOptions.DontRequireReceiver);
             }
-
         }
 
         // https://answers.unity.com/questions/14170/scaling-an-object-from-a-different-center.html
-        public override void MoveAxis(MoveArgs args) {
+        protected override void _moveAxis(MoveArgs args) {
             transform.parent.GetComponent<IVirgisEntity>().MoveAxis(args);
             transform.GetComponentsInChildren<Dataline>().ToList<Dataline>().ForEach(line => line.MoveAxisAction(args));
             if (args.translate != null) {
@@ -73,67 +68,33 @@ namespace Virgis
             }
         }
 
-        public override void MoveTo(MoveArgs args) {
-            throw new System.NotImplementedException();
-        }
-
-
-
         /// <summary>
         /// Called to draw the Polygon based upon the 
         /// </summary>
         /// <param name="perimeter">LineString defining the perimter of the polygon</param>
-        /// <param name="mat"> Material to be used</param>
+        /// <param name="mat"> List of materials</param>
         /// <returns></returns>
-        public GameObject Draw(List<Dataline> polygon, float tiling_size = 10) {
-
-            m_tiling_size = tiling_size;
-            
-            lines = polygon;
+        public GameObject Draw(List<Dataline> polygon, Dictionary<string, SerializableMaterialHash> mat) {
 
             Shape = Instantiate(shapePrefab, transform, false);
-            Shape.GetComponent<VirgisFeature>().Spawn(transform);
+            VirgisFeature com = Shape.GetComponent<VirgisFeature>();
+            com.Spawn(transform);
+            if (!mat.TryGetValue("body", out SerializableMaterialHash body_hash))
+                body_hash = new();
+            com.SetMaterial(body_hash);
+            m_Lines = polygon;
 
             // call the generic polygon draw function in DataShape
-            _redraw();
-
-            //mr.material.SetVector("_Tiling", new Vector2(scaleX / tiling_size, scaleY / tiling_size));
-            return gameObject;
-        }
-
-        /// <summary>
-        /// Move a vertex of the polygon and recreate the mesh
-        /// </summary>
-        /// <param name="data">MoveArgs</param>
-        public void ShapeMoveVertex(MoveArgs data) {
-            Mesh mesh = Shape.GetComponent<MeshFilter>().mesh;
-            MeshCollider mc = Shape.GetComponent<MeshCollider>();
-            MeshRenderer mr = Shape.GetComponent<MeshRenderer>();
-            Material mat = mr.material;
-            Destroy(mc);
-            mc = Shape.AddComponent<MeshCollider>();
-            Vector3[] vertices = mesh.vertices;
-            vertices[VertexTable.Find(item => item.Id == data.id).pVertex] = Shape.transform.InverseTransformPoint(data.pos);
-            mesh.vertices = vertices;
-            mesh.uv = BuildUVs(vertices);
-            mesh.RecalculateBounds();
-            mesh.RecalculateNormals();
-            try {
-                Physics.BakeMesh(mesh.GetInstanceID(), false);
-                mc.sharedMesh = mesh;
-            } catch (Exception e) {
-                Debug.Log(e.ToString());
+            try
+            {
+                _redraw();
             }
-            mat.SetVector("_Tiling", new Vector2(scaleX / m_tiling_size, scaleY / m_tiling_size));
-
-        }
-
-        public override Dictionary<string, object> GetInfo() {
-            return transform.parent.GetComponent<IVirgisEntity>().GetInfo(this);
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new NotImplementedException();
+            catch (Exception e)
+            {
+                RecordSetPrototype temp = GetLayer().GetMetadata();
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {GetFID<object>()} : {e.Message}");
+            }
+            return gameObject;
         }
     }
 }

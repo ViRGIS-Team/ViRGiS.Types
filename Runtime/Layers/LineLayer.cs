@@ -22,6 +22,7 @@ SOFTWARE. */
 
 using System.Linq;
 using UnityEngine;
+using Unity.Netcode;
 
 namespace Virgis
 {
@@ -50,11 +51,22 @@ namespace Virgis
             dataFeatures.ToList<Dataline>().Find(item => args.id == item.GetId())?.transform.Translate(args.translate, Space.World);
         }
 
-        public override void MoveAxis(MoveArgs args)
+        protected override void _moveAxis(MoveArgs args)
         {
             changed = true;
             Dataline[] dataFeatures = gameObject.GetComponentsInChildren<Dataline>();
             dataFeatures.ToList<Dataline>().Find(item => args.id == item.GetId()).MoveAxisAction(args);
+        }
+
+        [Rpc(SendTo.Server)]
+        public override void AddFeatureRpc(Vector3[] verteces)
+        {
+            m_loader._addFeature(verteces);
+        }
+
+        public override void RemoveVertex(Transform vertex)
+        {
+            //do nothing
         }
     }
 }

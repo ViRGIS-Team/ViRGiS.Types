@@ -8,6 +8,7 @@ namespace Virgis
     public class PointCloud : VirgisFeature
     {
         public SerializableBakedPointCloud Bpc = new();
+        public VisualEffect VFX;
 
         public new void Start(){
             base.Start();
@@ -18,38 +19,23 @@ namespace Virgis
         {
             base.OnNetworkSpawn();
             Bpc.OnValueChanged += SetBpc;
-            if (Bpc.width != 0 ) SetBpc( Bpc.PositionMap, Bpc.ColorMap, Bpc.PointCount);
+            if (Bpc.PointCount != 0 ) SetBpc( Bpc.PositionMap, Bpc.ColorMap, Bpc.PointCount, Bpc.PixelSize);
         }
 
-    public override void OnNetworkDespawn()
-    {
-        base.OnNetworkSpawn();
-        Bpc.OnValueChanged -= SetBpc;
-    }
+        public override void OnNetworkDespawn()
+        {
+            base.OnNetworkSpawn();
+            Bpc.OnValueChanged -= SetBpc;
+        }
         
-        public void SetBpc( Texture2D positions, Texture2D colors, int PointCount) {
-            VisualEffect vfx = GetComponent<VisualEffect>();
-            // Sort out the point size
-            RecordSetPrototype layer = GetLayer()?.GetMetadata();
-            Dictionary<string,UnitPrototype> Symbology = layer.Units;
+        public void SetBpc( Texture2D positions, Texture2D colors, int PointCount, float PixelSize) {
 
             // load the VFX and fire
-            vfx.SetTexture("_Positions", positions);
-            vfx.SetTexture("_Colors", colors);
-            vfx.SetInt("_pointCount", PointCount);
-            if ( ! Symbology.TryGetValue("point", out UnitPrototype pointSymbology)) 
-                vfx.SetVector3("_size", pointSymbology.Transform.Scale);
-            vfx.Play();
-        }
-        
-        public override Dictionary<string, object> GetInfo()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta)
-        {
-            throw new System.NotImplementedException();
+            VFX.SetTexture("_Positions", positions);
+            VFX.SetTexture("_Colors", colors);
+            VFX.SetInt("_pointCount", PointCount);
+            VFX.SetVector3("_size", Vector3.one * PixelSize);
+            VFX.Play();
         }
 
         public override T GetGeometry<T>()

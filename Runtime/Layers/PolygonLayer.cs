@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using UnityEngine;
+using Unity.Netcode;
 
 namespace Virgis
 {
@@ -50,9 +51,15 @@ namespace Virgis
             changed = true;
         }
 
-        public override void MoveAxis(MoveArgs args)
+        protected override void _moveAxis(MoveArgs args)
         {
             changed = true;
+        }
+
+        [Rpc(SendTo.Server)]
+        public override void AddFeatureRpc(Vector3[] verteces)
+        {
+            m_loader._addFeature(verteces);
         }
     }
 }

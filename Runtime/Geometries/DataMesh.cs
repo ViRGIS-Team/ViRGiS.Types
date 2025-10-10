@@ -21,86 +21,100 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using UnityEngine;
-using g3;
-using System.Collections.Generic;
+using VirgisGeometry;
 using System;
 using System.Linq;
-using Unity.Netcode;
+using System.Collections.Generic;
 
 namespace Virgis {
 
-    public class DataMesh : VirgisFeature
-    {
-        protected DMesh3 m_mesh;
-        protected DMeshAABBTree3 m_aabb; // AABB Tree for current mesh
+    public class DataMesh : VirgisFeature{
 
-        public NetworkVariable<SerializableMesh> umesh = new();
-        public NetworkVariable<SerializableColorArray> colorArray = new();
+        public SerializableMesh umesh = new();
+        public MeshFilter MeshFilter;
+        public MeshCollider[] MeshColliders;
+
+        protected Dictionary<int, int> m_VertexMap; // holds the map between the DMesh vertex ids and the Unity Mesh vertex ids
 
 
-        public override void OnNetworkSpawn()
-        {
+        public override void OnNetworkSpawn(){
             base.OnNetworkSpawn();
-            umesh.OnValueChanged += SetMesh;
-            if (umesh.Value != null && umesh.Value.IsMesh) SetMesh(new SerializableMesh(), umesh.Value);
-            colorArray.OnValueChanged += OnColorisation;
-            if (colorArray.Value.Colors != null) OnColorisation(new SerializableColorArray(), colorArray.Value);
+            umesh.OnMeshChanged += SetMesh;
+            if (umesh.IsMesh) SetMesh (umesh.Mesh);
         }
 
-        public override void OnNetworkDespawn()
-        {
+        public override void OnNetworkDespawn(){
             base.OnNetworkSpawn();
-            umesh.OnValueChanged -= SetMesh;
-            colorArray.OnValueChanged -= OnColorisation;
+            umesh.OnMeshChanged -= SetMesh;
         }
 
-        public void OnColorisation(SerializableColorArray previousValue, SerializableColorArray newValue)
-        {
-            if (newValue.Colors == null) return;
-            Vector2[] uv = new Vector2[newValue.Colors.Length];
-            for (int i = 0; i < newValue.Colors.Length; i++)
+        protected void SetMesh(Mesh newValue){
+
+            // load mesh as unity mesh and add to MeshFilter
+
+            if (!NetworkManager.IsServer)
             {
-                uv[i] = new Vector2(newValue.Colors[i], 0);
-            };
-            MeshFilter mf = GetComponent<MeshFilter>();
-            mf.sharedMesh.uv4 = uv;
-        }
-
-
-        private void SetMesh(SerializableMesh previousValue, SerializableMesh newValue)
-        {
-            if (newValue == previousValue || !newValue.IsMesh) return;
-            MeshFilter mf = GetComponent<MeshFilter>();
-            MeshCollider[] mc = GetComponents<MeshCollider>();
-
-            // load mesh as dmesh and process
-            m_mesh = newValue;
-            m_aabb = new DMeshAABBTree3(m_mesh, true);
-
-            // lead mesh as unity mesh and add to MeshFilter
-            Mesh mesh = (Mesh)m_mesh;
-            mesh.RecalculateNormals();
-            mesh.RecalculateTangents();
-            mf.mesh = mesh;
-
-            NetworkManager nm = GetComponent<NetworkObject>().NetworkManager;
-            if (nm.IsServer)
-            {
-                StartCoroutine(m_mesh.ColorisationCoroutine(20, (colors) =>
+                Vector2[] uv = newValue.uv2;
+                m_VertexMap = new();
+                for (int i = 0; i < uv.Length; i++)
                 {
-                    colorArray.Value = new SerializableColorArray() { Colors = colors };
+                    uv[i].x = Mathf.Round(uv[i].x);
+                    uv[i].y = Mathf.Round(uv[i].y);
+                    try
+                    {
+                        m_VertexMap.Add((int)uv[i].y, i);
+                    }
+                    catch (Exception e)
+                    {
+                        _ = e;
+                        Debug.Log("Duplicate Vertex in VertexMap");
+                    } 
                 }
-                ));
+                newValue.uv4 = uv;
+            } else
+            {
+                Vector2[] uv = newValue.uv4;
+                m_VertexMap = new ();
+                for (int i = 0; i < uv.Length; i++)
+                {
+                    m_VertexMap.Add((int)uv[i].y,i);
+                }
+            }
+            newValue.RecalculateBounds();
+            MeshFilter.mesh = newValue;
+            UpdateUnityMesh();
+            if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
+            {
+                UnityEngine.Debug.Log("Set Mesh -  a defective mesh " + res1.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Helper to create a UV from the Colors - the v component is set to the vertex ID since this gets scrambled through draco
+        /// </summary>
+        /// <param name="colors"></param>
+        /// <returns></returns>
+        public static Vector2[] ToUV(byte[] colors, int[] map)
+        {
+            Vector2[] uv = new Vector2[colors.Length];
+            for (int i = 0; i < colors.Length; i++)
+            {
+                uv[i] = new Vector2(colors[i], map[i]);
             };
+            return uv;
+        }
+
+        protected void UpdateUnityMesh() {
+            Mesh mesh = MeshFilter.sharedMesh;
 
             // create the mesh colliders
             Mesh imesh = new()
             {
                 indexFormat = mesh.indexFormat,
-
                 vertices = mesh.vertices,
                 triangles = mesh.triangles.Reverse().ToArray(),
-                uv = mesh.uv
+                uv = mesh.uv,
+                uv4 = mesh.uv4,
             };
 
             imesh.RecalculateBounds();
@@ -108,33 +122,25 @@ namespace Virgis {
 
             try
             {
-                mc[0].sharedMesh = mesh;
-                mc[1].sharedMesh = imesh;
+                MeshColliders[0].sharedMesh = mesh;
+                MeshColliders[1].sharedMesh = imesh;
             }
             catch (Exception e)
             {
-                Debug.Log(e.ToString());
+                Debug.LogError(e.ToString());
             }
         }
 
         public DMesh3 GetMesh() {
-            return m_mesh;
-        }
-
-        public override Dictionary<string, object> GetInfo() {
-            if (m_mesh != null)
-                return m_mesh.FindMetadata("properties") as Dictionary<string, object>;
-            else
-                return transform.parent.GetComponent<IVirgisFeature>().GetInfo();
-        }
-
-        public override void SetInfo(Dictionary<string, object> meta) {
-            throw new System.NotImplementedException();
+            return umesh.DMesh3;
         }
 
         public void MakeConvex() {
-            MeshCollider[] mcs = gameObject.GetComponents<MeshCollider>();
-            mcs.ToList().ForEach(item => item.convex = true);
+            MeshColliders.ToList().ForEach(item => item.convex = true);
+        }
+
+        public void MakeKinematic(){
+            MeshColliders.ToList().ForEach(item => Destroy(item));
         }
     }
 }
