@@ -60,7 +60,15 @@ namespace Virgis {
                 {
                     uv[i].x = Mathf.Round(uv[i].x);
                     uv[i].y = Mathf.Round(uv[i].y);
-                    m_VertexMap.Add((int)uv[i].y, i);
+                    try
+                    {
+                        m_VertexMap.Add((int)uv[i].y, i);
+                    }
+                    catch (Exception e)
+                    {
+                        _ = e;
+                        Debug.Log("Duplicate Vertex in VertexMap");
+                    } 
                 }
                 newValue.uv4 = uv;
             } else
