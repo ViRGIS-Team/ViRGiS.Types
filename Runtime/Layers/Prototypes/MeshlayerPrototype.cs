@@ -67,6 +67,19 @@ namespace Virgis
             }
         }
 
+        protected override void _onEditStop(bool save)
+        {
+            m_Editing = false;
+            if (IsWriteable)
+            {
+                VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
+                foreach (VirgisFeature com in coms)
+                {
+                    com.OnEditEnd(save);
+                }
+            }
+        }
+
         [Rpc(SendTo.Server)]
         public void AddFeatureRpc(Vector3[] verteces, int[] tris, Vector3[] normals, bool close)
         {

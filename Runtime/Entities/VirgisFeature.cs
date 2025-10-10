@@ -179,6 +179,14 @@ namespace Virgis {
         }
 
         /// <summary>
+        /// Used to signal to the hierarchy that a substantive change has been made
+        /// </summary>
+        public virtual void Changed()
+        {
+            transform.parent.GetComponent<IVirgisEntity>().Changed();
+        }
+
+        /// <summary>
         /// Called to Set the Feature State of the feature:
         /// - Sets the BlockMove State from the VirgisFeatureState object
         /// </summary>
@@ -201,6 +209,7 @@ namespace Virgis {
         public virtual void MoveTo(MoveArgs args)
         {
             MoveToRpc(args, m_State, ! IsServer);
+            Changed();
         }
 
         [Rpc(SendTo.Server)]
@@ -234,6 +243,7 @@ namespace Virgis {
                 args.pos = m_State.FirstHitPosition;
             }
             MoveAxisRpc(args, m_State);
+            Changed();
         }
 
         [Rpc(SendTo.Server)]
@@ -385,7 +395,17 @@ namespace Virgis {
             return false;
         }
 
+        public virtual void OnEditStart(bool save)
+        {
+            // do nothing
+        }
+
         public virtual void OnEdit(bool inSession) {
+            // do nothing
+        }
+
+        public virtual void OnEditEnd(bool save)
+        {
             // do nothing
         }
 

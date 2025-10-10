@@ -61,7 +61,7 @@ namespace Virgis
         }
 
         private IVirgisLayer m_Parent;
-        private bool m_Editing;
+        protected bool m_Editing;
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -245,7 +245,7 @@ namespace Virgis
         /// Draw the layer based upon the features in the features RecordSet
         /// </summary>
         public virtual async Task Draw() {
-            // if not a server - do ntohing
+            // if not a server - do nothing
             if(!IsServer) return;
             
             //change nothing if there are no changes
@@ -350,7 +350,7 @@ namespace Virgis
         /// </summary>
         /// <param name="button"> SelectionType</param>
         public virtual void Selected(SelectionType button) {
-            changed = true;
+            //do nothing
         }
 
         /// <summary>
@@ -359,6 +359,14 @@ namespace Virgis
         /// <param name="button">SelectionType</param>
         public virtual void UnSelected(SelectionType button) {
             // do nothing
+        }
+
+        /// <summary>
+        /// Used to signal to the hierarchy that a substantive change has been made
+        /// </summary>
+        public virtual void Changed()
+        {
+            changed = true;
         }
 
         /// <summary>
@@ -457,7 +465,6 @@ namespace Virgis
 
         public void SetEditable(bool checkout)
         {
-            if (!checkout && !changed) return; // don't checkin if this layer hs never been checkout
             if (isContainer)
             {
                 foreach (VirgisLayer sublayer in subLayers)
@@ -467,17 +474,16 @@ namespace Virgis
             } else
             {
                 SetEditableRpc(checkout);
-                changed = checkout; // this will ripple up
             }
         }
 
         [Rpc(SendTo.Server)]
         private void SetEditableRpc(bool checkout) {
+            if (m_CheckedOut.Value == checkout) return;
             _set_editable();
             if (!checkout)
             {
                 Debug.Log($"Check-in layer {GetId()}");
-                Draw();
             } else
             {
                 Debug.Log($"Check-out layer {GetId()}");
@@ -489,7 +495,14 @@ namespace Virgis
         }
 
         protected virtual void _onEditStart(bool test) {
-            // do nothing
+            if (IsWriteable)
+            {
+                VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
+                foreach (VirgisFeature com in coms)
+                {
+                    com.OnEditStart(test);
+                }
+            }
         }
 
         protected virtual void _onEditLayerChange((IVirgisLayer, IVirgisLayer) args)
@@ -522,8 +535,17 @@ namespace Virgis
             }
         }
 
-        protected virtual void _onEditStop(bool test) {
-            // do nothing
+        protected virtual void _onEditStop(bool save) {
+            m_Editing = false;
+            Draw();
+            if (IsWriteable)
+            {
+                VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
+                foreach (VirgisFeature com in coms)
+                {
+                    com.OnEditEnd(save);
+                }
+            }
         }
 
         public override bool Equals(object obj) {

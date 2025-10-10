@@ -197,7 +197,7 @@ namespace Virgis {
 
         protected void _onEditStart(bool ignore)
         {
-            CheckPoint();
+
         }
 
         /// <summary>
@@ -379,6 +379,11 @@ namespace Virgis {
         }
 
         public void AddVertex(Vector3 pos)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Changed()
         {
             throw new NotImplementedException();
         }

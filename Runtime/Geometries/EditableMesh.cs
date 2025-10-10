@@ -33,11 +33,15 @@ namespace Virgis
     public class EditableMesh : DataMesh{
         public GameObject MarkerShape;
 
-        private GameObject marker;
+        private GameObject marker; // Marked used to show the selected Vertex
+
+        private DMesh3 m_OldDMesh; // Saves the DMesh3 for recovery on Save and Discrad
+        private bool m_Changed; // True if the Mesh has been changed in an edit session
 
         private bool m_BlockMove = false; // is entity in a block-move state
 
         private int m_selectedVertex; // holds the current Unity Mesh vertex ID for the selected vertex - note that in clients this NOT the same as the DMesh vertex id
+        private int m_selectedTriangle; // holds the current Unity Mesh triangle ID - note that in clients this is not the same as the DMesh ytriangle ID
         private int n = -1; //indicator that the n-ring is built
         private bool m_selectOn = false;
 
@@ -57,13 +61,13 @@ namespace Virgis
             }
             m_selectOn = true;
             RaycastHit lastHit = State.instance.lastHit;
-            int triangle = lastHit.triangleIndex;
+            int m_selectedTriangle = lastHit.triangleIndex;
             Vector3 bary = lastHit.barycentricCoordinate;
             int[] triangles = (lastHit.collider as MeshCollider).sharedMesh.triangles;
             int selectedUVertex = 0;
-            if (bary.x >= bary.y && bary.x >= bary.z) selectedUVertex = triangles[triangle * 3]; 
-            else if (bary.y >= bary.x && bary.y >= bary.z) selectedUVertex = triangles[triangle * 3 + 1];
-            else if (bary.z >= bary.x && bary.z >= bary.y) selectedUVertex = triangles[triangle * 3 + 2];
+            if (bary.x >= bary.y && bary.x >= bary.z) selectedUVertex = triangles[m_selectedTriangle * 3]; 
+            else if (bary.y >= bary.x && bary.y >= bary.z) selectedUVertex = triangles[m_selectedTriangle * 3 + 1];
+            else if (bary.z >= bary.x && bary.z >= bary.y) selectedUVertex = triangles[m_selectedTriangle * 3 + 2];
             
             
             // get the collider mesh to get the verticesMesh and get the DMesh3 vertex id
@@ -117,12 +121,19 @@ namespace Virgis
             n = -1;
         }
 
+        public override void Changed()
+        {
+            base.Changed();
+            m_Changed = true;
+        }
+
         /// <summary>
         /// This is called by the Avatar on the client to move the current vertex
         /// </summary>
         /// <param name="args"></param>
         public override void MoveTo(MoveArgs args) {
             if (!m_selectOn) return;
+            Changed();
             Stopwatch timer = new();
             timer.Start();
             if (m_BlockMove)
@@ -135,6 +146,10 @@ namespace Virgis
             }
             else
             {
+                if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
+                {
+                    UnityEngine.Debug.Log("Move Vertex - Move Vertex given a defective mesh " + res1.ToString());
+                }
                 Vector3 localTranslate = transform.InverseTransformVector(args.translate);
                 if (marker != null) marker.transform.localPosition += localTranslate;
                 if (args.translate != Vector3.zero && m_selectOn)
@@ -202,11 +217,16 @@ namespace Virgis
             UpdateUnityMesh();
             timer.Stop();
             UnityEngine.Debug.LogWarning($"Edit took : {timer.Elapsed.TotalSeconds} seconds");
+            if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
+            {
+                UnityEngine.Debug.Log("Move Vertex - MOve Vertex created a defective mesh " + res2.ToString());
+            }
         }
 
         [Rpc(SendTo.Server)]
         public void MoveToRpc(int[] vIDs, double[] values, byte[] axisOrder)
         {
+            m_Changed = true;
             for (int i = 0; i < vIDs.Length; i++)
             {
                 int pointer = 0;
@@ -223,6 +243,7 @@ namespace Virgis
         public void MoveAxisAction(MoveArgs args){
             if (GetComponent<MeshFilter>().sharedMesh.bounds.Contains(transform.InverseTransformPoint(args.pos)))
             {
+                Changed();
                 if (args.translate != Vector3.zero)
                     transform.Translate(args.translate, Space.World);
                 args.rotate.ToAngleAxis(out float angle, out Vector3 axis);
@@ -277,10 +298,15 @@ namespace Virgis
         }
 
 
-        public override void OnEdit(bool inSession){
+        public override void OnEdit(bool inSession)
+        {
             if (inSession)
             {
                 MeshRenderer.material.SetFloat("_Wireframe", 1);
+                if (m_OldDMesh == null)
+                {
+                    m_OldDMesh = new (umesh.DMesh3);
+                }
             }
             else
             {
@@ -288,8 +314,30 @@ namespace Virgis
             }
         }
 
+
+        public override void OnEditEnd(bool save)
+        {
+            if (! save && m_Changed )
+            {
+                umesh.DMesh3 = m_OldDMesh;
+                StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
+                    {
+                        umesh.Mesh.uv4 = DataMesh.ToUV(colors, umesh.DMesh3.VertexMap);
+                        umesh.OnMeshChanged.Invoke(umesh.Mesh);
+                    }
+                ));
+            }
+            m_Changed = false;
+        }
+
         public override void AddVertex(Vector3 position)
         {
+            Changed();
+            if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
+            {
+                UnityEngine.Debug.Log("Add Vertex - Add Vertex given a defective mesh " + res1.ToString());
+            }
+
             Vector3d localPosition = (Vector3d)transform.InverseTransformPoint(position);
 
             // get the hit triangle
@@ -351,6 +399,10 @@ namespace Virgis
             umesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
             UnityEngine.Debug.Log($"Number of Verteces after edge split {umesh.DMesh3.VertexCount} ");
             umesh.DMesh3.SetVertex(result.vNew, localPosition);
+            if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
+            {
+                UnityEngine.Debug.Log("Add Vertex - Add Vertex created a defective mesh " + res2.ToString());
+            }
             umesh.RefreshUnityMesh();
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
@@ -365,12 +417,12 @@ namespace Virgis
         /// </summary>
         public override void RemoveVertex(Transform vertex = null)
         {
-            //if (!umesh.DMesh3.CheckValidity(out MeshResult result))
-            //{
-            //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex given a defective mesh " + result.ToString());
-            //    return;
-            //}
-            //bool isClosed = umesh.DMesh3.CachedIsClosed;
+            Changed();
+            if (!umesh.DMesh3.CheckValidity(out MeshResult result))
+            {
+                UnityEngine.Debug.Log("Remove Vertex - Remove Vertex given a defective mesh " + result.ToString());
+            }
+            bool isClosed = umesh.DMesh3.CachedIsClosed;
             MeshResult res = umesh.DMesh3.RemoveVertex(m_selectedVertex, true, false);
             if (res != MeshResult.Ok) {
                 UnityEngine.Debug.Log(res.ToString());
@@ -388,11 +440,10 @@ namespace Virgis
                 UnityEngine.Debug.Log("Remove Vertex - MeshAutoRepair did nothing");
                 return;
             }
-            //if ( ! umesh.DMesh3.CheckValidity(out MeshResult res2))
-            //{
-            //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
-            //    return;
-            //}
+            if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
+            {
+                UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
+            }
             umesh.RefreshUnityMesh();
             StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {

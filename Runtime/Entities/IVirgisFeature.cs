@@ -34,6 +34,7 @@ namespace Virgis
     {
         void Selected(SelectionType button);
         void UnSelected(SelectionType button);
+        void Changed();
         ulong GetId();
         VirgisFeature GetClosest(Vector3 coords, Guid[] exclude);
         void MoveAxis(MoveArgs args);

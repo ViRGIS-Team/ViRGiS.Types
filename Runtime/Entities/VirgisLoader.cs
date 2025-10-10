@@ -401,5 +401,10 @@ namespace Virgis
         {
             // do nothing
         }
+
+        public void Changed()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

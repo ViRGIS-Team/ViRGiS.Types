@@ -43,6 +43,12 @@ namespace Virgis
             m_Mesh = (Mesh)m_Dmesh;
         }
 
+        public void Reset(DMesh3 dmesh, Mesh umesh)
+        {
+            m_Mesh = umesh;
+            m_Dmesh = dmesh;
+        }
+
         public Mesh Mesh { get { return m_Mesh; } }
 
         public void MeshFinalize()
