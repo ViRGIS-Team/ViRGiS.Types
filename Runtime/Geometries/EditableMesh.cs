@@ -35,9 +35,10 @@ namespace Virgis
 
         private GameObject marker; // Marked used to show the selected Vertex
 
-        private DMesh3 m_OldDMesh; // Saves the DMesh3 for recovery on Save and Discrad
-        private bool m_Changed; // True if the Mesh has been changed in an edit session
+        private DMesh3 m_OldDMesh; // Saves the DMesh3 for recovery on Save and Discard
+        private Matrix4x4 m_OldTransform; // Saves the Transform for recovery on Save and Discard
 
+        private bool m_Changed; // True if the Mesh has been changed in an edit session
         private bool m_BlockMove = false; // is entity in a block-move state
 
         private int m_selectedVertex; // holds the current DMesh vertex ID for the selected vertex - note that in clients this NOT the same as the DMesh vertex id
@@ -303,9 +304,15 @@ namespace Virgis
             if (inSession)
             {
                 MeshRenderer.material.SetFloat("_Wireframe", 1);
-                if (m_OldDMesh == null)
+                if (! m_Changed)
                 {
                     m_OldDMesh = new (umesh.DMesh3);
+                    m_OldTransform = Matrix4x4.TRS(
+                        transform.position,
+                        transform.rotation,
+                        transform.localScale
+                    );
+                    UnityEngine.Debug.LogWarning($"Checkpoint saved for Object {GetId()}");
                 }
             }
             else
@@ -320,12 +327,24 @@ namespace Virgis
             if (! save && m_Changed )
             {
                 umesh.DMesh3 = m_OldDMesh;
+                transform.position = m_OldTransform.GetColumn(3);
+                transform.rotation = Quaternion.LookRotation(
+                    m_OldTransform.GetColumn(2),
+                    m_OldTransform.GetColumn(1)
+                    );
+                transform.localScale = new Vector3(
+                    m_OldTransform.GetColumn(0).magnitude,
+                    m_OldTransform.GetColumn(1).magnitude,
+                    m_OldTransform.GetColumn(2).magnitude
+                );
                 StartCoroutine(umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
                     {
                         umesh.Mesh.uv4 = DataMesh.ToUV(colors, umesh.DMesh3.VertexMap);
                         umesh.OnMeshChanged.Invoke(umesh.Mesh);
+                        UnityEngine.Debug.LogWarning($"Checkpoint restored for Object {GetId()}");
                     }
                 ));
+
             }
             m_Changed = false;
         }
