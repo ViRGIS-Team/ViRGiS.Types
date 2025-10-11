@@ -83,10 +83,11 @@ namespace Virgis {
             newValue.RecalculateBounds();
             MeshFilter.mesh = newValue;
             UpdateUnityMesh();
-            if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
-            {
-                UnityEngine.Debug.Log("Set Mesh -  a defective mesh " + res1.ToString());
-            }
+
+            //if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
+            //{
+            //    UnityEngine.Debug.Log("Set Mesh -  a defective mesh " + res1.ToString());
+            //}
         }
 
         /// <summary>
@@ -106,6 +107,7 @@ namespace Virgis {
 
         protected void UpdateUnityMesh() {
             Mesh mesh = MeshFilter.sharedMesh;
+            mesh.UploadMeshData(false);
 
             // create the mesh colliders
             Mesh imesh = new()
@@ -123,7 +125,9 @@ namespace Virgis {
             try
             {
                 MeshColliders[0].sharedMesh = mesh;
+                MeshColliders[0].sharedMesh.UploadMeshData(false);
                 MeshColliders[1].sharedMesh = imesh;
+                MeshColliders[0].sharedMesh.UploadMeshData(false);
             }
             catch (Exception e)
             {

@@ -50,23 +50,6 @@ namespace Virgis
             dataFeatures.ToList<EditableMesh>().Find(item => args.id == item.GetId()).MoveAxisAction(args);
         }
 
-        protected override void _set_editable() {
-            base._set_editable();
-            if (State.instance.InEditSession()) {
-                if (IsWriteable) {
-                    EditableMesh[] meshes = GetComponentsInChildren<EditableMesh>();
-                    foreach (EditableMesh mesh in meshes) {
-                        mesh.OnEdit(true);
-                    }
-                } else {
-                    EditableMesh[] meshes = GetComponentsInChildren<EditableMesh>();
-                    foreach (EditableMesh mesh in meshes) {
-                        mesh.OnEdit(false);
-                    }
-                }
-            }
-        }
-
         protected override void _onEditStop(bool save)
         {
             m_Editing = false;

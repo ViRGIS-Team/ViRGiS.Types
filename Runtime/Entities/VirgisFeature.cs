@@ -372,7 +372,9 @@ namespace Virgis {
         /// called when the pointer stops hovering on this feature
         /// </summary>
         public void UnHover() {
-            State.instance.Info.UnSet();
+            if ( ! State.instance.ButtonStatus.isRhGrip ) {
+                State.instance.Info.UnSet();
+            }
         }
 
         public IVirgisLayer GetLayer() {
