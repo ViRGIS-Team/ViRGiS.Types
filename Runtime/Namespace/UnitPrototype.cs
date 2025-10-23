@@ -28,7 +28,8 @@ namespace Virgis
         MultibandColor,
         SinglebandColor,
         SinglebandGrey,
-        Category
+        Category,
+        SingleColor
     }
 
     /// <summary>

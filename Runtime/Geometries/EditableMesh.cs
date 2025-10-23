@@ -277,12 +277,28 @@ namespace Virgis
                 Name = "body",
                 Color = bodySymbology.Color,
             };
+            int hVC;
+            switch (bodySymbology.ColorMode)
+            {
+                case ColorMode.SingleColor:
+                    hVC = 0;
+                    break;
+                case ColorMode.MultibandColor:
+                    hVC = dmeshin.HasVertexColors ? 1 : 0;
+                    break;
+                case ColorMode.SinglebandColor:
+                    hVC = 1;
+                    break;
+                default:
+                    hVC = 0;
+                    break;
+            }
             hash.properties = new SerializableProperty[]
             {
             new SerializableProperty()
             {
                 Key = "_hasVertexColor",
-                Value = dmeshin.HasVertexColors ? 1 : 0
+                Value = hVC
             }
             };
 
