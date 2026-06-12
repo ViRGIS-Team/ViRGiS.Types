@@ -5,8 +5,8 @@
   "description": "ViRGiS is a GIS platform for VR. See https://www.vrgis.org for more details.",
   "unity": "2020.3",
   "dependencies": {
-    "com.virgis.geometry": "4.0.0",
-    "com.virgis.geojson.net": "1.2.20"
+    "com.virgis.geometry": "4.0.2",
+    "com.virgis.geojson.net": "1.2.22"
   },
   "keywords": [
     "geometry",
