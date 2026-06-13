@@ -1,11 +1,11 @@
 {
   "name": "com.virgis.types",
-  "version": "3.0.0-a.1",
+  "version": "3.0.0-a.2",
   "displayName": "ViRGiS Visualisation Entities",
   "description": "ViRGiS is a GIS platform for VR. See https://www.vrgis.org for more details.",
   "unity": "2020.3",
   "dependencies": {
-    "com.virgis.geometry": "4.0.2",
+    "com.virgis.geometry": "4.0.3",
     "com.virgis.geojson.net": "1.2.22"
   },
   "keywords": [
