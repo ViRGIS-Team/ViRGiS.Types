@@ -24,7 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
-using UniRx;
+using R3;
 using System.Collections;
 using Unity.Netcode;
 using Unity.Mathematics;

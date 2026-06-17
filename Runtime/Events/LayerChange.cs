@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using UniRx;
+using R3;
 using System;
 
 namespace Virgis {
@@ -38,13 +38,13 @@ namespace Virgis {
             _DelEvent.OnNext(layer);
         }
 
-        public IObservable<VirgisLayer> AddEvents {
+        public Observable<VirgisLayer> AddEvents {
             get {
                 return _AddEvent.AsObservable();
             }
         }
 
-        public IObservable<VirgisLayer> DelEvents {
+        public Observable<VirgisLayer> DelEvents {
             get {
                 return _DelEvent.AsObservable();
             }

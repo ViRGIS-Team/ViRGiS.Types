@@ -20,7 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
-using UniRx;
+using R3;
 using System;
 
 namespace Virgis
@@ -39,7 +39,7 @@ namespace Virgis
             OnNext(1);
         }
 
-        public IObservable<float> Event
+        public Observable<float> Event
         {
             get
             {
