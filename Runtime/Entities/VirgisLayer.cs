@@ -40,6 +40,7 @@ namespace Virgis
 
         public FeatureType featureType { get; protected set; }
         public string sourceName { get; set; }
+        private bool IsListening => NetworkManager.Singleton is not null && NetworkManager.Singleton.IsListening;
 
         [HideInInspector]
         public List<IVirgisLayer> subLayers
@@ -98,7 +99,7 @@ namespace Virgis
             m_subs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
             m_subs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
             m_subs.Add(appState.EditSession.ChangeLayerEvent.Subscribe(_onEditLayerChange));
-            if (! IsServer)
+            if ( IsListening && ! IsServer)
             {
                 m_Parent = transform.parent?.GetComponent<IVirgisLayer>();
                 if (! isContainer) Loaded(this);
@@ -111,7 +112,7 @@ namespace Virgis
 
         public override void OnNetworkSpawn()
         {
-            if (IsServer)
+            if (! IsListening || IsServer)
             {
                 m_CheckedOut.Value = false;
             } 
@@ -153,27 +154,46 @@ namespace Virgis
 
         public bool Spawn(Transform parent){
             NetworkObject no = gameObject.GetComponent<NetworkObject>();
-            try
+            if (IsListening)
             {
-                no.Spawn();
-            } catch (Exception e){
-                _ = e;
-                return false;
+                try
+                {
+                    no.Spawn();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e.Message);
+                    return false;
+                }
+
+                return no.TrySetParent(parent);
             }
-            return no.TrySetParent(parent);
+            else
+            {
+                no.transform.SetParent(transform);
+                OnNetworkSpawn();
+                return true;
+            }
         }
 
         public void DeSpawn(Transform t = null) {
-            if (t==null) t = transform;
+            if (!t) t = transform;
             NetworkObject no = t.GetComponent<NetworkObject>();
-            try
+            if (IsListening)
             {
-                if (no.IsSpawned)
-                no.Despawn();
+
+                try
+                {
+                    if (no.IsSpawned) no.Despawn();
+                }
+                catch (Exception e)
+                {
+                    _ = e;
+                }
             }
-            catch (Exception e)
+            else
             {
-                _ = e;
+                OnNetworkDespawn();
             }
         }
 
@@ -195,7 +215,7 @@ namespace Virgis
         }
 
         public virtual void Loaded(VirgisLayer layer) {
-            if (! IsServer) subLayers.Add(layer);
+            if (IsListening && ! IsServer) subLayers.Add(layer);
             if (isContainer) {
                 m_SubLayersLoaded++;
                 if (m_SubLayersLoaded >= m_SubLayersCount.Value)
@@ -246,7 +266,7 @@ namespace Virgis
         /// </summary>
         public virtual async Task Draw() {
             // if not a server - do nothing
-            if(!IsServer) return;
+            if(IsListening && !IsServer) return;
             
             //change nothing if there are no changes
             if (changed) {

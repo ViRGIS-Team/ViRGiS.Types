@@ -52,6 +52,8 @@ namespace Virgis {
             BlockMove = false
         };
         private object m_FID;
+        
+        protected bool IsListening => NetworkManager.Singleton is not null && NetworkManager.Singleton.IsListening;
 
         public virtual void Start()
         {
@@ -109,7 +111,7 @@ namespace Virgis {
         }
 
         /// <summary>
-        /// Only Run this on a Server
+        /// 
         /// Burns the entire object tree of which this is the trunk
         /// starting from the leaves first. Only safe way to destroy 
         /// the ViRGiS tree on a networked version
@@ -129,28 +131,46 @@ namespace Virgis {
         public bool Spawn(Transform parent)
         {
             NetworkObject no = gameObject.GetComponent<NetworkObject>();
-            try
+            if (IsListening)
             {
-                no.Spawn();
+                try
+                {
+                    no.Spawn();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e.Message);
+                    return false;
+                }
+
+                return no.TrySetParent(parent);
             }
-            catch (Exception e)
+            else
             {
-                Debug.LogError(e.Message);
-                return false;
+                no.transform.SetParent(transform);
+                OnNetworkSpawn();
+                return true;
             }
-            return no.TrySetParent(parent);
         }
 
         public void DeSpawn(Transform t = null) {
-            if (t==null) t = transform;
+            if (!t) t = transform;
             NetworkObject no = t.GetComponent<NetworkObject>();
-            try
+            if (IsListening)
             {
-                if (no.IsSpawned) no.Despawn();
+
+                try
+                {
+                    if (no.IsSpawned) no.Despawn();
+                }
+                catch (Exception e)
+                {
+                    _ = e;
+                }
             }
-            catch (Exception e)
+            else
             {
-                _ = e;
+                OnNetworkDespawn();
             }
         }
 

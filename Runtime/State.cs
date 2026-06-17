@@ -464,7 +464,7 @@ namespace Virgis {
 
 
             //If Server ...Kill all map entities
-            if (NetworkManager.Singleton.IsServer)
+            if ( ! ( NetworkManager.Singleton.IsListening && ! NetworkManager.Singleton.IsServer ) )
             {
                 if (Map != null)
                 {

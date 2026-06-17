@@ -52,7 +52,7 @@ namespace Virgis {
 
             // load mesh as unity mesh and add to MeshFilter
 
-            if (!NetworkManager.IsServer)
+            if (IsListening && ! IsServer)
             {
                 Vector2[] uv = newValue.uv2;
                 m_VertexMap = new();
