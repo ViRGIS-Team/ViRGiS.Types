@@ -57,6 +57,9 @@ namespace Virgis
         public IPEndPoint Endpoint;
         public string ServerName;
         public string ModelName;
+        public bool IsDirectory;
+        public bool IsServer;
+        public bool IsFile;
     }
 
     public struct VirgisFeatureState : INetworkSerializable
