@@ -387,5 +387,10 @@ namespace Virgis {
         {
             throw new NotImplementedException();
         }
+
+        public virtual void New()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

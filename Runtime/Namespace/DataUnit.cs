@@ -15,7 +15,7 @@ namespace Virgis
     }
 
     /// <summary>
-    /// A Graph Unit from a Data Level
+    /// A Graph Unit from a Data Layer
     /// </summary>
     public class DataUnitPrototype : TestableObject
     {
