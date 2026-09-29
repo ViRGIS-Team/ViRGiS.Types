@@ -296,22 +296,10 @@ namespace Virgis
         }
 
         /// <summary>
-        /// Call this to tell the layers to create a checkpoint. 
-        /// 
-        /// Only valid outside of an Edit Session. Inside an Edit Session use Save() as CheckPoint() will do nothing
-        /// </summary>
-        public virtual void CheckPoint() {
-            if (!State.instance.InEditSession()) {
-                m_loader?._checkpoint();
-            }
-
-        }
-
-        /// <summary>
         /// Called to save the current layer data to source
         /// </summary>
         /// <returns>A copy of the data save dot the source</returns>
-        public virtual async Task<RecordSetPrototype> Save() {
+        public virtual RecordSetPrototype Save() {
             if (changed) {
                 SaveRpc();
             }
@@ -321,13 +309,15 @@ namespace Virgis
         }
 
         [Rpc(SendTo.Server)]
-        public void SaveRpc()
+        private void SaveRpc()
         {
             Debug.Log($"Save requested on layer {GetId()}");
             if (m_loader != null)
-                m_loader._save();
+                _ = m_loader._save();
             m_CheckedOut.Value = false;
         }
+        
+
 
         /// <summary>
         /// Called Whenever a member entity is asked to Translate
@@ -647,6 +637,20 @@ namespace Virgis
         public virtual void AddVertex(Vector3 position) 
         {
             //do nothing
+        }
+
+        [Rpc(SendTo.Server)]
+        public void RequestRedrawRpc(RecordSetPrototype layer = null)
+        {
+            changed = true;
+            m_loader.ReadSymbology();
+            _ = Draw();
+        }
+
+        [Rpc(SendTo.Server)]
+        public void UpdateSymbologyRpc(string unitName, UnitPrototype unit)
+        {
+            m_loader.ChangeSymbology(unitName, unit);
         }
     }
 }

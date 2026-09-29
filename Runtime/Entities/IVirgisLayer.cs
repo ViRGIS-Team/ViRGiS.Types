@@ -110,15 +110,10 @@ namespace Virgis
         void Loaded(VirgisLayer layer);
 
         /// <summary>
-        /// Lifecycle hook that is called at the start of an edit session
-        /// </summary>
-        void CheckPoint();
-
-        /// <summary>
         /// Called on a layer at the end of an edit session
         /// </summary>
         /// <returns></returns>
-        Task<RecordSetPrototype> Save();
+        RecordSetPrototype Save();
 
         /// <summary>
         /// Fetch a feature from a layer by GUID

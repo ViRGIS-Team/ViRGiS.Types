@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Text;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace Virgis
@@ -133,7 +135,7 @@ namespace Virgis
         }
     }
 
-    public class UnitPrototype : TestableObject
+    public class UnitPrototype : TestableObject, INetworkSerializable
     {
         /// <summary>
         /// Color used for the unit of symbology.
@@ -193,6 +195,29 @@ namespace Virgis
             }
             ci = null;
             return false;
+        }
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsWriter){
+                byte[] s = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this));
+                var writer = serializer.GetFastBufferWriter();
+                writer.WriteValueSafe(s.Length);
+                writer.WriteValueSafe(s);
+            } else {
+                var reader = serializer.GetFastBufferReader();
+                reader.ReadValueSafe(out int byteCount);
+                byte[] s = new byte[byteCount];
+                reader.ReadValueSafe(out s);
+                UnitPrototype newS = JsonConvert.DeserializeObject<UnitPrototype>(Encoding.UTF8.GetString(s));
+                Color = newS.Color;
+                Shape = newS.Shape;
+                Label = newS.Label;
+                Transform = newS.Transform;
+                ColorMode = newS.ColorMode;
+                ColorMap = newS.ColorMap;
+                ColorInterp = newS.ColorInterp;
+            }
         }
     }
 

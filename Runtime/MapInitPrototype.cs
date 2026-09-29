@@ -165,29 +165,9 @@ namespace Virgis {
         /// <summary>
         /// this call initiates the saving of the whole project and calls `Save` on each layer in turn
         /// </summary>
-        /// <param name="all"></param>
-        /// <returns></returns>
-        public virtual async Task<RecordSetPrototype> Save()
-        {
-            try
-            {
-                Debug.Log("Save starts");
-                if (State.instance.project != null)
-                {
-                    foreach (IVirgisLayer com in State.instance.Layers)
-                    {
-                        RecordSetPrototype alayer = await (com as VirgisLayer).Save();
-                    }
-                }
-                Debug.Log("Save Completed");
-                return default;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError("Save failed : " + e.ToString());
-                return default;
-            }
-        }
+        /// <returns>RecordSetPrototype</returns>
+        public abstract RecordSetPrototype Save();
+
 
         protected Task _save()
         {
@@ -204,7 +184,7 @@ namespace Virgis {
         /// Called when an edit session ends
         /// </summary>
         /// <param name="saved">true if stop and save, false if stop and discard</param>
-        protected async void _onEditStop(bool saved)
+        protected void _onEditStop(bool saved)
         {
             if (!saved)
             {
@@ -214,7 +194,7 @@ namespace Virgis {
                 }
             } else
             {
-                await Save();
+                Save();
             }
         }
 
@@ -237,11 +217,6 @@ namespace Virgis {
 
         public abstract Task SubInit(RecordSetPrototype layer);
 
-
-        public virtual void CheckPoint()
-        {
-            //do nothing
-        }
 
         public VirgisFeature GetFeature(Guid id)
         {

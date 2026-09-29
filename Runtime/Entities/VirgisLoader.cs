@@ -38,11 +38,7 @@ namespace Virgis
         /// <param name="geometry"></param>
         /// <returns></returns>
         IVirgisFeature _addFeature<T1>(T1 geometry);
-
-        /// <summary>
-        /// Called at the Checkpoint Lifecycle Hook
-        /// </summary>
-        void _checkpoint();
+        
 
         /// <summary>
         /// Called to Draw the dataset
@@ -64,6 +60,18 @@ namespace Virgis
         Task _save();
 
         void _set_visible();
+
+        /// <summary>
+        /// Change a Unit of Symbology in the Loader
+        /// </summary>
+        /// <param name="name"> string name of the unit</param>
+        /// <param name="unit"> UnitPrototype</param>
+        public void ChangeSymbology(string name, UnitPrototype unit);
+
+        /// <summary>
+        /// Tells the Loader to read and implement the symbology
+        /// </summary>
+        public void ReadSymbology();
     }
     
     public class VirgisLoader<S> : NetworkBehaviour, IVirgisLoader
@@ -84,6 +92,7 @@ namespace Virgis
         protected Dictionary<string, SerializableMaterialHash> m_materials = new();
         protected float m_displacement;
         protected e_ColorInterp m_ColorInterp = e_ColorInterp.None;
+        protected Dictionary<string, UnitPrototype> m_symbology;
 
         public RecordSetPrototype _layer
         {
@@ -146,11 +155,6 @@ namespace Virgis
         }
 
         public virtual IVirgisFeature _addFeature<T>(T geometry)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public virtual void _checkpoint()
         {
             throw new System.NotImplementedException();
         }
@@ -224,12 +228,7 @@ namespace Virgis
             throw new NotImplementedException();
         }
 
-        public virtual void CheckPoint()
-        {
-            throw new NotImplementedException();
-        }
-
-        public virtual Task<RecordSetPrototype> Save()
+        public virtual RecordSetPrototype Save()
         {
             throw new NotImplementedException();
         }
@@ -403,6 +402,16 @@ namespace Virgis
         }
 
         public void Changed()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ChangeSymbology(string unitName, UnitPrototype unit)
+        {
+            m_symbology[unitName] = unit;
+        }
+
+        public virtual void ReadSymbology()
         {
             throw new NotImplementedException();
         }

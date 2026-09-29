@@ -43,13 +43,6 @@ namespace Virgis {
             return;
         }
 
-        public override void CheckPoint() {
-            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
-                layer.CheckPoint();
-            }
-            base.CheckPoint();
-        }
-
         public override async Task Draw() {
             foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
                 await layer.Draw();
@@ -58,9 +51,9 @@ namespace Virgis {
             return;
         }
 
-        public override async Task<RecordSetPrototype> Save() {
+        public override RecordSetPrototype Save() {
             foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
-                await layer.Save();
+                layer.Save();
             }
             return GetMetadata();
         }
