@@ -50,6 +50,7 @@ namespace Virgis
         public NetworkVariable<Shapes> FeatureShape = new();
         [HideInInspector]
         public readonly NetworkVariable<SerializableMaterialHash> DefaultCol = new();
+        public readonly SerializableSymbology MSymbology = new();
 
         protected readonly NetworkVariable<RecordSetPrototype> Layer = new();
         protected readonly NetworkVariable<ulong> MCheckedOut = new();

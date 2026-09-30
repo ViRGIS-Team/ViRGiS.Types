@@ -1,6 +1,8 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
+using Unity.Netcode;
+using System.Text;
 
 namespace Virgis
 {
@@ -17,7 +19,7 @@ namespace Virgis
     /// <summary>
     /// A Graph Unit from a Data Layer
     /// </summary>
-    public class DataUnitPrototype : TestableObject
+    public class DataUnitPrototype : TestableObject,INetworkSerializable
     {
         /// <summary>
         /// The name of the Data Unit
@@ -61,14 +63,34 @@ namespace Virgis
         [JsonProperty(PropertyName = "label_range")]
         public string LabelRange;
         /// <summary>
-        /// Dictionary of symbology units for this data unit
-        /// </summary>
-        [JsonProperty(PropertyName = "units")]
-        public Dictionary<string, UnitPrototype> Units;
-        /// <summary>
         /// String that defines the axis order - should be "ENU" or "EUN"
         /// </summary>
         [JsonProperty(PropertyName = "axis_order")]
         public string AxisOrder;
+        
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsWriter){
+                byte[] s = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(this));
+                var writer = serializer.GetFastBufferWriter();
+                writer.WriteValueSafe(s.Length);
+                writer.WriteValueSafe(s);
+            } else {
+                var reader = serializer.GetFastBufferReader();
+                reader.ReadValueSafe(out int byteCount);
+                byte[] s = new byte[byteCount];
+                reader.ReadValueSafe(out s);
+                DataUnitPrototype newS = JsonConvert.DeserializeObject<DataUnitPrototype>(Encoding.UTF8.GetString(s));
+                Name = newS.Name;
+                Representation = newS.Representation;
+                TableName = newS.TableName;
+                XRange = newS.XRange;
+                YRange = newS.YRange;
+                ZRange = newS.ZRange;
+                LabelRange = newS.LabelRange;
+                AxisOrder = newS.AxisOrder;
+            }
+        }
     }
 }

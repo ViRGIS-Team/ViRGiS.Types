@@ -103,8 +103,30 @@ namespace Virgis
         protected Dictionary<string, SerializableMaterialHash> MMaterials = new();
         protected float MDisplacement;
         protected EColorInterp MColorInterp = EColorInterp.None;
-        protected Dictionary<string, UnitPrototype> MSymbology;
+
+        private Dictionary<string, UnitPrototype> _mSymbology;
+
+        protected Dictionary<string, UnitPrototype> MSymbology
+        {
+            get =>  _mSymbology;
+            set { 
+                _mSymbology = value;
+                MParent.MSymbology.FromSymbology(value);
+            }
+        }
         
+        private DataUnitPrototype _mDataUnit;
+
+        public DataUnitPrototype DataUnit
+        {
+            get => _mDataUnit;
+            set
+            {
+                _mDataUnit = value;
+                MParent.MSymbology.SetDataUnit(value);
+            }
+        }
+
         private string _sSymbologyCheckpoint;
 
         public RecordSetPrototype _layer
@@ -426,7 +448,6 @@ namespace Virgis
         public void RevertSymbology()
         {
             MSymbology = JsonConvert.DeserializeObject<Dictionary<string, UnitPrototype>>(_sSymbologyCheckpoint);
-            GetMetadata().Units = MSymbology;
         }
     }
 }

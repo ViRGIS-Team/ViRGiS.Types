@@ -33,17 +33,6 @@ namespace Virgis
             get { return m_source; }
             set { m_source = value; }
         }
-        /// <summary>
-        /// Dictionary of symbology units for this layer
-        /// </summary>
-        [JsonProperty(PropertyName = "units")]
-        public Dictionary<string, UnitPrototype> Units;
-
-        /// <summary>
-        /// List of Data Units for this layer
-        /// </summary>
-        [JsonProperty(PropertyName = "data_units")]
-        public List<DataUnitPrototype> DataUnits;
 
         public bool Equals(RecordSetPrototype other)
         {
@@ -68,9 +57,8 @@ namespace Virgis
                 Position = newS.Position;
                 Transform = newS.Transform;
                 Visible = newS.Visible;
-                Units = newS.Units;
-                DataUnits = newS.DataUnits;
                 DataTypeValue = newS.DataTypeValue;
+                Source = newS.Source;
             }
         }
     }
