@@ -14,6 +14,8 @@ namespace Virgis
 
         [JsonProperty(PropertyName = "id", Required = Required.Always)]
         public string Id;
+        [JsonProperty(PropertyName = "data-type-value")]
+        public int DataTypeValue { get; protected set; }
         [JsonProperty(PropertyName = "display-name")]
         public string DisplayName;
         [JsonProperty(PropertyName = "position")]
@@ -66,6 +68,9 @@ namespace Virgis
                 Position = newS.Position;
                 Transform = newS.Transform;
                 Visible = newS.Visible;
+                Units = newS.Units;
+                DataUnits = newS.DataUnits;
+                DataTypeValue = newS.DataTypeValue;
             }
         }
     }
