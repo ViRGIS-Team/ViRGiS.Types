@@ -49,7 +49,7 @@ namespace Virgis {
         [Rpc(SendTo.Server)]
         public override void AddFeatureRpc(Vector3[] verteces)
         {
-            m_loader._addFeature(verteces[0]);
+            MLoader._addFeature(verteces[0]);
         }
     }
 }

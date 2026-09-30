@@ -29,6 +29,7 @@ using System.Threading.Tasks;
 using R3;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Virgis
 {
@@ -48,46 +49,44 @@ namespace Virgis
         [HideInInspector]
         public NetworkVariable<Shapes> FeatureShape = new();
         [HideInInspector]
-        public NetworkVariable<SerializableMaterialHash> DefaultCol = new();
+        public readonly NetworkVariable<SerializableMaterialHash> DefaultCol = new();
 
-        protected NetworkVariable<RecordSetPrototype> _layer = new();
-        protected NetworkVariable<bool> m_CheckedOut = new();
-        protected NetworkVariable<bool> m_Writeable = new();
-        protected NetworkVariable<int> m_SubLayersCount = new();
+        protected readonly NetworkVariable<RecordSetPrototype> Layer = new();
+        protected readonly NetworkVariable<ulong> MCheckedOut = new();
+        protected readonly NetworkVariable<bool> MWriteable = new();
+        protected readonly NetworkVariable<int> MSubLayersCount = new();
 
         public void AddSubLayer(IVirgisLayer layer)
         {
             subLayers.Add(layer);
-            m_SubLayersCount.Value++;
+            MSubLayersCount.Value++;
         }
 
-        private IVirgisLayer m_Parent;
-        protected bool m_Editing;
+        protected bool MEditing;
+        private IVirgisLayer _mParent;
 
         /// <summary>
         /// true if this layer has been changed from the original file
         /// </summary>
         public bool changed {
-            get {
-                return m_changed;
-            }
+            get => mChanged;
             set {
-                m_changed = value;
-                if (m_Parent != null) m_Parent.changed = value;
+                mChanged = value;
+                if (_mParent != null) _mParent.changed = value;
             }
         }
         public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
 
 
-        protected int m_SubLayersLoaded;
+        protected int MSubLayersLoaded;
 
-        protected IVirgisLoader m_loader;
+        protected IVirgisLoader MLoader;
 
-        protected Task m_loaderTask;
-        protected IEnumerator m_loaderItr;
-        public bool m_changed;
+        protected Task MLoaderTask;
+        protected IEnumerator MLoaderItr;
+        [FormerlySerializedAs("m_changed")] public bool mChanged;
 
-        private readonly List<IDisposable> m_subs = new();
+        private readonly List<IDisposable> _mSubs = new();
 
         protected void Awake() {
             changed = true;
@@ -96,16 +95,16 @@ namespace Virgis
 
         public virtual void Start() {
             State appState = State.instance;
-            m_subs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
-            m_subs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
-            m_subs.Add(appState.EditSession.ChangeLayerEvent.Subscribe(_onEditLayerChange));
+            _mSubs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
+            _mSubs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
+            _mSubs.Add(appState.EditSession.ChangeLayerEvent.Subscribe(_onEditLayerChange));
             if ( IsListening && ! IsServer)
             {
-                m_Parent = transform.parent?.GetComponent<IVirgisLayer>();
+                _mParent = transform.parent?.GetComponent<IVirgisLayer>();
                 if (! isContainer) Loaded(this);
-                else if (m_SubLayersLoaded >= m_SubLayersCount.Value)
+                else if (MSubLayersLoaded >= MSubLayersCount.Value)
                 {
-                    if (m_Parent != null) m_Parent.Loaded(this);
+                    _mParent?.Loaded(this);
                 }
             }
         }
@@ -114,22 +113,22 @@ namespace Virgis
         {
             if (! IsListening || IsServer)
             {
-                m_CheckedOut.Value = false;
+                MCheckedOut.Value = 0;
             } 
         }
 
         protected new void OnDestroy() {
             State.instance.DelLayer(this);
             // kill any active loader process
-            if (m_loaderTask != null) {
-                StopCoroutine(m_loaderItr);
-                if(m_loaderTask.IsCompleted){
-                    m_loaderTask.Dispose();
+            if (MLoaderTask != null) {
+                StopCoroutine(MLoaderItr);
+                if(MLoaderTask.IsCompleted){
+                    MLoaderTask.Dispose();
                 } else {
                     Debug.Log("loader not finished");
                 }
             }
-            m_subs.ForEach(item => item.Dispose());
+            _mSubs.ForEach(item => item.Dispose());
             base.OnDestroy();
         }
 
@@ -209,31 +208,31 @@ namespace Virgis
         /// <param name="layer"> The RecordSet object that defines this layer</param>
         /// 
         public virtual IEnumerator Init(RecordSetPrototype layer) {
-            m_loaderTask = AsyncInit(layer);
-            m_loaderItr = m_loaderTask.AsIEnumerator();
-            return m_loaderItr;
+            MLoaderTask = AsyncInit(layer);
+            MLoaderItr = MLoaderTask.AsIEnumerator();
+            return MLoaderItr;
         }
 
         public virtual void Loaded(VirgisLayer layer) {
             if (IsListening && ! IsServer) subLayers.Add(layer);
             if (isContainer) {
-                m_SubLayersLoaded++;
-                if (m_SubLayersLoaded >= m_SubLayersCount.Value)
+                MSubLayersLoaded++;
+                if (MSubLayersLoaded >= MSubLayersCount.Value)
                 {
-                    if (m_Parent != null) m_Parent.Loaded(this);
+                    if (_mParent != null) _mParent.Loaded(this);
                 }
             } else {
-                m_Parent.Loaded(this);
+                _mParent.Loaded(this);
             }
         }
 
-        public async virtual Task AsyncInit(RecordSetPrototype layer) {
+        public virtual async Task AsyncInit(RecordSetPrototype layer) {
             await SubInit(layer);
             await Draw();
         }
 
         public Task Awaiter(){
-            return m_loaderTask;
+            return MLoaderTask;
         }
 
         /// <summary>
@@ -241,15 +240,15 @@ namespace Virgis
         /// </summary>
         /// <param name="layer"> The RecordSet object that defines this layer</param>
         /// 
-        public async virtual Task SubInit(RecordSetPrototype layer) {
+        public virtual async Task SubInit(RecordSetPrototype layer) {
             try {
-                m_Parent = transform.parent?.GetComponent<IVirgisLayer>();
-                m_SubLayersLoaded = 0;
-                m_loader = GetComponent<IVirgisLoader>();
+                _mParent = transform.parent?.GetComponent<IVirgisLayer>();
+                MSubLayersLoaded = 0;
+                MLoader = GetComponent<IVirgisLoader>();
                 SetMetadata(layer);
-                if (m_loader != null) {
-                    await m_loader._init();
-                    FeatureShape.Value = m_loader.GetFeatureShape();
+                if (MLoader != null) {
+                    await MLoader._init();
+                    FeatureShape.Value = MLoader.GetFeatureShape();
                 }
                 else
                 {
@@ -287,8 +286,8 @@ namespace Virgis
                     transform.localPosition = Vector3.zero;
                     transform.localScale = Vector3.one;
                 }
-                if (m_loader != null)
-                    await m_loader._draw();
+                if (MLoader != null)
+                    await MLoader._draw();
                 changed = false;
             }
             if (! isContainer) Loaded(this);
@@ -301,20 +300,24 @@ namespace Virgis
         /// <returns>A copy of the data save dot the source</returns>
         public virtual RecordSetPrototype Save() {
             if (changed) {
-                SaveRpc();
+                SaveRpc(State.instance.Hash);
+                changed = false;
+                MEditing = false;
             }
-            changed = false;
-            m_Editing = false;
             return GetMetadata();
         }
 
         [Rpc(SendTo.Server)]
-        private void SaveRpc()
+        private void SaveRpc(ulong clientId)
         {
-            Debug.Log($"Save requested on layer {GetId()}");
-            if (m_loader != null)
-                _ = m_loader._save();
-            m_CheckedOut.Value = false;
+            if (MCheckedOut.Value == clientId)
+            {
+                Debug.Log($"Check-in layer {GetId()} by client {clientId}");
+                Debug.Log($"Save requested on layer {GetId()} by client {clientId}");
+                if (MLoader != null)
+                    _ = MLoader._save();
+                MCheckedOut.Value = 0;
+            }
         }
         
 
@@ -414,7 +417,7 @@ namespace Virgis
         /// </summary>
         /// <returns></returns>
         public RecordSetPrototype GetMetadata() {
-            return _layer.Value;
+            return Layer.Value;
         }
 
         /// <summary>
@@ -422,7 +425,7 @@ namespace Virgis
         /// </summary>
         /// <param name="layer">Data tyoe that inherits form RecordSet</param>
         public void SetMetadata(RecordSetPrototype layer) {
-            _layer.Value = layer;
+            Layer.Value = layer;
         }
 
         /// <summary>
@@ -445,7 +448,7 @@ namespace Virgis
         /// <param name="visible"></param>
         public virtual void SetVisible(bool visible) {
             if (GetMetadata().Visible != visible) {
-                _layer.Value.Visible = visible;
+                Layer.Value.Visible = visible;
                 gameObject.SetActive(visible);
                 _set_visible();
             }
@@ -464,13 +467,13 @@ namespace Virgis
 
         public bool IsWriteable
         {
-            get { return m_Writeable.Value; }
-            set { m_Writeable.Value = value; }
+            get { return MWriteable.Value; }
+            set { MWriteable.Value = value; }
         }
 
         public bool IsEditable
         {
-            get { return ! m_CheckedOut.Value; }
+            get { return MCheckedOut.Value == 0 || MCheckedOut.Value == State.instance.Hash; }
         }
 
         public void SetEditable(bool checkout)
@@ -483,22 +486,33 @@ namespace Virgis
                 }
             } else
             {
-                SetEditableRpc(checkout);
+                SetEditableRpc(checkout, State.instance.Hash);
             }
         }
 
         [Rpc(SendTo.Server)]
-        private void SetEditableRpc(bool checkout) {
-            if (m_CheckedOut.Value == checkout) return;
-            _set_editable();
-            if (!checkout)
+        private void SetEditableRpc(bool checkout, ulong clientID) {
+            if (checkout)
             {
-                Debug.Log($"Check-in layer {GetId()}");
-            } else
-            {
-                Debug.Log($"Check-out layer {GetId()}");
+                if (MCheckedOut.Value == 0)
+                {
+                    MCheckedOut.Value = clientID;
+                    _set_editable();
+                    MLoader.CheckpointSymbology();
+                    Debug.Log($"Check-out layer {GetId()} by client {clientID}");
+                }
             }
-            m_CheckedOut.Value = checkout;
+            else
+            {
+                if (MCheckedOut.Value == clientID)
+                {
+                    MCheckedOut.Value = 0;
+                    MLoader.RevertSymbology();
+                    Debug.Log($"Check-in layer {GetId()} by client {clientID}");
+                    RequestRedrawRpc();
+                    //_ = AsyncInit(GetMetadata());
+                }
+            }
         }
 
         protected virtual void _set_editable() {
@@ -523,14 +537,14 @@ namespace Virgis
                 {
                     if (IsWriteable)
                     {
-                        m_Editing = true;
+                        MEditing = true;
                         VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
                         foreach (VirgisFeature com in coms)
                         {
                             com.OnEdit(true);
                         }
                     }
-                } else if (m_Editing)
+                } else if (MEditing)
                 {
                     if (IsWriteable)
                     {
@@ -539,14 +553,14 @@ namespace Virgis
                         {
                             com.OnEdit(false);
                         }
-                        m_Editing = false;
+                        MEditing = false;
                     }
                 }
             }
         }
 
         protected virtual void _onEditStop(bool save) {
-            m_Editing = false;
+            MEditing = false;
             Draw();
             if (IsWriteable)
             {
@@ -595,7 +609,7 @@ namespace Virgis
 
         public IVirgisLoader GetLoader()
         {
-            return m_loader;
+            return MLoader;
         }
 
         public void OnEdit(bool inSession) {
@@ -640,17 +654,17 @@ namespace Virgis
         }
 
         [Rpc(SendTo.Server)]
-        public void RequestRedrawRpc(RecordSetPrototype layer = null)
+        public void RequestRedrawRpc()
         {
             changed = true;
-            m_loader.ReadSymbology();
+            MLoader.ReadSymbology();
             _ = Draw();
         }
 
         [Rpc(SendTo.Server)]
         public void UpdateSymbologyRpc(string unitName, UnitPrototype unit)
         {
-            m_loader.ChangeSymbology(unitName, unit);
+            MLoader.ChangeSymbology(unitName, unit);
         }
     }
 }

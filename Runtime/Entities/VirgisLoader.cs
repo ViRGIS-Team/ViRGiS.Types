@@ -26,6 +26,8 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
+using Mapbox.Json;
+using UnityEngine.Serialization;
 
 namespace Virgis
 {
@@ -49,7 +51,6 @@ namespace Virgis
         /// <summary>
         /// Implement the layer specific init code in this method
         /// </summary>
-        /// <param name="layer"></param>
         /// <returns></returns>
         Task _init();
 
@@ -72,11 +73,21 @@ namespace Virgis
         /// Tells the Loader to read and implement the symbology
         /// </summary>
         public void ReadSymbology();
+
+        /// <summary>
+        /// Takes a checkpoint of the Symbology as a JSON string
+        /// </summary>
+        public void CheckpointSymbology();
+        
+        /// <summary>
+        /// Revert to the symbology checkpoint
+        /// </summary>
+        public void RevertSymbology();
     }
     
     public class VirgisLoader<S> : NetworkBehaviour, IVirgisLoader
     {
-        protected enum e_ColorInterp
+        protected enum EColorInterp
         {
             Interpolate,
             CategoryValue,
@@ -85,32 +96,32 @@ namespace Virgis
         }
 
         public S features; // holds the feature data for this layer
-        public Gradient Grad;
+        [FormerlySerializedAs("Grad")] public Gradient grad;
 
-        protected VirgisLayer m_parent; // holds the parent VirgisLayer
-        protected object m_crs;
-        protected Dictionary<string, SerializableMaterialHash> m_materials = new();
-        protected float m_displacement;
-        protected e_ColorInterp m_ColorInterp = e_ColorInterp.None;
-        protected Dictionary<string, UnitPrototype> m_symbology;
+        protected VirgisLayer MParent; // holds the parent VirgisLayer
+        protected object MCrs;
+        protected Dictionary<string, SerializableMaterialHash> MMaterials = new();
+        protected float MDisplacement;
+        protected EColorInterp MColorInterp = EColorInterp.None;
+        protected Dictionary<string, UnitPrototype> MSymbology;
+        
+        private string _sSymbologyCheckpoint;
 
         public RecordSetPrototype _layer
         {
-            get
-            { return m_parent?.GetMetadata(); }
+            get => MParent?.GetMetadata();
             set
-            { if (m_parent != null) m_parent.SetMetadata(value); }
+            { if (MParent != null) MParent.SetMetadata(value); }
         }
 
-        public string sourceName { get 
-            { return m_parent?.sourceName;}
+        public string sourceName { get => MParent?.sourceName;
             set 
-            { if ( m_parent != null) m_parent.sourceName = value;} 
+            { if ( MParent != null) MParent.sourceName = value;} 
         }
 
         public List<IVirgisLayer> subLayers
         {
-            get { return m_parent?.subLayers;}
+            get { return MParent?.subLayers;}
             }
 
 
@@ -119,39 +130,30 @@ namespace Virgis
         /// </summary>
         public bool changed
         {
-            get
-            {
-                return m_parent?.changed ?? false;
-            }
+            get => MParent?.changed ?? false;
             set
             {
-                if (m_parent != null) m_parent.changed = value;
+                if (MParent != null) MParent.changed = value;
             }
         }
 
-        public bool isContainer
-        {
-            get
-            { return m_parent?.isContainer ?? false; }
-        }
+        public bool isContainer => MParent?.isContainer ?? false;
 
         public FeatureType featureType => throw new NotImplementedException();
 
-        public bool IsEditable { get => m_parent?.IsEditable ?? false; }
+        public bool IsEditable => MParent?.IsEditable ?? false;
 
         public bool IsWriteable { 
-            get {
-                return m_parent?.IsWriteable ?? false;
-            } 
+            get => MParent?.IsWriteable ?? false;
             set {
-                if (m_parent != null) m_parent.IsWriteable = value;
+                if (MParent != null) MParent.IsWriteable = value;
             } }
 
-        protected IVirgisLoader m_loader;
+        protected IVirgisLoader MLoader;
 
         protected void Awake()
         {
-            m_parent = GetComponent<VirgisLayer>();
+            MParent = GetComponent<VirgisLayer>();
         }
 
         public virtual IVirgisFeature _addFeature<T>(T geometry)
@@ -174,9 +176,9 @@ namespace Virgis
             throw new System.NotImplementedException();
         }
 
-        public void SetFeatures(S features)
+        public void SetFeatures(S theseFeatures)
         {
-            this.features = features;
+            this.features = theseFeatures;
         }
 
         /// <summary>
@@ -185,12 +187,12 @@ namespace Virgis
         /// <param name="crs">SpatialReference</param>
         public void SetCrs(object crs)
         {
-            m_crs = crs;
+            MCrs = crs;
         }
 
         public object GetCrsRaw()
         {
-            return m_crs;
+            return MCrs;
         }
 
         public virtual void _set_visible()
@@ -286,7 +288,7 @@ namespace Virgis
 
         public ulong GetId()
         {
-            return m_parent.GetId();
+            return MParent.GetId();
         }
 
         public VirgisFeature GetClosest(Vector3 coords, Guid[] exclude)
@@ -316,7 +318,7 @@ namespace Virgis
 
         public IVirgisLayer GetLayer()
         {
-            return m_parent;
+            return MParent;
         }
 
         public void OnEdit(bool inSession)
@@ -357,20 +359,20 @@ namespace Virgis
                 {
                     if (unit.ColorMap.Type == ColorMapType.Interpolate)
                     {
-                        Grad = unit.ColorMap.GetGradient();
-                        m_ColorInterp = e_ColorInterp.Interpolate;
+                        grad = unit.ColorMap.GetGradient();
+                        MColorInterp = EColorInterp.Interpolate;
                     }
                     else
                     {
-                        m_ColorInterp = e_ColorInterp.CategoryValue;
+                        MColorInterp = EColorInterp.CategoryValue;
                     }
                 }
                 else if (unit.ColorMode == ColorMode.Category)
                 {
                     if (unit.ColorMap.Type == ColorMapType.Categorize)
                     {
-                        Grad = unit.ColorMap.GetGradient();
-                        m_ColorInterp = e_ColorInterp.CategoryList;
+                        grad = unit.ColorMap.GetGradient();
+                        MColorInterp = EColorInterp.CategoryList;
                     }
                 }
             }
@@ -408,12 +410,23 @@ namespace Virgis
 
         public void ChangeSymbology(string unitName, UnitPrototype unit)
         {
-            m_symbology[unitName] = unit;
+            MSymbology[unitName] = unit;
         }
 
         public virtual void ReadSymbology()
         {
             throw new NotImplementedException();
+        }
+
+        public void CheckpointSymbology()
+        {
+            _sSymbologyCheckpoint = JsonConvert.SerializeObject(MSymbology);
+        }
+
+        public void RevertSymbology()
+        {
+            MSymbology = JsonConvert.DeserializeObject<Dictionary<string, UnitPrototype>>(_sSymbologyCheckpoint);
+            GetMetadata().Units = MSymbology;
         }
     }
 }

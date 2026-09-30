@@ -190,7 +190,7 @@ namespace Virgis {
             {
                 foreach (VirgisLayer layer in State.instance.Layers)
                 {
-                    layer.SetEditable(false);
+                    layer?.SetEditable(false);
                 }
             } else
             {

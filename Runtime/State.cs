@@ -222,6 +222,15 @@ namespace Virgis {
 
         void UnloadProject(Action callback);
 
+        /// <summary>
+        /// Get a unique session ID for this client
+        /// </summary>
+        /// <returns>Guid</returns>
+        public Guid Guid
+        {
+            get;
+        }
+
     }
 
     public abstract class State : MonoBehaviour, IState
@@ -481,6 +490,18 @@ namespace Virgis {
             } 
             if (callback != null) callback();
         }
+
+        public ulong Hash
+        {
+            get
+            {
+                Span<byte> bytes = stackalloc byte[16];
+                Guid.TryWriteBytes(bytes);
+                return BitConverter.ToUInt64(bytes);
+            }
+        }
+
+        public Guid Guid { get; } = Guid.NewGuid();
 
         public async Task Exit()
         {

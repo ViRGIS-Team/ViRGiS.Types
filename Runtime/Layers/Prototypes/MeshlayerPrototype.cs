@@ -52,7 +52,7 @@ namespace Virgis
 
         protected override void _onEditStop(bool save)
         {
-            m_Editing = false;
+            MEditing = false;
             if (IsWriteable)
             {
                 VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
@@ -73,7 +73,7 @@ namespace Virgis
                 MeshAutoRepair mr = new(mesh);
                 mr.Apply();
             }
-            m_loader._addFeature(mesh);
+            MLoader._addFeature(mesh);
         }
     }
 }
