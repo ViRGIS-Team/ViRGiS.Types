@@ -142,15 +142,16 @@ namespace Virgis
         /// 
         /// Can be in either integer[0 .. 255] format or float[0..1] format
         /// </summary>
-        [JsonProperty(PropertyName = "color", Required = Required.Always)]
+        [JsonProperty(PropertyName = "color")]
         [JsonConverter(typeof(VectorConverter<SerializableColor>))]
         public SerializableColor Color = new();
 
         /// <summary>
         /// The transfor to be applied to the unit of symnbology
         /// </summary>
-        [JsonProperty(PropertyName = "transform", Required = Required.Always)]
-        public JsonTransform Transform = new();
+        [JsonProperty(PropertyName = "transform")]
+        public JsonTransform Transform = JsonTransform.zero();
+        
         /// <summary>
         /// The name of a field in the metadata to be used a label for the data entity
         /// </summary>
@@ -162,8 +163,9 @@ namespace Virgis
         /// 
         /// Must contain an instance of Shapes
         /// </summary>
-        [JsonProperty(PropertyName = "shape", Required = Required.Always)]
+        [JsonProperty(PropertyName = "shape",DefaultValueHandling = DefaultValueHandling.Populate)]
         [JsonConverter(typeof(StringEnumConverter))]
+        [DefaultValue("Spheroid")]
         public Shapes Shape;
 
         /// <summary>

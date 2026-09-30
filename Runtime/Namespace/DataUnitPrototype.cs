@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Unity.Netcode;
 using System.Text;
 
@@ -30,12 +31,13 @@ namespace Virgis
         /// Tranform to be applied to this Data Unit
         /// </summary>
         [JsonProperty(PropertyName = "transform")]
-        public JsonTransform Transform;
+        public JsonTransform Transform = JsonTransform.zero();
         /// <summary>
         /// The data vizualisation to use
         /// </summary>
-        [JsonProperty(PropertyName = "representation")]
+        [JsonProperty(PropertyName = "representation", DefaultValueHandling = DefaultValueHandling.Populate)]
         [JsonConverter(typeof(StringEnumConverter))]
+        [DefaultValue("Points")]
         public DataUnitRepresent Representation;
         /// <summary>
         /// The name of the Table in the source Dataset that is the source of the data
