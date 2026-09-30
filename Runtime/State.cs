@@ -354,6 +354,8 @@ namespace Virgis {
 
         public MapInitializePrototype MapInitialize;
 
+        public VirgisNetworkState NetworkState;
+
         public List<VirgisLayer> Layers
         {
             get;

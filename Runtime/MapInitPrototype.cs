@@ -168,6 +168,12 @@ namespace Virgis {
         /// <returns>RecordSetPrototype</returns>
         public abstract RecordSetPrototype Save();
 
+        /// <summary>
+        /// Overload this to actually save the project file
+        /// </summary>
+        /// <param name="clientId"></param>
+        public abstract Task SaveProjectAsync(ulong clientId);
+
 
         protected Task _save()
         {

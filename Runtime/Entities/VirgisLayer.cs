@@ -313,8 +313,8 @@ namespace Virgis
         {
             if (MCheckedOut.Value == clientId)
             {
-                Debug.Log($"Check-in layer {GetId()} by client {clientId}");
-                Debug.Log($"Save requested on layer {GetId()} by client {clientId}");
+                State.instance.NetworkState.LogMessageRpc($"Check-in layer {GetId()} by client {clientId}");
+                State.instance.NetworkState.LogMessageRpc($"Save requested on layer {GetId()} by client {clientId}");
                 if (MLoader != null)
                     _ = MLoader._save();
                 MCheckedOut.Value = 0;
@@ -500,7 +500,7 @@ namespace Virgis
                     MCheckedOut.Value = clientID;
                     _set_editable();
                     MLoader.CheckpointSymbology();
-                    Debug.Log($"Check-out layer {GetId()} by client {clientID}");
+                    State.instance.NetworkState.LogMessageRpc($"Check-out layer {GetId()} by client {clientID}");
                 }
             }
             else
@@ -509,7 +509,7 @@ namespace Virgis
                 {
                     MCheckedOut.Value = 0;
                     MLoader.RevertSymbology();
-                    Debug.Log($"Check-in layer {GetId()} by client {clientID}");
+                    State.instance.NetworkState.LogMessageRpc($"Check-in layer {GetId()} by client {clientID}");
                     RequestRedrawRpc();
                     //_ = AsyncInit(GetMetadata());
                 }
