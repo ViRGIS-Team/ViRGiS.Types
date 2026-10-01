@@ -304,7 +304,7 @@ namespace Virgis
             {
                 foreach (IVirgisLayer sublayer in subLayers)
                 {
-                    (sublayer as VirgisLayer)?.Save();
+                    (sublayer as VirgisLayer)?.Save(clientId);
                 }
             }
             else
