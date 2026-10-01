@@ -84,6 +84,7 @@ namespace Virgis
 
         protected Task MLoaderTask;
         protected IEnumerator MLoaderItr;
+        
         [SerializeField]
         [InspectorName("Changed")]
         private bool _bChanged;
@@ -296,7 +297,9 @@ namespace Virgis
         /// Called to save the current layer data to source
         /// </summary>
         /// <returns>A copy of the data save dot the source</returns>
-        public virtual RecordSetPrototype Save() {
+        public virtual RecordSetPrototype Save() => Save(State.instance.Hash);
+        
+        public RecordSetPrototype Save(ulong clientId){
             if (isContainer)
             {
                 foreach (IVirgisLayer sublayer in subLayers)
@@ -306,7 +309,7 @@ namespace Virgis
             }
             else
             {
-                if (IsCheckedOut) {
+                if (TestCheckedOut(clientId)) {
                     SaveRpc();
                     MEditing = false;
                 }
@@ -490,7 +493,12 @@ namespace Virgis
             get { return MCheckedOut.Value == 0 || MCheckedOut.Value == State.instance.Hash; }
         }
         
-        public bool IsCheckedOut => MCheckedOut.Value == State.instance.Hash;
+        public bool IsCheckedOut => TestCheckedOut(State.instance.Hash);
+
+        public bool TestCheckedOut(ulong clientId)
+        {
+            return MCheckedOut.Value == clientId;
+        }
         
         public void SetEditable(bool checkout)
         {
