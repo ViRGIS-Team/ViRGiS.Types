@@ -57,27 +57,28 @@ namespace Virgis {
         {
             get
             {
-                return m_changed;
+                return _bChanged;
             }
-            set
+            protected set
             {
-                m_changed = value;
+                _bChanged = value;
                 IVirgisLayer parent = transform.parent?.GetComponent<IVirgisLayer>();
-                if (parent != null) parent.changed = value;
+                if (value == true && parent != null) parent.Changed();
             }
         }
         public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
         public bool IsEditable { get => false; }
+        public bool IsCheckedOut { get => false; }
         public bool IsWriteable { get => false; set { } }
 
         protected Guid m_id;
-        private bool m_changed;
-        private readonly List<IDisposable> m_subs = new List<IDisposable>();
+        private bool _bChanged;
+        private readonly List<IDisposable> _mSubs = new List<IDisposable>();
 
         protected void Start()
         {
-            m_subs.Add(State.instance.EditSession.StartEvent.Subscribe(_onEditStart));
-            m_subs.Add(State.instance.EditSession.EndEvent.Subscribe(_onEditStop));
+            _mSubs.Add(State.instance.EditSession.StartEvent.Subscribe(_onEditStart));
+            _mSubs.Add(State.instance.EditSession.EndEvent.Subscribe(_onEditStop));
         }
 
         /// 

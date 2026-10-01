@@ -136,15 +136,13 @@ namespace Virgis
             { if (MParent != null) MParent.SetMetadata(value); }
         }
 
-        public string sourceName { get => MParent?.sourceName;
+        public string sourceName { 
+            get => MParent?.sourceName;
             set 
-            { if ( MParent != null) MParent.sourceName = value;} 
+            { if (MParent) MParent.sourceName = value;} 
         }
 
-        public List<IVirgisLayer> subLayers
-        {
-            get { return MParent?.subLayers;}
-            }
+        public List<IVirgisLayer> subLayers => MParent?.subLayers;
 
 
         /// <summary>
@@ -153,9 +151,9 @@ namespace Virgis
         public bool changed
         {
             get => MParent?.changed ?? false;
-            set
+            protected set
             {
-                if (MParent != null) MParent.changed = value;
+                if (value == true && MParent) MParent.Changed();
             }
         }
 
@@ -168,8 +166,10 @@ namespace Virgis
         public bool IsWriteable { 
             get => MParent?.IsWriteable ?? false;
             set {
-                if (MParent != null) MParent.IsWriteable = value;
+                if (MParent) MParent.IsWriteable = value;
             } }
+
+        public bool IsCheckedOut => MParent?.IsCheckedOut ?? false;
 
         protected IVirgisLoader MLoader;
 

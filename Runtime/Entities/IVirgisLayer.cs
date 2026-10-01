@@ -65,12 +65,11 @@ namespace Virgis
         }
 
         /// <summary>
-        /// Does this layer, or a daughter layer, have changes that have not been saved
+        /// Does this layer, or a daughter layer, have content only changes that have not been saved
         /// </summary>
         public bool changed
         {
             get;
-            set;
         }
 
         /// <summary>
@@ -160,10 +159,18 @@ namespace Virgis
 
         /// <summary>
         /// Is the layer currently available for editing.
-        /// This is false if any client currently has the layer checked out 
+        /// This is false if any other client currently has the layer checked out 
         /// </summary>
         /// <returns></returns>
         bool IsEditable
+        {
+            get;
+        }
+        
+        /// <summary>
+        /// Is this layer currently checked out by this client and thus can be edited
+        /// </summary>
+        bool IsCheckedOut
         {
             get;
         }
