@@ -39,7 +39,7 @@ namespace Virgis
         { 
             base.Start();
             DataMesh com = GetComponentInChildren<DataMesh>();
-            if (Texture.tex != null) com.SetTexture(Texture.tex);
+            if (texture.tex != null) com.SetTexture(texture.tex);
         }
 
         /// <summary>
@@ -71,8 +71,8 @@ namespace Virgis
                 Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {gisId as string} : {e.Message}");
             }
 
-            com.SetMaterial(m_Col.Value);
-            com.Texture.Set(tex);
+            com.SetMaterial(MCol.Value);
+            com.texture.Set(tex);
 
 
             return gameObject;

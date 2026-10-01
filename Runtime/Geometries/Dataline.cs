@@ -53,7 +53,7 @@ namespace Virgis
         /// </summary>
         public void Update()
         {
-            if (Label) Label.LookAt(State.instance.mainCamera.transform);
+            if (label) label.LookAt(State.instance.mainCamera.transform);
         }
 
 
@@ -67,7 +67,7 @@ namespace Virgis
                     if (vLookup.LineComp && vLookup.LineComp.m_vEnd == vdata.Vertex)
                         vLookup.LineComp.MoveEnd(data.pos);
                 }
-                if (Label) Label.position = _labelPosition();
+                if (label) label.position = _labelPosition();
                 Curve.SetVertex(vdata.Vertex, data.pos);
             }
             base.VertexMove(data);
@@ -201,7 +201,7 @@ namespace Virgis
 
         public override void Translate(MoveArgs args)
         {
-            if (!m_State.BlockMove)
+            if (!MState.BlockMove)
             {
                 BroadcastMessage("TranslateHandle", args, SendMessageOptions.DontRequireReceiver);
             }
@@ -269,7 +269,7 @@ namespace Virgis
         public override void RemoveVertex(Transform vertex)
         {
             ulong vID = vertex.GetComponent<VirgisFeature>().GetId();
-            if (m_State.BlockMove)
+            if (MState.BlockMove)
             {
                 RemoveFeatureRpc();
             }

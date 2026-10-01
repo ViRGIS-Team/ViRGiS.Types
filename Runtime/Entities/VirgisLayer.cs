@@ -74,6 +74,7 @@ namespace Virgis
                 if ( value && _mParent != null) _mParent.Changed();
             }
         }
+        
         public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
 
 
@@ -83,6 +84,8 @@ namespace Virgis
 
         protected Task MLoaderTask;
         protected IEnumerator MLoaderItr;
+        [SerializeField]
+        [InspectorName("Changed")]
         private bool _bChanged;
 
         private readonly List<IDisposable> _mSubs = new();

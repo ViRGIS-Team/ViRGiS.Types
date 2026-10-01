@@ -25,33 +25,37 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.Serialization;
 
 namespace Virgis {
 
 
     public abstract class VirgisFeature : NetworkBehaviour, IVirgisFeature
     {
+        private static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        private static readonly int BaseMap = Shader.PropertyToID("_BaseMap");
+        private static readonly int TextureSwitch = Shader.PropertyToID("_TextureSwitch");
+
         /// <summary>
         /// The Symbology for this Feature
         /// </summary>
-        [HideInInspector]
         public Dictionary<string, UnitPrototype> Symbology = new();
         /// <summary>
         /// The Label object for this feature
         /// </summary>
-        public Transform Label;
-        public SerializableTexture Texture = new();
-        public MeshRenderer MeshRenderer;
+        [FormerlySerializedAs("Label")] public Transform label;
+        [FormerlySerializedAs("Texture")] public SerializableTexture texture = new();
+        [FormerlySerializedAs("MeshRenderer")] public MeshRenderer meshRenderer;
 
-        protected Material m_Material;
-        protected readonly List<IDisposable> m_Subs = new();
-        protected NetworkVariable<SerializableMaterialHash> m_Col = new();
-        protected VirgisFeatureState m_State = new VirgisFeatureState() {
+        protected Material MMaterial;
+        protected readonly List<IDisposable> MSubs = new();
+        protected readonly NetworkVariable<SerializableMaterialHash> MCol = new();
+        protected VirgisFeatureState MState = new VirgisFeatureState() {
             FirstHitPosition = Vector3.zero,
             NullifyHitPos = true,
             BlockMove = false
         };
-        private object m_FID;
+        private object _mFid;
         
         protected bool IsListening => NetworkManager.Singleton is not null && NetworkManager.Singleton.IsListening;
 
@@ -62,52 +66,52 @@ namespace Virgis {
 
         public override void OnNetworkSpawn()
         {
-            if (MeshRenderer != null)
+            if (meshRenderer)
             {
-                m_Material = MeshRenderer.material;
+                MMaterial = meshRenderer.material;
             }
             base.OnNetworkSpawn();
-            if (Texture.tex != null) SetTexture(Texture.tex);
-            UpdateMaterial(new(), m_Col.Value);
-            m_Col.OnValueChanged += UpdateMaterial;
-            Texture.OnValueChanged += SetTexture;
+            if (texture.tex) SetTexture(texture.tex);
+            UpdateMaterial(new(), MCol.Value);
+            MCol.OnValueChanged += UpdateMaterial;
+            texture.OnValueChanged += SetTexture;
         }
 
         public override void OnNetworkDespawn()
         {
-            m_Col.OnValueChanged -= UpdateMaterial;
-            Texture.OnValueChanged -= SetTexture;
+            MCol.OnValueChanged -= UpdateMaterial;
+            texture.OnValueChanged -= SetTexture;
             base.OnNetworkDespawn();
         }
 
         public override void OnDestroy()
         {
-            Destroy(m_Material);
-            m_Subs.ForEach(item => item.Dispose());
+            Destroy(MMaterial);
+            MSubs.ForEach(item => item.Dispose());
             base.OnDestroy();
         }
 
         public virtual void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
         {
             if (newValue.Equals(previousValue)) return;
-            m_Material.SetColor("_BaseColor", newValue.Color);
+            MMaterial.SetColor(BaseColor, newValue.Color);
             if (newValue.properties == null) return;
             foreach (SerializableProperty prop in newValue.properties)
             {
-                m_Material.SetFloat(prop.Key.ToString(), prop.Value);
+                MMaterial.SetFloat(prop.Key.ToString(), prop.Value);
             }
         }
 
         public virtual void SetMaterial(SerializableMaterialHash hash)
         {
-            m_Col.Value = hash;
+            MCol.Value = hash;
         }
 
         public virtual void SetTexture(Texture2D tex)
         {
-            m_Material.SetColor("_BaseColor", Color.white);
-            m_Material.SetTexture("_BaseMap", tex);
-            m_Material.SetFloat("_TextureSwitch", 1f);
+            MMaterial.SetColor(BaseColor, Color.white);
+            MMaterial.SetTexture(BaseMap, tex);
+            MMaterial.SetFloat(TextureSwitch, 1f);
         }
 
         /// <summary>
@@ -180,7 +184,7 @@ namespace Virgis {
         /// </summary>
         /// <param name="button"> SelectionType</param>
         public virtual void Selected(SelectionType button) {
-            m_State.NullifyHitPos = true;
+            MState.NullifyHitPos = true;
             if (button != SelectionType.BROADCAST)
                 transform.parent.GetComponent<IVirgisEntity>().Selected(button);
             if (button == SelectionType.SELECTALL) {
@@ -214,11 +218,11 @@ namespace Virgis {
         public virtual void SetFeatureState(VirgisFeatureState state)
         {
             m_SetBlockMove(state.BlockMove);
-            transform.parent.SendMessageUpwards("SetFeatureState",m_State,SendMessageOptions.DontRequireReceiver);
+            transform.parent.SendMessageUpwards("SetFeatureState",MState,SendMessageOptions.DontRequireReceiver);
         }
 
         protected void m_SetBlockMove(bool state) {
-            m_State.BlockMove = state;
+            MState.BlockMove = state;
         }
 
 
@@ -228,14 +232,14 @@ namespace Virgis {
         /// <param name="args">MoveArgs : Either a translation vector OR a Vector position to move to, both in World space coordinates</param>
         public virtual void MoveTo(MoveArgs args)
         {
-            MoveToRpc(args, m_State, ! IsServer);
-            Changed();
+            MoveToRpc(args, MState, ! IsServer);
         }
 
         [Rpc(SendTo.Server)]
         protected void MoveToRpc(MoveArgs args, VirgisFeatureState state, bool fromClient)
         {
-            m_State = state;
+            Changed();
+            MState = state;
             if (fromClient)
             {
                 SetFeatureState(state);
@@ -254,22 +258,22 @@ namespace Virgis {
         /// <param name="args">The move argumants structure holding the new position</param>
         public void MoveAxis(MoveArgs args)
         {
-            if (m_State.NullifyHitPos)
+            if (MState.NullifyHitPos)
             {
-                m_State.FirstHitPosition = args.pos;
-                m_State.NullifyHitPos = false;
+                MState.FirstHitPosition = args.pos;
+                MState.NullifyHitPos = false;
             } else
             {
-                args.pos = m_State.FirstHitPosition;
+                args.pos = MState.FirstHitPosition;
             }
-            MoveAxisRpc(args, m_State);
-            Changed();
+            MoveAxisRpc(args, MState);
         }
 
         [Rpc(SendTo.Server)]
         protected void MoveAxisRpc(MoveArgs args, VirgisFeatureState state) {
-            m_State = state;
+            MState = state;
             _moveAxis(args);
+            Changed();
         }
 
         protected virtual void _moveAxis(MoveArgs args) { 
@@ -281,7 +285,6 @@ namespace Virgis {
         /// Called when a child component is translated by User action
         /// </summary>
         /// <param name="args">MoveArgs</param>
-        /// <param name="state">The state structure for the client feature object</param>
         public virtual void Translate(MoveArgs args) {
             //do nothing
         }
@@ -289,8 +292,7 @@ namespace Virgis {
         /// <summary>
         /// Called when a child Vertex moves to the point in the MoveArgs - which is in World Coordinates
         /// </summary>
-        /// <param name="data">MoveArgs</param>
-        /// <param name="state">The state structure for the client feature object</param>
+        /// <param name="args">MoveArgs</param> m>
         public virtual void VertexMove(MoveArgs args) {
             transform.parent.SendMessage("VertexMove", args, SendMessageOptions.DontRequireReceiver);
         }
@@ -299,9 +301,10 @@ namespace Virgis {
         /// Gets the closest point of the feature geometry to the coordinates
         /// </summary>
         /// <param name="coords"> Vector3 Target Coordinates </param>
+        /// <param name="exclude"> exclude list based on GetId()</param>
         /// <returns> Vector3 in world space coordinates </returns>
         public virtual VirgisFeature GetClosest(Vector3 coords, Guid[] exclude) {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -328,6 +331,7 @@ namespace Virgis {
         [Rpc(SendTo.Server)]
         public virtual void RemoveFeatureRpc() {
             Destroy();
+            Changed();
         }
 
 
@@ -337,7 +341,7 @@ namespace Virgis {
         /// <typeparam name="T">The Type of the geometry</typeparam>
         /// <returns> Gemoetry of type T </returns>
         public virtual T GetGeometry<T>() {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public ulong GetId() {
@@ -371,7 +375,7 @@ namespace Virgis {
             return (int)GetId();
         }
         public bool Equals(VirgisFeature other) {
-            if (other == null)
+            if (!other)
                 return false;
             return (this.GetId().Equals(other.GetId()));
         }
@@ -380,7 +384,7 @@ namespace Virgis {
         /// Called when the pointer hovers on this feature
         /// </summary>
         public void Hover() {
-            m_State.LastHit = State.instance.lastHit.point;
+            MState.LastHit = State.instance.lastHit.point;
             Dictionary<string, string> meta = GetInfo();
             if (meta != null && meta.Count > 0) {
                 string output = string.Join("\n", meta.Select(x => $"{x.Key}:\t{x.Value}"));
@@ -436,14 +440,14 @@ namespace Virgis {
             return default;
         }
 
-        public void SetFID<T>(T FID)
+        public void SetFID<T>(T fid)
         {
-            m_FID = FID;
+            _mFid = fid;
         }
 
         public T GetFID<T>()
         {
-            return (T)m_FID;
+            return (T)_mFid;
         }
     }
 }

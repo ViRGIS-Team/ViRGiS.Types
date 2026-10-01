@@ -43,14 +43,14 @@ namespace Virgis
         public new void Start()
         {
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out MeshRenderer)) m_Material = MeshRenderer.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out meshRenderer)) MMaterial = meshRenderer.material;
         }
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
             m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out MeshRenderer)) m_Material = MeshRenderer.material;
+            if (m_Shape.TryGetComponent<MeshRenderer>(out meshRenderer)) MMaterial = meshRenderer.material;
         }
 
         /// <summary>
@@ -101,7 +101,7 @@ namespace Virgis
         }
 
         protected override void _move(MoveArgs args){
-            if (m_State.BlockMove)
+            if (MState.BlockMove)
                 SendMessageUpwards("Translate", args, SendMessageOptions.DontRequireReceiver);
         }
 
@@ -112,8 +112,8 @@ namespace Virgis
         public override void Selected(SelectionType button)
         {
             base.Selected(button);
-            float dist1 = (m_State.LastHit - m_Start).sqrMagnitude;
-            float dist2 = (m_State.LastHit - m_End).sqrMagnitude;
+            float dist1 = (MState.LastHit - m_Start).sqrMagnitude;
+            float dist2 = (MState.LastHit - m_End).sqrMagnitude;
             int selected = -1;
             if (dist1 < dist2 * .5f) selected = m_vStart;
             if (dist2 < dist1 * .5f) selected = m_vEnd;

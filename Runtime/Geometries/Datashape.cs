@@ -104,7 +104,7 @@ namespace Virgis
         }
 
         public override void RemoveVertex(Transform vertex) {
-            if (m_State.BlockMove) {
+            if (MState.BlockMove) {
                 RemoveFeatureRpc();
             } else {
                 _redraw();

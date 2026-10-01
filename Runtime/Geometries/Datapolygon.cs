@@ -33,14 +33,14 @@ namespace Virgis
     public class Datapolygon : Datashape {
 
         public override void VertexMove(MoveArgs data) {
-            if (!m_State.BlockMove) {
+            if (!MState.BlockMove) {
                 _redraw();
             }
             base.VertexMove(data);
         }
 
         public override void Translate(MoveArgs args) {
-            if (m_State.BlockMove) {
+            if (MState.BlockMove) {
                 transform.Translate(args.translate, Space.World);
             } else
             {

@@ -319,7 +319,7 @@ namespace Virgis
         {
             if (inSession)
             {
-                MeshRenderer.material.SetFloat("_Wireframe", 1);
+                meshRenderer.material.SetFloat("_Wireframe", 1);
                 if (! m_Changed)
                 {
                     m_OldDMesh = new (umesh.DMesh3);
@@ -333,7 +333,7 @@ namespace Virgis
             }
             else
             {
-                MeshRenderer.material.SetFloat("_Wireframe", 0);
+                meshRenderer.material.SetFloat("_Wireframe", 0);
             }
         }
 

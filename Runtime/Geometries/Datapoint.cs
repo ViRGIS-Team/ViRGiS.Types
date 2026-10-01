@@ -40,7 +40,7 @@ namespace Virgis
         {
             base.Start();
             if (transform.childCount > 0)
-                Label = transform.GetChild(0);
+                label = transform.GetChild(0);
         }
 
         /// <summary>
@@ -48,20 +48,20 @@ namespace Virgis
         /// </summary>
         void Update()
         {
-            if (Label) Label.LookAt(State.instance.mainCamera.transform);
+            if (label) label.LookAt(State.instance.mainCamera.transform);
         }
 
         public override void Selected(SelectionType button)
         {
             base.Selected(button);
-            MeshRenderer.material.SetInt("_Selected", 1);
+            meshRenderer.material.SetInt("_Selected", 1);
         }
 
 
         public override void UnSelected(SelectionType button)
         {
             base.UnSelected(button);
-            MeshRenderer.material.SetInt("_Selected", 0);
+            meshRenderer.material.SetInt("_Selected", 0);
             if (button != SelectionType.BROADCAST)
             {
                 MoveArgs args = new MoveArgs();
