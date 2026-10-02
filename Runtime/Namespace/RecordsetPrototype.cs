@@ -22,9 +22,6 @@ namespace Virgis
         public Point Position;
         [JsonProperty(PropertyName = "transform")]
         public JsonTransform Transform;
-        [JsonProperty(PropertyName = "visible", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        [DefaultValue(true)]
-        public bool Visible;
         [JsonProperty(PropertyName = "source")]
         public string m_source;
         [JsonIgnore]
@@ -56,7 +53,6 @@ namespace Virgis
                 DisplayName = newS.DisplayName;
                 Position = newS.Position;
                 Transform = newS.Transform;
-                Visible = newS.Visible;
                 DataTypeValue = newS.DataTypeValue;
                 Source = newS.Source;
             }

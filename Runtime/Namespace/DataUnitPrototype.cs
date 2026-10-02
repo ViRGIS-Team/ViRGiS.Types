@@ -52,12 +52,12 @@ namespace Virgis
         /// <summary>
         /// The range to be used as Y value
         /// </summary>
-        [JsonProperty(PropertyName = "z_range")]
+        [JsonProperty(PropertyName = "y_range")]
         public string YRange;
         /// <summary>
         /// The range to be used as labels
         /// </summary>
-        [JsonProperty(PropertyName = "y_range")]
+        [JsonProperty(PropertyName = "z_range")]
         public string ZRange;
         /// <summary>
         /// The range to be used as labels

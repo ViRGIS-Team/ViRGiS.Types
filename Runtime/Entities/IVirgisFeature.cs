@@ -64,5 +64,6 @@ namespace Virgis
         void UnHover();
         void SetFID<T>(T FID);
         T GetFID<T>();
+        void OnSave();
     }
 }

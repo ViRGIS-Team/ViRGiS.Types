@@ -46,6 +46,7 @@ namespace Virgis {
         [FormerlySerializedAs("Label")] public Transform label;
         [FormerlySerializedAs("Texture")] public SerializableTexture texture = new();
         [FormerlySerializedAs("MeshRenderer")] public MeshRenderer meshRenderer;
+        public bool changed;
 
         protected Material MMaterial;
         protected readonly List<IDisposable> MSubs = new();
@@ -207,6 +208,7 @@ namespace Virgis {
         /// </summary>
         public virtual void Changed()
         {
+            changed = true;
             transform.parent.GetComponent<IVirgisEntity>().Changed();
         }
 
@@ -448,6 +450,15 @@ namespace Virgis {
         public T GetFID<T>()
         {
             return (T)_mFid;
+        }
+
+        public void OnSave()
+        {
+            changed = false;
+            foreach (Transform child in transform)
+            {
+                child.SendMessage("OnSave", SendMessageOptions.DontRequireReceiver);
+            }
         }
     }
 }

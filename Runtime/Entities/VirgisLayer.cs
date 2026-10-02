@@ -257,7 +257,6 @@ namespace Virgis
                 {
                     featureShape.Value = Shapes.None;
                 }
-                gameObject.SetActive(layer.Visible);
             } catch (Exception e) {
                 Debug.LogError($"Layer : { layer.DisplayName} :  {e}");
             }
@@ -328,6 +327,7 @@ namespace Virgis
                 changed = false;
                 if (MLoader != null)
                     _ = MLoader._save();
+                transform.BroadcastMessage("OnSave", SendMessageOptions.DontRequireReceiver);
             }
             MCheckedOut.Value = 0;
         }
@@ -464,11 +464,8 @@ namespace Virgis
         /// </summary>
         /// <param name="visible"></param>
         public virtual void SetVisible(bool visible) {
-            if (GetMetadata().Visible != visible) {
-                Layer.Value.Visible = visible;
-                gameObject.SetActive(visible);
+            gameObject.SetActive(visible);
                 _set_visible();
-            }
         }
 
         public virtual void _set_visible() {
@@ -479,7 +476,7 @@ namespace Virgis
         /// </summary>
         /// <returns>Boolean</returns>
         public bool IsVisible() {
-            return GetMetadata().Visible;
+            return gameObject.activeSelf;
         }
         
         public bool IsWriteable
@@ -585,7 +582,6 @@ namespace Virgis
 
         protected virtual void _onEditStop(bool save) {
             MEditing = false;
-            _ = Draw();
             if (IsWriteable)
             {
                 VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
