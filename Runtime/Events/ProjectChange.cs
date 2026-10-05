@@ -34,24 +34,29 @@ namespace Virgis {
 
         
 
-        private GisProjectPrototype _project;
+        private GisProjectPrototype _mProject;
 
-        private readonly Subject<ProjectEventType> _projectEvent = new Subject<ProjectEventType>();
+        private readonly Subject<ProjectEventType> _mProjectEvent = new Subject<ProjectEventType>();
 
         public void Set(GisProjectPrototype project) {
-            _project = project;
-            _projectEvent.OnNext(ProjectEventType.Started);
+            _mProject = project;
+            _mProjectEvent.OnNext(ProjectEventType.Started);
+        }
+
+        public void Started()
+        {
+            _mProjectEvent.OnNext(ProjectEventType.Started);
         }
 
         public void Complete() {
-            _projectEvent.OnNext(ProjectEventType.Complete);
+            _mProjectEvent.OnNext(ProjectEventType.Complete);
         }
 
         public GisProjectPrototype Get() {
-            return _project;
+            return _mProject;
         }
 
-        public Observable<ProjectEventType> Event => _projectEvent.AsObservable();
+        public Observable<ProjectEventType> Event => _mProjectEvent.AsObservable();
     }
 
 }

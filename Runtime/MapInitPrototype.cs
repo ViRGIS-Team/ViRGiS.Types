@@ -26,8 +26,6 @@ using System.Threading.Tasks;
 using UnityEngine;
 using R3;
 using System.Collections;
-using Unity.Netcode;
-using Unity.Mathematics;
 using UnityEngine.Serialization;
 
 namespace Virgis {
@@ -56,20 +54,17 @@ namespace Virgis {
         /// </summary>
         public bool changed
         {
-            get
-            {
-                return _bChanged;
-            }
+            get => _bChanged;
             protected set
             {
                 _bChanged = value;
                 IVirgisLayer parent = transform.parent?.GetComponent<IVirgisLayer>();
-                if (value == true && parent != null) parent.Changed();
+                if (value && parent != null) parent.Changed();
             }
         }
         public bool IsContainer { get; protected set; }  // if this is a container layer - do not Draw
-        public bool IsEditable { get => false; }
-        public bool IsCheckedOut { get => false; }
+        public bool IsEditable => false;
+        public bool IsCheckedOut => false;
         public bool IsWriteable { get => false; set { } }
 
         protected Guid MId;
@@ -78,15 +73,23 @@ namespace Virgis {
 
         protected void Start()
         {
-            _mSubs.Add(State.Instance.EditSession.StartEvent.Subscribe(_onEditStart));
-            _mSubs.Add(State.Instance.EditSession.EndEvent.Subscribe(_onEditStop));
+            _mSubs.Add(State.Instance.EditSession.StartEvent.Subscribe(OnEditStart));
+            _mSubs.Add(State.Instance.EditSession.EndEvent.Subscribe(OnEditStop));
+            _mSubs.Add(State.Instance.Client.Event.Subscribe(OnClientConnected));
         }
 
-        /// 
+        protected void OnDestroy()
+        {
+            _mSubs.ForEach(x => x.Dispose());
+        }
+
+        /// <summary>
         /// This is the initialisation script.
         /// 
         /// It loads the Project file, reads it for the layers and calls Draw to render each layer
         /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         public bool Load(string file)
         {
             return _load(file);
@@ -114,9 +117,8 @@ namespace Virgis {
                 List<Task> tasks = new();
                 foreach (RecordSetPrototype thisLayer in layers)
                 {
-                    VirgisLayer temp = null;
                     Debug.Log("Loading Layer : " + thisLayer.DisplayName);
-                    temp = CreateLayer(thisLayer);
+                    VirgisLayer temp = CreateLayer(thisLayer);
                     if (temp == null) continue;
                     if (!temp.Spawn(State.Instance.Map.transform)) Debug.Log("reparent failed");
                     tasks.Add(temp.AsyncInit(thisLayer));
@@ -125,7 +127,7 @@ namespace Virgis {
             }
             catch (Exception e)
             {
-                Debug.LogError($"Project load failed :" + e.ToString());
+                Debug.LogError($"Project load failed :" + e);
                 callback();
             }
             OnLoad();
@@ -146,7 +148,7 @@ namespace Virgis {
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Project Layer {layer.SourceName} has failed to draw :" + e.ToString());
+                    Debug.LogError($"Project Layer {layer.SourceName} has failed to draw :" + e);
                 }
             }
         }
@@ -154,14 +156,19 @@ namespace Virgis {
         /// <summary>
         /// Override this call to add functionality after the Project has loaded
         /// </summary>
-        public abstract void OnLoad();
+        protected abstract void OnLoad();
+        
+        /// <summary>
+        /// Override this to add functionality after the Client has loaded
+        /// </summary>
+        protected abstract void OnClientConnected(ClientEventType thisEvent);
 
 
         public abstract void Add(MoveArgs args);
 
         protected Task _draw()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         protected void _checkpoint()
@@ -183,11 +190,11 @@ namespace Virgis {
 
         protected Task _save()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
 
-        protected void _onEditStart(bool ignore)
+        protected void OnEditStart(bool ignore)
         {
 
         }
@@ -196,7 +203,7 @@ namespace Virgis {
         /// Called when an edit session ends
         /// </summary>
         /// <param name="saved">true if stop and save, false if stop and discard</param>
-        protected void _onEditStop(bool saved)
+        protected void OnEditStop(bool saved)
         {
             if (!saved)
             {

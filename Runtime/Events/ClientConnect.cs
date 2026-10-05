@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using R3;
-using System;
 
 namespace Virgis
 {
@@ -55,14 +54,7 @@ namespace Virgis
             _clientEvent.OnNext (ClientEventType.Failed);
         }
 
-        public Observable<ClientEventType> Event
-        {
-            get
-            {
-                return _clientEvent.AsObservable();
-            }
-        }
-
+        public Observable<ClientEventType> Event => _clientEvent.AsObservable();
     }
 
 }
