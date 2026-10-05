@@ -29,12 +29,12 @@ namespace Virgis {
 
         public new void Awake() {
             base.Awake();
-            isContainer = true;
+            IsContainer = true;
         }
 
         public async override Task SubInit(RecordSetPrototype layerData)
         {
-            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>())
+            foreach (VirgisLayer layer in SubLayers.Cast<VirgisLayer>())
             {
                 layer.Init(layerData);
                 await layer.Awaiter();
@@ -44,7 +44,7 @@ namespace Virgis {
         }
 
         public override async Task Draw() {
-            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
+            foreach (VirgisLayer layer in SubLayers.Cast<VirgisLayer>()) {
                 await layer.Draw();
             }
             await base.Draw();
@@ -52,7 +52,7 @@ namespace Virgis {
         }
 
         public override RecordSetPrototype Save() {
-            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
+            foreach (VirgisLayer layer in SubLayers.Cast<VirgisLayer>()) {
                 layer.Save();
             }
             return GetMetadata();
@@ -60,7 +60,7 @@ namespace Virgis {
 
         public new void OnDestroy()
         {
-            foreach (VirgisLayer layer in subLayers.Cast<VirgisLayer>()) {
+            foreach (VirgisLayer layer in SubLayers.Cast<VirgisLayer>()) {
                 Destroy(layer);
             }
             base.OnDestroy();

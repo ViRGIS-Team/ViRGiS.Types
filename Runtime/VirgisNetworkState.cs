@@ -9,13 +9,13 @@ namespace Virgis
     {
         public override void OnNetworkSpawn()
         {
-            State.instance.NetworkState = this;
+            State.Instance.networkState = this;
         }
 
         [Rpc(SendTo.Server)]
         public void SaveRpc(ulong clientId)
         {
-            _ = State.instance.MapInitialize.SaveProjectAsync(clientId);
+            _ = State.Instance.mapInitialize.SaveProjectAsync(clientId);
         }
 
         [Rpc(SendTo.Everyone)]

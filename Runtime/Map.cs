@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using UnityEngine;
-using Unity.Netcode;
 
 namespace Virgis
 {
@@ -34,10 +33,10 @@ namespace Virgis
         }
         public override void Loaded(VirgisLayer layer)
         {
-            if (State.instance.Layers.Find(item => item == layer) == null)
+            if (State.Instance.Layers.Find(item => item == layer) == null)
             {
                 if (layer.GetMetadata() != null) Debug.Log($"Loaded Layer : {layer.GetMetadata().DisplayName}");
-                State.instance.AddLayer(layer);
+                State.Instance.AddLayer(layer);
             }
         }
         

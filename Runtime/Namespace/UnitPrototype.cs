@@ -51,7 +51,7 @@ namespace Virgis
         /// <summary>
         /// Color used for the element.
         /// 
-        /// Can be in either integer[0 .. 255] format or float[0..1] format
+        /// Can be in either integer[0, 255] format or float[0, 1] format
         /// </summary>
         [JsonProperty(PropertyName = "color", Required = Required.Always)]
         [JsonConverter(typeof(VectorConverter<SerializableColor>))]
@@ -140,7 +140,7 @@ namespace Virgis
         /// <summary>
         /// Color used for the unit of symbology.
         /// 
-        /// Can be in either integer[0 .. 255] format or float[0..1] format
+        /// Can be in either integer[0, 255] format or float[0, 1] format
         /// </summary>
         [JsonProperty(PropertyName = "color")]
         [JsonConverter(typeof(VectorConverter<SerializableColor>))]
@@ -150,7 +150,7 @@ namespace Virgis
         /// The transfor to be applied to the unit of symnbology
         /// </summary>
         [JsonProperty(PropertyName = "transform")]
-        public JsonTransform Transform = JsonTransform.zero();
+        public JsonTransform Transform = JsonTransform.Zero();
         
         /// <summary>
         /// The name of a field in the metadata to be used a label for the data entity
@@ -185,14 +185,16 @@ namespace Virgis
         [JsonProperty(PropertyName = "colorinterp")]
         public Dictionary<string, object> ColorInterp;
 
-        public bool GetCI ( out Dictionary<string, object> ci)
+        public bool GetCi ( out Dictionary<string, object> ci)
         {
             if (ColorMode == ColorMode.SinglebandColor && ColorInterp != null)
             {
-                ci = new(ColorInterp);
-                ci["type"] = "filters.colorinterp";
-                ci["dimension"] = ColorInterp.TryGetValue("dimension", out object t) ?
-                    t : "Z";
+                ci = new(ColorInterp)
+                {
+                    ["type"] = "filters.colorinterp",
+                    ["dimension"] = ColorInterp.TryGetValue("dimension", out object t) ?
+                        t : "Z"
+                };
                 return true;
             }
             ci = null;
@@ -225,10 +227,6 @@ namespace Virgis
 
     public class ColorMapConverter : JsonConverter
     {
-        public ColorMapConverter()
-        {
-
-        }
 
         public override bool CanConvert(Type objectType)
         {

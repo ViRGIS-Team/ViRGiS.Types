@@ -31,7 +31,7 @@ namespace Virgis
         protected new void Awake()
         {
             base.Awake();
-            isContainer = false;
+            IsContainer = false;
         }
     }
 }

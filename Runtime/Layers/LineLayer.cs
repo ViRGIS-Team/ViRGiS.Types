@@ -41,7 +41,7 @@ namespace Virgis
 
         new protected void Awake() {
             base.Awake();
-            featureType = FeatureType.LINE;
+            FeatureType = FeatureType.LINE;
         }
 
         public override void Translate(MoveArgs args)

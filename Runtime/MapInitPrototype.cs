@@ -28,6 +28,7 @@ using R3;
 using System.Collections;
 using Unity.Netcode;
 using Unity.Mathematics;
+using UnityEngine.Serialization;
 
 namespace Virgis {
 
@@ -42,13 +43,13 @@ namespace Virgis {
 
         public GameObject appState;
 
-        public string LoadOnStartup;
+        [FormerlySerializedAs("LoadOnStartup")] public string loadOnStartup;
 
-        public FeatureType featureType => throw new NotImplementedException();
+        public FeatureType FeatureType => throw new NotImplementedException();
 
-        public string sourceName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public string SourceName { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        public List<IVirgisLayer> subLayers => throw new NotImplementedException();
+        public List<IVirgisLayer> SubLayers => throw new NotImplementedException();
 
         /// <summary>
         /// true if this layer has been changed from the original file
@@ -66,19 +67,19 @@ namespace Virgis {
                 if (value == true && parent != null) parent.Changed();
             }
         }
-        public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
+        public bool IsContainer { get; protected set; }  // if this is a container layer - do not Draw
         public bool IsEditable { get => false; }
         public bool IsCheckedOut { get => false; }
         public bool IsWriteable { get => false; set { } }
 
-        protected Guid m_id;
+        protected Guid MId;
         private bool _bChanged;
         private readonly List<IDisposable> _mSubs = new List<IDisposable>();
 
         protected void Start()
         {
-            _mSubs.Add(State.instance.EditSession.StartEvent.Subscribe(_onEditStart));
-            _mSubs.Add(State.instance.EditSession.EndEvent.Subscribe(_onEditStop));
+            _mSubs.Add(State.Instance.EditSession.StartEvent.Subscribe(_onEditStart));
+            _mSubs.Add(State.Instance.EditSession.EndEvent.Subscribe(_onEditStop));
         }
 
         /// 
@@ -91,7 +92,11 @@ namespace Virgis {
             return _load(file);
         }
 
+        public abstract bool Load();
+
         protected abstract bool _load(string file);
+        
+        
 
 
         /// <summary>
@@ -102,7 +107,7 @@ namespace Virgis {
         /// <returns></returns>
         public abstract VirgisLayer CreateLayer(RecordSetPrototype thisLayer);
 
-        protected async Task initLayers(List<RecordSetPrototype> layers, Action callback)
+        protected async Task InitLayers(List<RecordSetPrototype> layers, Action callback)
         {
             try
             {
@@ -113,7 +118,7 @@ namespace Virgis {
                     Debug.Log("Loading Layer : " + thisLayer.DisplayName);
                     temp = CreateLayer(thisLayer);
                     if (temp == null) continue;
-                    if (!temp.Spawn(State.instance.Map.transform)) Debug.Log("reparent failed");
+                    if (!temp.Spawn(State.Instance.Map.transform)) Debug.Log("reparent failed");
                     tasks.Add(temp.AsyncInit(thisLayer));
                 }
                 await Task.WhenAll(tasks);
@@ -133,7 +138,7 @@ namespace Virgis {
         /// </summary>
         public void Draw()
         {
-            foreach (IVirgisLayer layer in State.instance.Layers)
+            foreach (IVirgisLayer layer in State.Instance.Layers)
             {
                 try
                 {
@@ -141,7 +146,7 @@ namespace Virgis {
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"Project Layer {layer.sourceName} has failed to draw :" + e.ToString());
+                    Debug.LogError($"Project Layer {layer.SourceName} has failed to draw :" + e.ToString());
                 }
             }
         }
@@ -195,7 +200,7 @@ namespace Virgis {
         {
             if (!saved)
             {
-                foreach (VirgisLayer layer in State.instance.Layers)
+                foreach (VirgisLayer layer in State.Instance.Layers)
                 {
                     layer?.SetEditable(false);
                 }

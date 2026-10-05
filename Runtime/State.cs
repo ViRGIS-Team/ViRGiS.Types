@@ -27,6 +27,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine.Serialization;
 
 namespace Virgis {
 
@@ -35,22 +36,19 @@ namespace Virgis {
     //
     // Singleton pattern taken from https://learn.unity.com/tutorial/level-generation
     public interface IState  {
-        static IState instance;
-        int editScale { get; set; } // holds the current Edit Svcal
-        int currentView { get; set; } // holds the current view number
+        static IState Instance;
+        int EditScale { get; set; } // holds the current Edit Svcal
+        int CurrentView { get; set; } // holds the current view number
         string UserID { get; set; } // holds a user identity
         object Token { get; set; } // allows the storing of an arbitrary licence token object
 
         /// <summary>
         /// Shows if there is interaction with the gui
         /// </summary>
-        bool guiActive {
-            get {
-                return lhguiActive || rhguiActive;
-            }
-        }
-        bool lhguiActive { get; set; }
-        bool rhguiActive { get; set; }
+        bool GUIActive => LhguiActive || RhguiActive;
+
+        bool LhguiActive { get; set; }
+        bool RhguiActive { get; set; }
 
         /// <summary>
         /// Use this to get and change the view orientation
@@ -85,7 +83,7 @@ namespace Virgis {
         /// <summary>
         /// Use this to get the project change event
         /// </summary>
-        ProjectChange Project {
+        ProjectChange ProjectChange {
             get;
         }
 
@@ -128,17 +126,13 @@ namespace Virgis {
         /// <summary>
         /// Use this to change or get the project
         /// </summary>
-        GisProjectPrototype project {
-            get {
-                return Project.Get();
-            } 
-            set {
-                Project.Set(value);
-            } 
+        GisProjectPrototype Project {
+            get => ProjectChange.Get();
+            set => ProjectChange.Set(value);
         }
 
         /// <summary>
-        /// List of all of the layers of the model
+        /// List of all the layers of the model
         /// </summary>
         List<VirgisLayer> Layers {
             get;
@@ -158,14 +152,14 @@ namespace Virgis {
         /// <summary>
         /// Get and set the main camera
         /// </summary>
-        Camera mainCamera {
+        Camera MainCamera {
             get; set;
         }
 
         /// <summary>
         /// Get and Set the tracking space for this user
         /// </summary>
-        Transform trackingSpace {
+        Transform TrackingSpace {
             get; set;
         }
 
@@ -213,8 +207,7 @@ namespace Virgis {
         /// <summary>
         /// Sets the map scale
         /// </summary>
-        /// <param name=""></param>
-        /// <param name=""></param>
+        /// <param name="scale"></param>
         /// <returns> a number representing the scale set</returns>
         void SetScale(float scale);
 
@@ -235,26 +228,15 @@ namespace Virgis {
 
     public abstract class State : MonoBehaviour, IState
     {
+        public static State Instance { get; protected set; }
 
-        private static State m_inst = null;
+        public RaycastHit LastHit = new();
 
-        public static State instance
-        {
-            get
-            {
-                return m_inst;
-            }
-
-            protected set { m_inst = value; }
-        }
-
-        public RaycastHit lastHit = new();
-
-        public int editScale
+        public int EditScale
         {
             get; set;
         }
-        public int currentView
+        public int CurrentView
         {
             get; set;
         }
@@ -268,15 +250,9 @@ namespace Virgis {
             get; set;
         }
 
-        public bool guiActive
-        {
-            get
-            {
-                return lhguiActive || rhguiActive;
-            }
-        }
-        public bool lhguiActive { get; set; } = false;
-        public bool rhguiActive { get; set; } = false;
+        public bool GUIActive => LhguiActive || RhguiActive;
+        public bool LhguiActive { get; set; }
+        public bool RhguiActive { get; set; } 
 
         public OrientEvent Orientation
         {
@@ -308,7 +284,7 @@ namespace Virgis {
             protected set;
         }
 
-        public ProjectChange Project
+        public ProjectChange ProjectChange
         {
             get;
             protected set;
@@ -322,29 +298,15 @@ namespace Virgis {
 
         public BehaviorSubject<bool> ConfigEvent { get; private set; } = new BehaviorSubject<bool>(false);
 
-        protected EditSession _editSession
+
+        
+        public virtual GisProjectPrototype Project
         {
-            get; set;
+            get => ProjectChange.Get();
+            set => ProjectChange.Set(value);
         }
 
-
-
-        public virtual GisProjectPrototype project
-        {
-            get
-            {
-                return Project.Get();
-            }
-            set
-            {
-                Project.Set(value);
-            }
-        }
-
-        public EditSession EditSession
-        {
-            get => _editSession;
-        }
+        public EditSession EditSession { get; protected set; }
 
 
         public GameObject Map
@@ -352,9 +314,9 @@ namespace Virgis {
             get; set;
         }
 
-        public MapInitializePrototype MapInitialize;
+        [FormerlySerializedAs("MapInitialize")] public MapInitializePrototype mapInitialize;
 
-        public VirgisNetworkState NetworkState;
+        [FormerlySerializedAs("NetworkState")] public VirgisNetworkState networkState;
 
         public List<VirgisLayer> Layers
         {
@@ -378,12 +340,12 @@ namespace Virgis {
             LayerUpdate.DelLayer(layer);
         }
 
-        public Camera mainCamera
+        public Camera MainCamera
         {
             get; set;
         }
 
-        public Transform trackingSpace
+        public Transform TrackingSpace
         {
             get; set;
         }
@@ -425,23 +387,23 @@ namespace Virgis {
 
         public bool InEditSession()
         {
-            return _editSession.IsActive();
+            return EditSession.IsActive();
         }
 
         public void StartEditSession()
         {
-            _editSession.Start();
-            editScale = 5;
+            EditSession.Start();
+            EditScale = 5;
         }
 
         public void StopSaveEditSession()
         {
-            _editSession.StopAndSave();
+            EditSession.StopAndSave();
         }
 
         public void StopDiscardEditSession()
         {
-            _editSession.StopAndDiscard();
+            EditSession.StopAndDiscard();
         }
 
         public virtual object ConfigObject()
@@ -466,18 +428,15 @@ namespace Virgis {
 
         public bool LoadProject(string path)
         {
-            return MapInitialize.Load(path);
+            return mapInitialize.Load(path);
         }
 
         public void UnloadProject(Action callback = null)
         {
-            NetworkObject no;
-
-
             //If Server ...Kill all map entities
             if ( ! ( NetworkManager.Singleton.IsListening && ! NetworkManager.Singleton.IsServer ) )
             {
-                if (Map != null)
+                if (Map)
                 {
                     for (int i = Map.transform.childCount - 1; i >= 0; i--)
                     {
@@ -486,11 +445,10 @@ namespace Virgis {
                             sublayer.Destroy();
                         }
                     }
-                    no = Map.GetComponent<NetworkObject>();
-                    no.Despawn();
+                    Map.GetComponent<NetworkObject>().Despawn();
                 }
-            } 
-            if (callback != null) callback();
+            }
+            callback?.Invoke();
         }
 
         public ulong Hash
@@ -505,12 +463,13 @@ namespace Virgis {
 
         public Guid Guid { get; } = Guid.NewGuid();
 
-        public async Task Exit()
+        public Task Exit()
         {
             Debug.Log("QuitButton.OnClick now quit");
             UnloadProject();
             NetworkManager.Singleton.Shutdown();
             Application.Quit();
+            return Task.CompletedTask;
         }
     }
 }

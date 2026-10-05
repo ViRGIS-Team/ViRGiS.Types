@@ -1,6 +1,5 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using System.Collections.Generic;
 using System.ComponentModel;
 using Unity.Netcode;
 using System.Text;
@@ -31,7 +30,7 @@ namespace Virgis
         /// Tranform to be applied to this Data Unit
         /// </summary>
         [JsonProperty(PropertyName = "transform")]
-        public JsonTransform Transform = JsonTransform.zero();
+        public JsonTransform Transform = JsonTransform.Zero();
         /// <summary>
         /// The data vizualisation to use
         /// </summary>

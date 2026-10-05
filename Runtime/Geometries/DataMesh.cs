@@ -25,44 +25,45 @@ using VirgisGeometry;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using UnityEngine.Serialization;
 
 namespace Virgis {
 
     public class DataMesh : VirgisFeature{
 
-        public SerializableMesh umesh = new();
-        public MeshFilter MeshFilter;
-        public MeshCollider[] MeshColliders;
+        public readonly SerializableMesh Umesh = new();
+        [FormerlySerializedAs("MeshFilter")] public MeshFilter meshFilter;
+        [FormerlySerializedAs("MeshColliders")] public MeshCollider[] meshColliders;
 
-        protected Dictionary<int, int> m_VertexMap; // holds the map between the DMesh vertex ids and the Unity Mesh vertex ids
+        protected Dictionary<int, int> MVertexMap; // holds the map between the DMesh vertex ids and the Unity Mesh vertex ids
 
 
         public override void OnNetworkSpawn(){
             base.OnNetworkSpawn();
-            umesh.OnMeshChanged += SetMesh;
-            if (umesh.IsMesh) SetMesh (umesh.Mesh);
+            Umesh.OnMeshChanged += SetMesh;
+            if (Umesh.IsMesh) SetMesh (Umesh.Mesh);
         }
 
         public override void OnNetworkDespawn(){
             base.OnNetworkSpawn();
-            umesh.OnMeshChanged -= SetMesh;
+            Umesh.OnMeshChanged -= SetMesh;
         }
 
-        protected void SetMesh(Mesh newValue){
+        private void SetMesh(Mesh newValue){
 
             // load mesh as unity mesh and add to MeshFilter
 
             if (IsListening && ! IsServer)
             {
                 Vector2[] uv = newValue.uv2;
-                m_VertexMap = new();
+                MVertexMap = new();
                 for (int i = 0; i < uv.Length; i++)
                 {
                     uv[i].x = Mathf.Round(uv[i].x);
                     uv[i].y = Mathf.Round(uv[i].y);
                     try
                     {
-                        m_VertexMap.Add((int)uv[i].y, i);
+                        MVertexMap.Add((int)uv[i].y, i);
                     }
                     catch (Exception e)
                     {
@@ -74,14 +75,14 @@ namespace Virgis {
             } else
             {
                 Vector2[] uv = newValue.uv4;
-                m_VertexMap = new ();
+                MVertexMap = new ();
                 for (int i = 0; i < uv.Length; i++)
                 {
-                    m_VertexMap.Add((int)uv[i].y,i);
+                    MVertexMap.Add((int)uv[i].y,i);
                 }
             }
             newValue.RecalculateBounds();
-            MeshFilter.mesh = newValue;
+            meshFilter.mesh = newValue;
             UpdateUnityMesh();
 
             //if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
@@ -94,19 +95,20 @@ namespace Virgis {
         /// Helper to create a UV from the Colors - the v component is set to the vertex ID since this gets scrambled through draco
         /// </summary>
         /// <param name="colors"></param>
+        /// <param name="map"> Vertex ID map</param>
         /// <returns></returns>
-        public static Vector2[] ToUV(byte[] colors, int[] map)
+        protected static Vector2[] ToUV(byte[] colors, int[] map)
         {
             Vector2[] uv = new Vector2[colors.Length];
             for (int i = 0; i < colors.Length; i++)
             {
                 uv[i] = new Vector2(colors[i], map[i]);
-            };
+            }
             return uv;
         }
 
         protected void UpdateUnityMesh() {
-            Mesh mesh = MeshFilter.sharedMesh;
+            Mesh mesh = meshFilter.sharedMesh;
             mesh.UploadMeshData(false);
 
             // create the mesh colliders
@@ -124,10 +126,10 @@ namespace Virgis {
 
             try
             {
-                MeshColliders[0].sharedMesh = mesh;
-                MeshColliders[0].sharedMesh.UploadMeshData(false);
-                MeshColliders[1].sharedMesh = imesh;
-                MeshColliders[0].sharedMesh.UploadMeshData(false);
+                meshColliders[0].sharedMesh = mesh;
+                meshColliders[0].sharedMesh.UploadMeshData(false);
+                meshColliders[1].sharedMesh = imesh;
+                meshColliders[0].sharedMesh.UploadMeshData(false);
             }
             catch (Exception e)
             {
@@ -136,15 +138,15 @@ namespace Virgis {
         }
 
         public DMesh3 GetMesh() {
-            return umesh.DMesh3;
+            return Umesh.DMesh3;
         }
 
         public void MakeConvex() {
-            MeshColliders.ToList().ForEach(item => item.convex = true);
+            meshColliders.ToList().ForEach(item => item.convex = true);
         }
 
         public void MakeKinematic(){
-            MeshColliders.ToList().ForEach(item => Destroy(item));
+            meshColliders.ToList().ForEach(Destroy);
         }
     }
 }

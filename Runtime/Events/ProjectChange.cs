@@ -21,7 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using R3;
-using System;
 
 namespace Virgis {
 
@@ -52,12 +51,7 @@ namespace Virgis {
             return _project;
         }
 
-        public Observable<ProjectEventType> Event {
-            get {
-                return _projectEvent.AsObservable();
-            }
-        }
-
+        public Observable<ProjectEventType> Event => _projectEvent.AsObservable();
     }
 
 }

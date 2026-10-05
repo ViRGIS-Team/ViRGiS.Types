@@ -57,6 +57,7 @@ namespace Virgis {
             BlockMove = false
         };
         private object _mFid;
+        private object _mGid;
         
         protected bool IsListening => NetworkManager.Singleton is not null && NetworkManager.Singleton.IsListening;
 
@@ -386,11 +387,11 @@ namespace Virgis {
         /// Called when the pointer hovers on this feature
         /// </summary>
         public void Hover() {
-            MState.LastHit = State.instance.lastHit.point;
+            MState.LastHit = State.Instance.LastHit.point;
             Dictionary<string, string> meta = GetInfo();
             if (meta != null && meta.Count > 0) {
                 string output = string.Join("\n", meta.Select(x => $"{x.Key}:\t{x.Value}"));
-                State.instance.Info.Set(output);
+                State.Instance.Info.Set(output);
             }
         }
 
@@ -398,8 +399,8 @@ namespace Virgis {
         /// called when the pointer stops hovering on this feature
         /// </summary>
         public void UnHover() {
-            if ( ! State.instance.ButtonStatus.isRhGrip ) {
-                State.instance.Info.UnSet();
+            if ( ! State.Instance.ButtonStatus.isRhGrip ) {
+                State.Instance.Info.UnSet();
             }
         }
 
@@ -441,15 +442,41 @@ namespace Virgis {
         {
             return default;
         }
-
-        public void SetFID<T>(T fid)
+        /// <summary>
+        /// Set the Feature ID for this VirgIs Feature
+        /// </summary>
+        /// <param name="fid"></param>
+        /// <typeparam name="T"></typeparam>
+        public void SetFid<T>(T fid)
         {
             _mFid = fid;
         }
-
-        public T GetFID<T>()
+        /// <summary>
+        /// Set the Feature ID for this VirgIs Feature
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T GetFid<T>()
         {
             return (T)_mFid;
+        }
+        /// <summary>
+        /// Get the Geometry Id for this Virgis Featuire
+        /// </summary>
+        /// <param name="gid"></param>
+        /// <typeparam name="T"></typeparam>
+        public void SetGid<T>(T gid)
+        {
+            _mGid = gid;
+        }
+        /// <summary>
+        /// Get the Geometry Id for this Virgis Feature
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public T GetGid<T>()
+        {
+            return (T)_mGid;
         }
 
         public void OnSave()

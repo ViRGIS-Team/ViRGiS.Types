@@ -5,6 +5,7 @@ using GeoJSON.Net.Geometry;
 using Unity.Netcode;
 using System.Collections.Generic;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Virgis
@@ -23,17 +24,17 @@ namespace Virgis
         [JsonProperty(PropertyName = "transform")]
         public JsonTransform Transform;
         [JsonProperty(PropertyName = "source")]
-        public string m_source;
+        private string _mSource;
         [JsonIgnore]
         public virtual string Source
         {
-            get { return m_source; }
-            set { m_source = value; }
+            get => _mSource;
+            set => _mSource = value;
         }
 
         public bool Equals(RecordSetPrototype other)
         {
-            return Id == other.Id && DisplayName == other.DisplayName;
+            return Id == other?.Id && DisplayName == other?.DisplayName;
         }
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -62,6 +63,7 @@ namespace Virgis
     /// <summary>
     /// Acceptable values for the Source field of a recordset
     /// </summary>
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public enum SourceType
     {
         File,
@@ -87,20 +89,17 @@ namespace Virgis
         /// DEM or DTM to map these values onto
         /// </summary>
         [JsonProperty(PropertyName = "dem")]
-        public string m_Dem;
+        protected string _mDem;
 
         [JsonIgnore]
-        public virtual string Dem
-        {
-            get
-            { return m_Dem; }
-        }
+        public virtual string Dem => _mDem;
+
         /// <summary>
         /// Header string to be used when converting raster bands to point cloud data for vizualisation
         /// identifies the properties names that the raster bands are mapped to in order
         /// </summary>
         [JsonProperty(PropertyName = "header-string")]
-        public string headerString;
+        public string HeaderString;
         /// <summary>
         /// PDAL Filter String
         /// </summary>

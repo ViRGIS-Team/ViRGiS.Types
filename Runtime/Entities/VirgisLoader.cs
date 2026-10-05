@@ -83,9 +83,10 @@ namespace Virgis
         /// Revert to the symbology checkpoint
         /// </summary>
         public void RevertSymbology();
+        
     }
     
-    public class VirgisLoader<S> : NetworkBehaviour, IVirgisLoader
+    public abstract class VirgisLoader<S> : NetworkBehaviour, IVirgisLoader
     {
         protected enum EColorInterp
         {
@@ -111,7 +112,7 @@ namespace Virgis
             get =>  _mSymbology;
             set { 
                 _mSymbology = value;
-                MParent.MSymbology.FromSymbology(value);
+                MParent.Symbology.FromSymbology(value);
             }
         }
         
@@ -123,26 +124,26 @@ namespace Virgis
             set
             {
                 _mDataUnit = value;
-                MParent.MSymbology.SetDataUnit(value);
+                MParent.Symbology.SetDataUnit(value);
             }
         }
 
         private string _sSymbologyCheckpoint;
 
-        public RecordSetPrototype _layer
+        public RecordSetPrototype Layer
         {
             get => MParent?.GetMetadata();
             set
             { if (MParent != null) MParent.SetMetadata(value); }
         }
 
-        public string sourceName { 
-            get => MParent?.sourceName;
+        public string SourceName { 
+            get => MParent?.SourceName;
             set 
-            { if (MParent) MParent.sourceName = value;} 
+            { if (MParent) MParent.SourceName = value;} 
         }
 
-        public List<IVirgisLayer> subLayers => MParent?.subLayers;
+        public List<IVirgisLayer> SubLayers => MParent?.SubLayers;
 
 
         /// <summary>
@@ -153,13 +154,13 @@ namespace Virgis
             get => MParent?.changed ?? false;
             protected set
             {
-                if (value == true && MParent) MParent.Changed();
+                if (value && MParent) MParent.Changed();
             }
         }
 
-        public bool isContainer => MParent?.isContainer ?? false;
+        public bool IsContainer => MParent?.IsContainer ?? false;
 
-        public FeatureType featureType => throw new NotImplementedException();
+        public FeatureType FeatureType => throw new NotImplementedException();
 
         public bool IsEditable => MParent?.IsEditable ?? false;
 
@@ -180,22 +181,22 @@ namespace Virgis
 
         public virtual IVirgisFeature _addFeature<T>(T geometry)
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public virtual Task _draw()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public virtual Task _init()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public virtual Task _save()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
 
         public void SetFeatures(S theseFeatures)
@@ -269,12 +270,12 @@ namespace Virgis
 
         public virtual RecordSetPrototype GetMetadata()
         {
-            return _layer;
+            return Layer;
         }
 
         public virtual void SetMetadata(RecordSetPrototype meta)
         {
-            _layer = meta;
+            Layer = meta;
         }
 
         public virtual void SetVisible(bool visible)
@@ -449,5 +450,7 @@ namespace Virgis
         {
             MSymbology = JsonConvert.DeserializeObject<Dictionary<string, UnitPrototype>>(_sSymbologyCheckpoint);
         }
+        
+        protected abstract IEnumerator Hydrate();
     }
 }

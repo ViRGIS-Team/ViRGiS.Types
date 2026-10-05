@@ -34,7 +34,7 @@ namespace Virgis {
 
         new protected void Awake() {
             base.Awake();
-            featureType = FeatureType.POINT;
+            FeatureType = FeatureType.POINT;
         }
 
         public override void Translate(MoveArgs args) {

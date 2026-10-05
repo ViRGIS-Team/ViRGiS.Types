@@ -30,7 +30,7 @@ namespace Virgis
 
         new protected void Awake() {
             base.Awake();
-            featureType = FeatureType.RASTER;
+            FeatureType = FeatureType.RASTER;
         }
     }
 }

@@ -43,7 +43,7 @@ namespace Virgis
 
         new protected void Awake() {
             base.Awake();
-            featureType = FeatureType.POLYGON;
+            FeatureType = FeatureType.POLYGON;
         }
 
         public override void Translate(MoveArgs args)

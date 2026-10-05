@@ -8,12 +8,12 @@ namespace Virgis
     public abstract class GisProjectPrototype : TestableObject
     {
         public abstract string path { get; set; }   
-        protected abstract string TYPE { get;}
-        protected abstract string VERSION { get;}
+        protected abstract string Type { get;}
+        protected abstract string Version { get;}
 
         public  string GetVersion()
         {
-            return $"{TYPE}:{VERSION}";
+            return $"{Type}:{Version}";
         }
 
         [JsonProperty(PropertyName = "version", Required = Required.Always)]
@@ -23,19 +23,19 @@ namespace Virgis
         public string Name;
 
         [JsonProperty(PropertyName = "guid")]
-        private string m_Guid;
+        private string _mGuid;
 
         [JsonIgnore]
         public Guid Guid
         {
             get
             {
-                if (m_Guid != null) return Guid.Parse(m_Guid);
+                if (_mGuid != null) return Guid.Parse(_mGuid);
                 return Guid.Empty;
             }
             set
             {
-                m_Guid = value.ToString();
+                _mGuid = value.ToString();
             }
         }
 
@@ -43,7 +43,7 @@ namespace Virgis
         public Point Origin;
 
         [JsonProperty(PropertyName = "default_proj", Required = Required.Always)]
-        public string projectCrs;
+        public string ProjectCrs;
 
         [Obsolete("Map Scale is not used in Virgis 3.0")]
         [JsonProperty(PropertyName = "map_scale")]

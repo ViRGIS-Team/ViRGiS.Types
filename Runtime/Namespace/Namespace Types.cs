@@ -19,7 +19,7 @@ namespace Virgis
         [JsonConverter(typeof(VectorConverter<SerializableVector3>))]
         public SerializableVector3 Scale;
 
-        public static JsonTransform zero()
+        public static JsonTransform Zero()
         {
             return new JsonTransform() { Position = Vector3.zero, Rotate = Quaternion.identity, Scale = Vector3.zero };
         }
@@ -27,10 +27,6 @@ namespace Virgis
 
     public class VectorConverter<T> : JsonConverter where T : Serializable, new()
     {
-        public VectorConverter()
-        {
-
-        }
 
         public override bool CanConvert(Type objectType)
         {
@@ -58,7 +54,7 @@ namespace Virgis
         public override void WriteJson(JsonWriter writer, object vector, JsonSerializer serializer)
         {
             T newvector = (T)vector;
-            serializer.Serialize(writer, newvector.ToArray());
+            if (newvector != null) serializer.Serialize(writer, newvector.ToArray());
         }
     }
 

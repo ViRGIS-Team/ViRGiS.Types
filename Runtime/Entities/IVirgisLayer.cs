@@ -35,7 +35,7 @@ namespace Virgis
         /// <summary>
         /// The type of layer this is
         /// </summary>
-        FeatureType featureType
+        FeatureType FeatureType
         {
             get;
         }
@@ -43,7 +43,7 @@ namespace Virgis
         /// <summary>
         /// The display name of the source
         /// </summary>
-        string sourceName
+        string SourceName
         {
             get; set;
         }
@@ -51,7 +51,7 @@ namespace Virgis
         /// <summary>
         /// Is this layer a container layer or a value layer
         /// </summary>
-        public bool isContainer
+        public bool IsContainer
         {
             get;
         }
@@ -59,7 +59,7 @@ namespace Virgis
         /// <summary>
         /// List of daighter layers to this layer
         /// </summary>
-        List<IVirgisLayer> subLayers
+        List<IVirgisLayer> SubLayers
         {
             get;
         }
@@ -75,8 +75,7 @@ namespace Virgis
         /// <summary>
         /// Add a new feature to the layer
         /// </summary>
-        /// <typeparam name="T"> The type of the geometry - must match the type expected by the source loader</typeparam>
-        /// <param name="geometry">The geometry of the new feature</param>
+        /// <param name="verteces">The verteces of the new feature</param>
         /// <returns></returns>
         void AddFeatureRpc(Vector3[] verteces);
 
@@ -128,7 +127,7 @@ namespace Virgis
         Shapes GetFeatureShape();
 
         /// <summary>
-        /// Fetch the default Feature Color
+        /// Fetch the default Feature Colour
         /// </summary>
         /// <returns></returns>
         SerializableMaterialHash GetFeatureDefaultColor();
@@ -176,7 +175,7 @@ namespace Virgis
         }
 
         /// <summary>
-        /// Called by a client/server to checkout and checkin a layer
+        /// Called by a client/server to check out and checkin a layer
         /// Note - checkin without saving first will delete all changes
         /// </summary>
         /// <param name="checkout"> true for a checkout</param>

@@ -10,7 +10,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -6326553014083454370, guid: 034407076198e45269efc10e2878ccfe, type: 3}
       propertyPath: GlobalObjectIdHash
-      value: 548396409
+      value: 3422275542
       objectReference: {fileID: 0}
     - target: {fileID: 1165789925040790244, guid: 034407076198e45269efc10e2878ccfe, type: 3}
       propertyPath: MeshRenderer

@@ -39,29 +39,29 @@ namespace Virgis
     /// </summary>
     public abstract class VirgisLayer : NetworkBehaviour, IVirgisLayer {
 
-        public FeatureType featureType { get; protected set; }
-        public string sourceName { get; set; }
+        public FeatureType FeatureType { get; protected set; }
+        public string SourceName { get; set; }
         private bool IsListening => NetworkManager.Singleton is not null && NetworkManager.Singleton.IsListening;
         
-        public List<IVirgisLayer> subLayers
+        public List<IVirgisLayer> SubLayers
         { get; } = new List<IVirgisLayer>();
         [FormerlySerializedAs("FeatureShape")] [HideInInspector]
         public NetworkVariable<Shapes> featureShape = new();
         public readonly NetworkVariable<SerializableMaterialHash> DefaultCol = new();
-        public readonly SerializableSymbology MSymbology = new();
+        public readonly SerializableSymbology Symbology = new();
 
-        protected readonly NetworkVariable<RecordSetPrototype> Layer = new();
+        protected readonly NetworkVariable<RecordSetPrototype> MLayer = new();
         protected readonly NetworkVariable<ulong> MCheckedOut = new();
-        protected readonly NetworkVariable<bool> MWriteable = new();
+        protected readonly NetworkVariable<bool> BWriteable = new();
         protected readonly NetworkVariable<int> MSubLayersCount = new();
 
         public void AddSubLayer(IVirgisLayer layer)
         {
-            subLayers.Add(layer);
+            SubLayers.Add(layer);
             MSubLayersCount.Value++;
         }
 
-        protected bool MEditing;
+        protected bool IsEditing;
         private IVirgisLayer _mParent;
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Virgis
             }
         }
         
-        public bool isContainer { get; protected set; }  // if this is a container layer - do not Draw
+        public bool IsContainer { get; protected set; }  // if this is a container layer - do not Draw
 
 
         protected int MSubLayersLoaded;
@@ -93,18 +93,18 @@ namespace Virgis
 
         protected void Awake() {
             changed = true;
-            isContainer = false;
+            IsContainer = false;
         }
 
         public virtual void Start() {
-            State appState = State.instance;
+            State appState = State.Instance;
             _mSubs.Add(appState.EditSession.StartEvent.Subscribe(_onEditStart));
             _mSubs.Add(appState.EditSession.EndEvent.Subscribe(_onEditStop));
             _mSubs.Add(appState.EditSession.ChangeLayerEvent.Subscribe(_onEditLayerChange));
             if ( IsListening && ! IsServer)
             {
                 _mParent = transform.parent?.GetComponent<IVirgisLayer>();
-                if (! isContainer) Loaded(this);
+                if (! IsContainer) Loaded(this);
                 else if (MSubLayersLoaded >= MSubLayersCount.Value)
                 {
                     _mParent?.Loaded(this);
@@ -121,7 +121,7 @@ namespace Virgis
         }
 
         protected new void OnDestroy() {
-            State.instance.DelLayer(this);
+            State.Instance.DelLayer(this);
             // kill any active loader process
             if (MLoaderTask != null) {
                 StopCoroutine(MLoaderItr);
@@ -217,8 +217,8 @@ namespace Virgis
         }
 
         public virtual void Loaded(VirgisLayer layer) {
-            if (IsListening && ! IsServer) subLayers.Add(layer);
-            if (isContainer) {
+            if (IsListening && ! IsServer) SubLayers.Add(layer);
+            if (IsContainer) {
                 MSubLayersLoaded++;
                 if (MSubLayersLoaded >= MSubLayersCount.Value)
                 {
@@ -269,7 +269,7 @@ namespace Virgis
             // if not a server - do nothing
             if(IsListening && !IsServer) return;
             
-            if (!isContainer) {
+            if (!IsContainer) {
                 //make sure the layer is empty
                 for (int i = transform.childCount - 1; i >= 0; i--) {
                     Transform child = transform.GetChild(i);
@@ -279,7 +279,6 @@ namespace Virgis
                         com.Destroy();
                         Destroy(com);
                     }
-
                 }
 
                 transform.rotation = Quaternion.identity;
@@ -289,19 +288,19 @@ namespace Virgis
             if (MLoader != null)
                 await MLoader._draw();
             changed = false;
-            if (! isContainer) Loaded(this);
+            if (! IsContainer) Loaded(this);
         }
 
         /// <summary>
         /// Called to save the current layer data to source
         /// </summary>
         /// <returns>A copy of the data save dot the source</returns>
-        public virtual RecordSetPrototype Save() => Save(State.instance.Hash);
+        public virtual RecordSetPrototype Save() => Save(State.Instance.Hash);
         
         public RecordSetPrototype Save(ulong clientId){
-            if (isContainer)
+            if (IsContainer)
             {
-                foreach (IVirgisLayer sublayer in subLayers)
+                foreach (IVirgisLayer sublayer in SubLayers)
                 {
                     (sublayer as VirgisLayer)?.Save(clientId);
                 }
@@ -310,7 +309,7 @@ namespace Virgis
             {
                 if (TestCheckedOut(clientId)) {
                     SaveRpc();
-                    MEditing = false;
+                    IsEditing = false;
                 }
             }
             return GetMetadata();
@@ -319,10 +318,10 @@ namespace Virgis
         [Rpc(SendTo.Server)]
         private void SaveRpc()
         {
-            State.instance.NetworkState.LogMessageRpc($"Check-in layer {GetId()} by client {MCheckedOut.Value}");
+            State.Instance.networkState.LogMessageRpc($"Check-in layer {GetId()} by client {MCheckedOut.Value}");
             if (changed)
             {
-                State.instance.NetworkState.LogMessageRpc(
+                State.Instance.networkState.LogMessageRpc(
                     $"Save requested on layer {GetId()} by client {MCheckedOut.Value}");
                 changed = false;
                 if (MLoader != null)
@@ -434,7 +433,7 @@ namespace Virgis
         /// </summary>
         /// <returns></returns>
         public RecordSetPrototype GetMetadata() {
-            return Layer.Value;
+            return MLayer.Value;
         }
 
         /// <summary>
@@ -442,7 +441,7 @@ namespace Virgis
         /// </summary>
         /// <param name="layer">Data tyoe that inherits form RecordSet</param>
         public void SetMetadata(RecordSetPrototype layer) {
-            Layer.Value = layer;
+            MLayer.Value = layer;
         }
 
         /// <summary>
@@ -481,16 +480,16 @@ namespace Virgis
         
         public bool IsWriteable
         {
-            get { return MWriteable.Value; }
-            set { MWriteable.Value = value; }
+            get { return BWriteable.Value; }
+            set { BWriteable.Value = value; }
         }
 
         public bool IsEditable
         {
-            get { return MCheckedOut.Value == 0 || MCheckedOut.Value == State.instance.Hash; }
+            get { return MCheckedOut.Value == 0 || MCheckedOut.Value == State.Instance.Hash; }
         }
         
-        public bool IsCheckedOut => TestCheckedOut(State.instance.Hash);
+        public bool IsCheckedOut => TestCheckedOut(State.Instance.Hash);
 
         public bool TestCheckedOut(ulong clientId)
         {
@@ -499,15 +498,15 @@ namespace Virgis
         
         public void SetEditable(bool checkout)
         {
-            if (isContainer)
+            if (IsContainer)
             {
-                foreach (IVirgisLayer sublayer in subLayers)
+                foreach (IVirgisLayer sublayer in SubLayers)
                 {
                     (sublayer as VirgisLayer)?.SetEditable(checkout);
                 }
             } else
             {
-                SetEditableRpc(checkout, State.instance.Hash);
+                SetEditableRpc(checkout, State.Instance.Hash);
             }
         }
 
@@ -520,7 +519,7 @@ namespace Virgis
                     MCheckedOut.Value = clientID;
                     _set_editable();
                     MLoader.CheckpointSymbology();
-                    State.instance.NetworkState.LogMessageRpc($"Check-out layer {GetId()} by client {clientID}");
+                    State.Instance.networkState.LogMessageRpc($"Check-out layer {GetId()} by client {clientID}");
                 }
             }
             else
@@ -529,7 +528,7 @@ namespace Virgis
                 {
                     MCheckedOut.Value = 0;
                     MLoader.RevertSymbology();
-                    State.instance.NetworkState.LogMessageRpc($"Check-in layer {GetId()} by client {clientID}");
+                    State.Instance.networkState.LogMessageRpc($"Check-in layer {GetId()} by client {clientID}");
                     RequestRedrawRpc();
                     //_ = AsyncInit(GetMetadata());
                 }
@@ -558,14 +557,14 @@ namespace Virgis
                 {
                     if (IsWriteable)
                     {
-                        MEditing = true;
+                        IsEditing = true;
                         VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();
                         foreach (VirgisFeature com in coms)
                         {
                             com.OnEdit(true);
                         }
                     }
-                } else if (MEditing)
+                } else if (IsEditing)
                 {
                     if (IsWriteable)
                     {
@@ -574,14 +573,14 @@ namespace Virgis
                         {
                             com.OnEdit(false);
                         }
-                        MEditing = false;
+                        IsEditing = false;
                     }
                 }
             }
         }
 
         protected virtual void _onEditStop(bool save) {
-            MEditing = false;
+            IsEditing = false;
             if (IsWriteable)
             {
                 VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();

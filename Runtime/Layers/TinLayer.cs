@@ -34,7 +34,7 @@ namespace Virgis {
 
         new protected void Awake() {
             base.Awake();
-            featureType = FeatureType.MESH;
+            FeatureType = FeatureType.MESH;
         }
     }
 }

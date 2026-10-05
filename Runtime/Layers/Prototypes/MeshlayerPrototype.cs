@@ -37,7 +37,7 @@ namespace Virgis
 
         new protected void Awake() {
             base.Awake();
-            featureType = FeatureType.MESH;
+            FeatureType = FeatureType.MESH;
         }
        
         public override void Translate(MoveArgs args) {
@@ -52,7 +52,7 @@ namespace Virgis
 
         protected override void _onEditStop(bool save)
         {
-            MEditing = false;
+            IsEditing = false;
             if (IsWriteable)
             {
                 VirgisFeature[] coms = GetComponentsInChildren<VirgisFeature>();

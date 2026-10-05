@@ -33,6 +33,8 @@ namespace Virgis
     /// </summary>
     public class Datapoint : VirgisFeature
     {
+        private static readonly int Selected1 = Shader.PropertyToID("_Selected");
+
         /// <summary>
         /// sets the label reference
         /// </summary>
@@ -48,41 +50,41 @@ namespace Virgis
         /// </summary>
         void Update()
         {
-            if (label) label.LookAt(State.instance.mainCamera.transform);
+            if (label) label.LookAt(State.Instance.MainCamera.transform);
         }
 
         public override void Selected(SelectionType button)
         {
             base.Selected(button);
-            meshRenderer.material.SetInt("_Selected", 1);
+            meshRenderer.material.SetInt(Selected1, 1);
         }
 
 
         public override void UnSelected(SelectionType button)
         {
             base.UnSelected(button);
-            meshRenderer.material.SetInt("_Selected", 0);
+            meshRenderer.material.SetInt(Selected1, 0);
             if (button != SelectionType.BROADCAST)
             {
                 MoveArgs args = new MoveArgs();
-                switch (State.instance.EditSession.mode)
+                switch (State.Instance.EditSession.mode)
                 {
                     case EditSession.EditMode.None:
                         break;
                     case EditSession.EditMode.SnapAnchor:
-                        LayerMask layerMask = UnityLayers.POINT;
+                        LayerMask layerMask = UnityLayers.Point;
                         List<Collider> hitColliders = Physics.OverlapBox(transform.position, transform.TransformVector(Vector3.one / 2), Quaternion.identity, layerMask).ToList().FindAll(item => item.transform.position != transform.position);
                         if (hitColliders.Count > 0)
                         {
                             args.oldPos = transform.position;
-                            args.pos = hitColliders.First<Collider>().transform.position;
+                            args.pos = hitColliders.First().transform.position;
                             args.translate = args.pos - args.oldPos;
                             MoveTo(args);
                         }
                         break;
                     case EditSession.EditMode.SnapGrid:
                         args.oldPos = transform.position;
-                        args.pos = transform.position.Round(State.instance.Map.transform.TransformVector(Vector3.one * (State.instance.GridScale.Get() != 0 ? State.instance.GridScale.Get() : 1f)).magnitude); ;
+                        args.pos = transform.position.Round(State.Instance.Map.transform.TransformVector(Vector3.one * (State.Instance.GridScale.Get() != 0 ? State.Instance.GridScale.Get() : 1f)).magnitude);
                         args.translate = args.pos - transform.position;
                         MoveTo(args);
                         break;
@@ -114,8 +116,10 @@ namespace Virgis
         {
             if (argsin.id == GetId())
             {
-                MoveArgs argsout = new MoveArgs();
-                argsout.oldPos = transform.position;
+                MoveArgs argsout = new MoveArgs
+                {
+                    oldPos = transform.position
+                };
                 transform.Translate(argsin.translate, Space.World);
                 argsout.id = GetId();
                 argsout.pos = transform.position;

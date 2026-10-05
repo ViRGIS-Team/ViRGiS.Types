@@ -3,6 +3,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Virgis
 {
@@ -13,7 +14,7 @@ namespace Virgis
     /// need to create our own version. This one will automatically convert
     /// between Vector3 and SerializableVector3
     /// </summary>
-    [System.Serializable]
+    [Serializable]
     public class SerializableVector3 : Serializable
     {
         /// <summary>
@@ -51,9 +52,10 @@ namespace Virgis
          }
 
         /// <summary>
-        /// Build from Json and swap the Y and Z axes
-        /// </summary>
+        /// Build from JSON and swap the Y and Z axes
         /// <param name="r">IList<float> world coordinates  z up</param>
+        /// </summary>
+        [SuppressMessage("ReSharper", "InvalidXmlDocComment")]
         public override void Update(IList<float> r)
         {
             x = r[0];
@@ -67,15 +69,15 @@ namespace Virgis
         /// <returns></returns>
         public override string ToString()
         {
-            return String.Format("[{0}, {1}, {2}]", x, z, y);
+            return $"[{x}, {z}, {y}]";
         }
 
         public override float[] ToArray()
         {
-            return new float[3] { x, z, y };
+            return new[] { x, z, y };
         }
 
-        public new float magnitude
+        public new float Magnitude
         {
             get
             {
@@ -105,7 +107,7 @@ namespace Virgis
         }
     }
 
-    [System.Serializable]
+    [Serializable]
     public class SerializableQuaternion : Serializable
     {
         /// <summary>
@@ -151,9 +153,10 @@ namespace Virgis
         }
 
         /// <summary>
-        /// Build from Json and swap the Y and Z axes
-        /// </summary>
+        /// Build from JSON and swap the Y and Z axes
         /// <param name="r">IList<float> world coordinates  z up</param>
+        /// </summary>
+        [SuppressMessage("ReSharper", "InvalidXmlDocComment")]
         public override void Update(IList<float> r)
         {
             x = r[0];
@@ -168,12 +171,12 @@ namespace Virgis
         /// <returns></returns>
         public override string ToString()
         {
-            return String.Format("[{0}, {1}, {2}, {3}]", x, z, y, w);
+            return $"[{x}, {z}, {y}, {w}]";
         }
 
         public override float[] ToArray()
         {
-            return new float[4] { x, z, y, w };
+            return new[] { x, z, y, w };
         }
 
         /// <summary>
@@ -197,7 +200,7 @@ namespace Virgis
         }
     }
 
-    [System.Serializable]
+    [Serializable]
     public class SerializableColor : Serializable
     {
 
@@ -227,11 +230,12 @@ namespace Virgis
         /// Used by JSON.Net to deserialize the object.
         /// 
         /// For consistency will Kivy and Python aas well as consistency with web based standards, 
-        /// he function accepts both float [0 .. 1] and integer [0 .. 255] formats.
+        /// the function accepts both float [0, 1] and integer [0, 255] formats.
         /// 
-        /// This does mean that the function will incorrectly deserialize the color [1i,1i,1i].
+        /// This does mean that the function will incorrectly deserialize the colour [1i,1i,1i].
         /// </summary>
         /// <param name="color">List<float></floats></param>
+        [SuppressMessage("ReSharper", "InvalidXmlDocComment")]
         public override void Update(IList<float> color)
         {
             float factor = 1;
@@ -263,12 +267,12 @@ namespace Virgis
         /// <returns></returns>
         public override string ToString()
         {
-            return String.Format("[{0}, {1}, {2}, {3}]", r , g , b , a);
+            return $"[{r}, {g}, {b}, {a}]";
         }
 
         public override float[] ToArray()
         {
-            return new float[4] { r , g , b , a };
+            return new[] { r , g , b , a };
         }
     }
 
@@ -276,6 +280,6 @@ namespace Virgis
     {
         public abstract void Update(IList<float> v);
         public abstract float[] ToArray();
-        public float magnitude;
+        public float Magnitude;
     }
 }

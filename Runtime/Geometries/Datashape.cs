@@ -25,31 +25,26 @@ using UnityEngine;
 using VirgisGeometry;
 using System.Linq;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Virgis
 {
     /// <summary>
-    /// Controls an instance of a Polygon ViRGIS component
+    /// Controls an instance of a Polygon ViRGIS component. The DataShape component is not editable and assumes that the MLines perimeter is correctly setup. This type is an abstract base class
     /// </summary>
-    public class Datashape : VirgisFeature {
+    public abstract class Datashape : VirgisFeature {
 
         public GameObject shapePrefab;
         protected GameObject Shape; // gameObject to be used for the shape
-        protected List<Dataline> m_Lines = new();
-        protected List<DCurve3> m_Polygon = new();
-        protected float m_ScaleX;
-        protected float m_ScaleY;
+        public List<Dataline> Lines { get; protected set; } = new();
+        public List<DCurve3> Polygon { get; protected set; } = new();
 
-        public override void Start()
-        {
-            base.Start();
-        }
 
         public override void Selected(SelectionType button) {
             if (button == SelectionType.SELECTALL) {
                 gameObject.BroadcastMessage("Selected", SelectionType.BROADCAST, SendMessageOptions.DontRequireReceiver);
                 m_SetBlockMove(true);
-                GetComponentsInChildren<Dataline>().ToList<Dataline>().ForEach(item => item.Selected(SelectionType.SELECTALL));
+                GetComponentsInChildren<Dataline>().ToList().ForEach(item => item.Selected(SelectionType.SELECTALL));
             }
         }
 
@@ -67,35 +62,34 @@ namespace Virgis
         /// <summary>
         /// Makes the actual mesh
         /// </summary>
+        [SuppressMessage("ReSharper", "IdentifierTypo")]
         protected void _redraw()
         {
-            if (m_Lines.Count > 0)
+            if (Lines.Count > 0)
             {
-                m_Polygon = new List<DCurve3>();
-                foreach (Dataline ring in m_Lines)
+                Polygon = new List<DCurve3>();
+                foreach (Dataline ring in Lines)
                 {
-                    m_Polygon.Add(ring.Curve); // Note that Polygon is in World Coordinates
+                    Polygon.Add(ring.Curve); // Note that Polygon is in World Coordinates
                 }
             }
 
             //
             // Map 3d Polygon to the bext fit 2d polygon and also return the frame used for the mapping
             //
-            Frame3f frame;
-            IEnumerable<Vector3d> verticesItr;
-            GeneralPolygon2d polygon2d = new(m_Polygon, out frame, out verticesItr );
+            GeneralPolygon2d polygon2D = new(Polygon, out Frame3f _, out var verticesItr );
 
-            //Traingulate The Polygon
-            Index3i[] trianglesItr = polygon2d.GetMesh();
+            //Triangulate The Polygon
+            Index3i[] trianglesItr = polygon2D.GetMesh();
 
             //Build a DMesh3 from the result
-            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, m_Polygon[0].axisOrder);
+            DMesh3 dmesh = DMesh3Builder.Build<Vector3d, Index3i, Vector3d>(verticesItr, trianglesItr, null, null, Polygon[0].axisOrder);
             dmesh.CalculateUVs();
 
             //Add DMesh to the component
             DataMesh mesh = Shape.GetComponent<DataMesh>();
-            mesh.umesh.DMesh3 = dmesh;
-            mesh.umesh.MeshFinalize();
+            mesh.Umesh.DMesh3 = dmesh;
+            mesh.Umesh.MeshFinalize();
         }
 
         public override void AddVertex(Vector3 position) {
@@ -103,18 +97,18 @@ namespace Virgis
             base.AddVertex(position);
         }
 
-        public override void RemoveVertex(Transform vertex) {
+        public override void RemoveVertex(Transform vertex = null) {
             if (MState.BlockMove) {
                 RemoveFeatureRpc();
             } else {
                 _redraw();
-            };
+            }
             base.RemoveVertex(vertex);
         }
 
         public override void UpdateMaterial(SerializableMaterialHash previousValue, SerializableMaterialHash newValue)
         {
-            if (Shape != null)
+            if (Shape)
             {
                 Shape.SendMessage("SetMaterial", newValue);
             }

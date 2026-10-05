@@ -30,19 +30,17 @@ using UnityEngine;
 
 namespace Virgis {
 
-    public class KdTree<T> : IEnumerable<T>, IEnumerable where T : Component
+    public class KdTree<T> : IEnumerable<T> where T : Component
     {
-        protected KdNode _root;
-        protected KdNode _last;
-        protected int _count;
-        protected bool _just2D;
-        protected float _LastUpdate = -1f;
-        protected KdNode[] _open;
+        protected KdNode Root;
+        protected KdNode Last;
+        private readonly bool _just2D;
+        private float _lastUpdate = -1f;
+        protected KdNode[] Open;
 
-        public int Count { get { return _count; } }
-        public bool IsReadOnly { get { return false; } }
-        public float AverageSearchLength { protected set; get; }
-        public float AverageSearchDeep { protected set; get; }
+        private int _count;
+        private float _averageSearchLength;
+        private float _averageSearchDeep;
 
         /// <summary>
         /// create a tree
@@ -59,10 +57,10 @@ namespace Virgis {
             {
                 if (key >= _count)
                     throw new ArgumentOutOfRangeException();
-                var current = _root;
+                var current = Root;
                 for (var i = 0; i < key; i++)
-                    current = current.next;
-                return current.component;
+                    current = current.Next;
+                return current.Component;
             }
         }
 
@@ -70,9 +68,9 @@ namespace Virgis {
         /// add item
         /// </summary>
         /// <param name="item">item</param>
-        public void Add(T item)
+        private void Add(T item)
         {
-            _add(new KdNode() { component = item });
+            _add(new KdNode() { Component = item });
         }
 
         /// <summary>
@@ -104,12 +102,12 @@ namespace Virgis {
         /// <param name="match">lamda expression</param>
         public T Find(Predicate<T> match)
         {
-            var current = _root;
+            var current = Root;
             while (current != null)
             {
-                if (match(current.component))
-                    return current.component;
-                current = current.next;
+                if (match(current.Component))
+                    return current.Component;
+                current = current.Next;
             }
             return null;
         }
@@ -124,8 +122,8 @@ namespace Virgis {
             Clear();
             foreach (var node in list)
             {
-                node._oldRef = null;
-                node.next = null;
+                node.OldRef = null;
+                node.Next = null;
             }
             foreach (var node in list)
                 _add(node);
@@ -138,12 +136,12 @@ namespace Virgis {
         public void RemoveAll(Predicate<T> match)
         {
             var list = new List<KdNode>(_getNodes());
-            list.RemoveAll(n => match(n.component));
+            list.RemoveAll(n => match(n.Component));
             Clear();
             foreach (var node in list)
             {
-                node._oldRef = null;
-                node.next = null;
+                node.OldRef = null;
+                node.Next = null;
             }
             foreach (var node in list)
                 _add(node);
@@ -166,13 +164,13 @@ namespace Virgis {
         /// <summary>
         /// clear tree
         /// </summary>
-        public void Clear()
+        private void Clear()
         {
 
 
             //rest for the garbage collection
-            _root = null;
-            _last = null;
+            Root = null;
+            Last = null;
             _count = 0;
         }
 
@@ -182,10 +180,10 @@ namespace Virgis {
         /// <param name="rate">Updates per second</param>
         public void UpdatePositions(float rate)
         {
-            if (Time.timeSinceLevelLoad - _LastUpdate < 1f / rate)
+            if (Time.timeSinceLevelLoad - _lastUpdate < 1f / rate)
                 return;
 
-            _LastUpdate = Time.timeSinceLevelLoad;
+            _lastUpdate = Time.timeSinceLevelLoad;
 
             UpdatePositions();
         }
@@ -193,18 +191,18 @@ namespace Virgis {
         /// <summary>
         /// Update positions (if objects moved)
         /// </summary>
-        public void UpdatePositions()
+        private void UpdatePositions()
         {
             //save old traverse
-            var current = _root;
+            var current = Root;
             while (current != null)
             {
-                current._oldRef = current.next;
-                current = current.next;
+                current.OldRef = current.Next;
+                current = current.Next;
             }
 
             //save root
-            current = _root;
+            current = Root;
 
             //reset values
             Clear();
@@ -213,7 +211,7 @@ namespace Virgis {
             while (current != null)
             {
                 _add(current);
-                current = current._oldRef;
+                current = current.OldRef;
             }
         }
 
@@ -223,11 +221,11 @@ namespace Virgis {
         /// <returns>Enumberator</returns>
         public IEnumerator<T> GetEnumerator()
         {
-            var current = _root;
+            var current = Root;
             while (current != null)
             {
-                yield return current.component;
-                current = current.next;
+                yield return current.Component;
+                current = current.Next;
             }
         }
 
@@ -251,14 +249,15 @@ namespace Virgis {
             return GetEnumerator();
         }
 
-        protected float _distance(Vector3 a, Vector3 b)
+        private float _distance(Vector3 a, Vector3 b)
         {
             if (_just2D)
                 return (a.x - b.x) * (a.x - b.x) + (a.z - b.z) * (a.z - b.z);
             else
                 return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z);
         }
-        protected float _getSplitValue(int level, Vector3 position)
+
+        private float _getSplitValue(int level, Vector3 position)
         {
             if (_just2D)
                 return (level % 2 == 0) ? position.x : position.z;
@@ -269,59 +268,56 @@ namespace Virgis {
         private void _add(KdNode newNode)
         {
             _count++;
-            newNode.left = null;
-            newNode.right = null;
-            newNode.level = 0;
-            var parent = _findParent(newNode.component.transform.position);
+            newNode.Left = null;
+            newNode.Right = null;
+            newNode.Level = 0;
+            var parent = _findParent(newNode.Component.transform.position);
 
             //set last
-            if (_last != null)
-                _last.next = newNode;
-            _last = newNode;
+            if (Last != null)
+                Last.Next = newNode;
+            Last = newNode;
 
             //set root
             if (parent == null)
             {
-                _root = newNode;
+                Root = newNode;
                 return;
             }
 
             var splitParent = _getSplitValue(parent);
-            var splitNew = _getSplitValue(parent.level, newNode.component.transform.position);
+            var splitNew = _getSplitValue(parent.Level, newNode.Component.transform.position);
 
-            newNode.level = parent.level + 1;
+            newNode.Level = parent.Level + 1;
 
             if (splitNew < splitParent)
-                parent.left = newNode; //go left
+                parent.Left = newNode; //go left
             else
-                parent.right = newNode; //go right
+                parent.Right = newNode; //go right
         }
 
         private KdNode _findParent(Vector3 position)
         {
             //travers from root to bottom and check every node
-            var current = _root;
-            var parent = _root;
+            var current = Root;
+            var parent = Root;
             while (current != null)
             {
                 var splitCurrent = _getSplitValue(current);
-                var splitSearch = _getSplitValue(current.level, position);
+                var splitSearch = _getSplitValue(current.Level, position);
 
                 parent = current;
-                if (splitSearch < splitCurrent)
-                    current = current.left; //go left
-                else
-                    current = current.right; //go right
-
+                current = splitSearch < splitCurrent ? current.Left : //go left
+                    current.Right; //go right
             }
             return parent;
         }
 
         /// <summary>
-        /// Find closest object to given position
-        /// </summary>
+        /// Find the closest object to given position
         /// <param name="position">position</param>
         /// <returns>closest object</returns>
+        /// </summary>
         public T FindClosest(Vector3 position)
         {
             return _findClosest(position);
@@ -339,32 +335,32 @@ namespace Virgis {
             return output;
         }
 
-        protected T _findClosest(Vector3 position, List<T> traversed = null)
+        private T _findClosest(Vector3 position, List<T> traversed = null)
         {
-            if (_root == null)
+            if (Root == null)
                 return null;
 
             var nearestDist = float.MaxValue;
             KdNode nearest = null;
 
-            if (_open == null || _open.Length < Count)
-                _open = new KdNode[Count];
-            for (int i = 0; i < _open.Length; i++)
-                _open[i] = null;
+            if (Open == null || Open.Length < _count)
+                Open = new KdNode[_count];
+            for (int i = 0; i < Open.Length; i++)
+                Open[i] = null;
 
             var openAdd = 0;
             var openCur = 0;
 
-            if (_root != null)
-                _open[openAdd++] = _root;
+            if (Root != null)
+                Open[openAdd++] = Root;
 
-            while (openCur < _open.Length && _open[openCur] != null)
+            while (openCur < Open.Length && Open[openCur] != null)
             {
-                var current = _open[openCur++];
+                var current = Open[openCur++];
                 if (traversed != null)
-                    traversed.Add(current.component);
+                    traversed.Add(current.Component);
 
-                var nodeDist = _distance(position, current.component.transform.position);
+                var nodeDist = _distance(position, current.Component.transform.position);
                 if (nodeDist < nearestDist)
                 {
                     nearestDist = nodeDist;
@@ -372,53 +368,53 @@ namespace Virgis {
                 }
 
                 var splitCurrent = _getSplitValue(current);
-                var splitSearch = _getSplitValue(current.level, position);
+                var splitSearch = _getSplitValue(current.Level, position);
 
                 if (splitSearch < splitCurrent)
                 {
-                    if (current.left != null)
-                        _open[openAdd++] = current.left; //go left
-                    if (Mathf.Abs(splitCurrent - splitSearch) * Mathf.Abs(splitCurrent - splitSearch) < nearestDist && current.right != null)
-                        _open[openAdd++] = current.right; //go right
+                    if (current.Left != null)
+                        Open[openAdd++] = current.Left; //go left
+                    if (Mathf.Abs(splitCurrent - splitSearch) * Mathf.Abs(splitCurrent - splitSearch) < nearestDist && current.Right != null)
+                        Open[openAdd++] = current.Right; //go right
                 }
                 else
                 {
-                    if (current.right != null)
-                        _open[openAdd++] = current.right; //go right
-                    if (Mathf.Abs(splitCurrent - splitSearch) * Mathf.Abs(splitCurrent - splitSearch) < nearestDist && current.left != null)
-                        _open[openAdd++] = current.left; //go left
+                    if (current.Right != null)
+                        Open[openAdd++] = current.Right; //go right
+                    if (Mathf.Abs(splitCurrent - splitSearch) * Mathf.Abs(splitCurrent - splitSearch) < nearestDist && current.Left != null)
+                        Open[openAdd++] = current.Left; //go left
                 }
             }
 
-            AverageSearchLength = (99f * AverageSearchLength + openCur) / 100f;
-            AverageSearchDeep = (99f * AverageSearchDeep + nearest.level) / 100f;
+            _averageSearchLength = (99f * _averageSearchLength + openCur) / 100f;
+            _averageSearchDeep = (99f * _averageSearchDeep + nearest.Level) / 100f;
 
-            return nearest.component;
+            return nearest.Component;
         }
 
         private float _getSplitValue(KdNode node)
         {
-            return _getSplitValue(node.level, node.component.transform.position);
+            return _getSplitValue(node.Level, node.Component.transform.position);
         }
 
         private IEnumerable<KdNode> _getNodes()
         {
-            var current = _root;
+            var current = Root;
             while (current != null)
             {
                 yield return current;
-                current = current.next;
+                current = current.Next;
             }
         }
 
         protected class KdNode
         {
-            internal T component;
-            internal int level;
-            internal KdNode left;
-            internal KdNode right;
-            internal KdNode next;
-            internal KdNode _oldRef;
+            internal T Component;
+            internal int Level;
+            internal KdNode Left;
+            internal KdNode Right;
+            internal KdNode Next;
+            internal KdNode OldRef;
         }
     }
 }

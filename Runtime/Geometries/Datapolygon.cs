@@ -24,11 +24,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Virgis
 {
     /// <summary>
-    /// Controls an instance of a Polygon ViRGIS component
+    /// Controls an instance of a Polygon ViRGIS component for editable polygon shapes. Expects to be given a valid set of DataLine perimeters in the Draw Function.
     /// </summary>
     public class Datapolygon : Datashape {
 
@@ -51,38 +52,36 @@ namespace Virgis
         // https://answers.unity.com/questions/14170/scaling-an-object-from-a-different-center.html
         protected override void _moveAxis(MoveArgs args) {
             transform.parent.GetComponent<IVirgisEntity>().MoveAxis(args);
-            transform.GetComponentsInChildren<Dataline>().ToList<Dataline>().ForEach(line => line.MoveAxisAction(args));
-            if (args.translate != null) {
-                Shape.transform.Translate(args.translate, Space.World);
-            }
+            transform.GetComponentsInChildren<Dataline>().ToList().ForEach(line => line.MoveAxisAction(args));
+            Shape.transform.Translate(args.translate, Space.World);
             args.rotate.ToAngleAxis(out float angle, out Vector3 axis);
             Shape.transform.RotateAround(args.pos, axis, angle);
-            Vector3 A = Shape.transform.localPosition;
-            Vector3 B = transform.InverseTransformPoint(args.pos);
-            Vector3 C = A - B;
-            float RS = args.scale;
-            Vector3 FP = B + C * RS;
-            if (FP.magnitude < float.MaxValue) {
-                Shape.transform.localScale = Shape.transform.localScale * RS;
-                Shape.transform.localPosition = FP;
-            }
+            Vector3 a = Shape.transform.localPosition;
+            Vector3 b = transform.InverseTransformPoint(args.pos);
+            Vector3 c = a - b;
+            float rs = args.scale;
+            Vector3 fp = b + c * rs;
+            if (!(fp.magnitude < float.MaxValue)) return;
+            Shape.transform.localScale = Shape.transform.localScale * rs;
+            Shape.transform.localPosition = fp;
         }
 
         /// <summary>
         /// Called to draw the Polygon based upon the 
-        /// </summary>
-        /// <param name="perimeter">LineString defining the perimter of the polygon</param>
+        /// <param name="polygon">List<Dataline> defining the perimeter of the polygons</param>
         /// <param name="mat"> List of materials</param>
         /// <returns></returns>
+        /// </summary>
+        [SuppressMessage("ReSharper", "InvalidXmlDocComment")]
         public GameObject Draw(List<Dataline> polygon, Dictionary<string, SerializableMaterialHash> mat) {
 
             Shape = Instantiate(shapePrefab, transform, false);
             VirgisFeature com = Shape.GetComponent<VirgisFeature>();
             com.Spawn(transform);
-            if (!mat.TryGetValue("body", out SerializableMaterialHash body_hash))
-                body_hash = new();
-            com.SetMaterial(body_hash);
-            m_Lines = polygon;
+            if (!mat.TryGetValue("body", out SerializableMaterialHash bodyHash))
+                bodyHash = new();
+            com.SetMaterial(bodyHash);
+            Lines = polygon;
 
             // call the generic polygon draw function in DataShape
             try
@@ -92,7 +91,7 @@ namespace Virgis
             catch (Exception e)
             {
                 RecordSetPrototype temp = GetLayer().GetMetadata();
-                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {GetFID<object>()} : {e.Message}");
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {GetFid<object>()} : {e.Message}");
             }
             return gameObject;
         }

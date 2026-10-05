@@ -28,13 +28,14 @@ using VirgisGeometry;
 namespace Virgis
 {
     /// <summary>
-    /// Controls an instance of a Polygon ViRGIS component
+    /// Controls an instance of a Polygon ViRGIS component for creating non-editable planar images from two DCurve imstances (the tope and the bottom of the plane - which do not need to be vertically aligned) and a texture
     /// </summary>
     public class Dataplane : Datashape
     {
         public string gisId;
-        public Dictionary<string, object> gisProperties;
-
+        public Dictionary<string, object> GisProperties;
+        
+        // This is to set the texture on the client side - Draw is only called on the server side
         public override void Start() 
         { 
             base.Start();
@@ -45,20 +46,22 @@ namespace Virgis
         /// <summary>
         /// Called to draw the Polygon based upon the 
         /// </summary>
-        /// <param name="perimeter">LineString defining the perimter of the polygon</param>
+        /// <param name="top">DCurev3 for the tope of the plabe</param>
+        /// <param name="bottom">DCurev3 for the bottom of the plane></param>
+        /// <param name="tex">The texture to be used</param>
         /// <returns></returns>
         public GameObject Draw( DCurve3 top, DCurve3 bottom, Texture2D tex)
         {
-            m_Polygon = new List<DCurve3>();
-            m_Lines = new List<Dataline>();
-            m_Polygon.Add(top);
+            Polygon = new List<DCurve3>();
+            Lines = new List<Dataline>();
+            Polygon.Add(top);
             for (int i = bottom.VertexCount - 1; i >=0; i--) {
-                m_Polygon[0].AppendVertex(bottom[i]);
+                Polygon[0].AppendVertex(bottom[i]);
             }
             Shape = Instantiate(shapePrefab, transform);
             DataMesh com = Shape.GetComponent<DataMesh>();
             if (!com.Spawn(transform)) throw new Exception("reparenting failed");
-            m_Polygon[0].Closed = true;
+            Polygon[0].Closed = true;
 
             // call the generic polygon draw function from DataShape
             try
@@ -68,7 +71,7 @@ namespace Virgis
             catch (Exception e)
             {
                 RecordSetPrototype temp = GetLayer().GetMetadata();
-                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {gisId as string} : {e.Message}");
+                Debug.LogError($"Triangulation Error for Layer {temp.DisplayName} in Object {gisId} : {e.Message}");
             }
 
             com.SetMaterial(MCol.Value);

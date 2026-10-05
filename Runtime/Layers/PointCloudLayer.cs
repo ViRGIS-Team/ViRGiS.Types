@@ -40,7 +40,7 @@ namespace Virgis
 
         new protected void Awake() {
             base.Awake();
-            featureType = FeatureType.POINTCLOUD;
+            FeatureType = FeatureType.POINTCLOUD;
         }
 
         public async override Task AsyncInit(RecordSetPrototype layer)

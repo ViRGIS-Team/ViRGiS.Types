@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.VFX;
 
 namespace Virgis
@@ -7,8 +7,8 @@ namespace Virgis
 
     public class PointCloud : VirgisFeature
     {
-        public SerializableBakedPointCloud Bpc = new();
-        public VisualEffect VFX;
+        [FormerlySerializedAs("Bpc")] public SerializableBakedPointCloud bpc = new();
+        [FormerlySerializedAs("VFX")] public VisualEffect vfx;
 
         public new void Start(){
             base.Start();
@@ -18,24 +18,24 @@ namespace Virgis
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            Bpc.OnValueChanged += SetBpc;
-            if (Bpc.PointCount != 0 ) SetBpc( Bpc.PositionMap, Bpc.ColorMap, Bpc.PointCount, Bpc.PixelSize);
+            bpc.OnValueChanged += SetBpc;
+            if (bpc.PointCount != 0 ) SetBpc( bpc.PositionMap, bpc.ColorMap, bpc.PointCount, bpc.PixelSize);
         }
 
         public override void OnNetworkDespawn()
         {
             base.OnNetworkSpawn();
-            Bpc.OnValueChanged -= SetBpc;
+            bpc.OnValueChanged -= SetBpc;
         }
-        
-        public void SetBpc( Texture2D positions, Texture2D colors, int PointCount, float PixelSize) {
+
+        private void SetBpc( Texture2D positions, Texture2D colors, int pointCount, float pixelSize) {
 
             // load the VFX and fire
-            VFX.SetTexture("_Positions", positions);
-            VFX.SetTexture("_Colors", colors);
-            VFX.SetInt("_pointCount", PointCount);
-            VFX.SetVector3("_size", Vector3.one * PixelSize);
-            VFX.Play();
+            vfx.SetTexture("_Positions", positions);
+            vfx.SetTexture("_Colors", colors);
+            vfx.SetInt("_pointCount", pointCount);
+            vfx.SetVector3("_size", Vector3.one * pixelSize);
+            vfx.Play();
         }
 
         public override T GetGeometry<T>()

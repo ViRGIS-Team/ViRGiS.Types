@@ -62,8 +62,10 @@ namespace Virgis
 
         void Hover();
         void UnHover();
-        void SetFID<T>(T FID);
-        T GetFID<T>();
+        void SetFid<T>(T fid);
+        T GetFid<T>();
+        void SetGid<T>(T fid);
+        T GetGid<T>();
         void OnSave();
     }
 }

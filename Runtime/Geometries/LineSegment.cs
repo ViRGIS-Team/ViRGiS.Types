@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE. */
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Virgis
 {
@@ -31,26 +32,26 @@ namespace Virgis
     public class LineSegment : VirgisFeature
     {
 
-        private Vector3 m_Start; // coords of the start of the line in Map.local space coordinates
-        private Vector3 m_End;  // coords of the start of the line in Map.local space coordinates
-        private float m_Diameter; // Diameter of the vertex in Map.local units
-        public int m_vStart; // Vertex ID of the start of the line
-        public int m_vEnd; // Vertex ID of the end of the line
-        private Transform m_Shape;
-        private Datapoint m_SelectedVertex;
+        private Vector3 _mStart; // coords of the start of the line in Map.local space coordinates
+        private Vector3 _mEnd;  // coords of the start of the line in Map.local space coordinates
+        private float _mDiameter; // Diameter of the vertex in Map.local units
+        [FormerlySerializedAs("m_vStart")] public int mVStart; // Vertex ID of the start of the line
+        [FormerlySerializedAs("m_vEnd")] public int mVEnd; // Vertex ID of the end of the line
+        private Transform _mShape;
+        private Datapoint _mSelectedVertex;
 
 
         public new void Start()
         {
-            m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out meshRenderer)) MMaterial = meshRenderer.material;
+            _mShape = transform.GetChild(0);
+            if (_mShape.TryGetComponent(out meshRenderer)) MMaterial = meshRenderer.material;
         }
 
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
-            m_Shape = transform.GetChild(0);
-            if (m_Shape.TryGetComponent<MeshRenderer>(out meshRenderer)) MMaterial = meshRenderer.material;
+            _mShape = transform.GetChild(0);
+            if (_mShape.TryGetComponent(out meshRenderer)) MMaterial = meshRenderer.material;
         }
 
         /// <summary>
@@ -63,36 +64,36 @@ namespace Virgis
         /// <param name="dia">Diameter of the line segement in Map.local units</param>
         public void Draw(Vector3 from, Vector3 to, int vertStart, int vertEnd, float dia)
         {
-            m_Start = transform.parent.InverseTransformPoint(from);
-            m_End = transform.parent.InverseTransformPoint(to);
-            m_Diameter = dia;
-            m_vStart = vertStart;
-            m_vEnd = vertEnd;
+            _mStart = transform.parent.InverseTransformPoint(from);
+            _mEnd = transform.parent.InverseTransformPoint(to);
+            _mDiameter = dia;
+            mVStart = vertStart;
+            mVEnd = vertEnd;
             _draw();
         }
 
         // Move the start of line to newStart point in World Coords
         public void MoveStart(Vector3 newStart)
         {
-            m_Start = transform.parent.InverseTransformPoint(newStart);
+            _mStart = transform.parent.InverseTransformPoint(newStart);
             _draw();
         }
 
         // Move the start of line to newStart point in World Coords
         public void MoveEnd(Vector3 newEnd)
         {
-            m_End = transform.parent.InverseTransformPoint(newEnd);
+            _mEnd = transform.parent.InverseTransformPoint(newEnd);
             _draw();
         }
 
         private void _draw()
         {
 
-            transform.localPosition = m_Start;
-            transform.LookAt(transform.parent.TransformPoint(m_End));
-            float length = Vector3.Distance(m_Start, m_End) / 2.0f;
+            transform.localPosition = _mStart;
+            transform.LookAt(transform.parent.TransformPoint(_mEnd));
+            float length = Vector3.Distance(_mStart, _mEnd) / 2.0f;
             Vector3 linescale = transform.parent.localScale;
-            transform.localScale = new Vector3(m_Diameter / linescale.x, m_Diameter / linescale.y, length);
+            transform.localScale = new Vector3(_mDiameter / linescale.x, _mDiameter / linescale.y, length);
         }
 
         protected override void _moveAxis(MoveArgs args){
@@ -112,31 +113,30 @@ namespace Virgis
         public override void Selected(SelectionType button)
         {
             base.Selected(button);
-            float dist1 = (MState.LastHit - m_Start).sqrMagnitude;
-            float dist2 = (MState.LastHit - m_End).sqrMagnitude;
+            float dist1 = (MState.LastHit - _mStart).sqrMagnitude;
+            float dist2 = (MState.LastHit - _mEnd).sqrMagnitude;
             int selected = -1;
-            if (dist1 < dist2 * .5f) selected = m_vStart;
-            if (dist2 < dist1 * .5f) selected = m_vEnd;
+            if (dist1 < dist2 * .5f) selected = mVStart;
+            if (dist2 < dist1 * .5f) selected = mVEnd;
             if (selected == -1) return;
-            if (GetParent(out IVirgisEntity parent)) {
-                m_SelectedVertex = (parent as Dataline).GetVertexById(selected) as Datapoint;
-                m_SelectedVertex.Selected(button);
-            }
+            if (!GetParent(out IVirgisEntity parent)) return;
+            _mSelectedVertex = (parent as Dataline)?.GetVertexById(selected) as Datapoint;
+            _mSelectedVertex?.Selected(button);
         }
 
         public override void MoveTo(MoveArgs args)
         {
-            if (m_SelectedVertex != null)
+            if (_mSelectedVertex)
             {
-                m_SelectedVertex.MoveTo(args);
+                _mSelectedVertex.MoveTo(args);
             }
         }
 
         public override void RemoveVertex(Transform vertex = null)
         {
-            if (m_SelectedVertex != null)
+            if (_mSelectedVertex != null)
             {
-                m_SelectedVertex.RemoveVertex(m_SelectedVertex.transform);
+                _mSelectedVertex.RemoveVertex(_mSelectedVertex.transform);
             }
         }
     }
