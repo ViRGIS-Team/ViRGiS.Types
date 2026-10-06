@@ -31,7 +31,7 @@ namespace Virgis {
 
     public class DataMesh : VirgisFeature{
 
-        public SerializableMesh Umesh = new();
+        public readonly SerializableMesh SerialMesh = new();
         [FormerlySerializedAs("MeshFilter")] public MeshFilter meshFilter;
         [FormerlySerializedAs("MeshColliders")] public MeshCollider[] meshColliders;
 
@@ -40,15 +40,19 @@ namespace Virgis {
 
         public override void OnNetworkSpawn(){
             base.OnNetworkSpawn();
-            Umesh.OnMeshChanged += SetMesh;
-            if (Umesh.IsMesh) SetMesh (Umesh.Mesh);
+            SerialMesh.OnMeshChanged += SetMesh;
+            if (SerialMesh.IsMesh) SetMesh (SerialMesh.Mesh);
         }
 
         public override void OnNetworkDespawn(){
             base.OnNetworkSpawn();
-            Umesh.OnMeshChanged -= SetMesh;
+            SerialMesh.OnMeshChanged -= SetMesh;
         }
-
+        
+        /// <summary>
+        /// Called when the SerializeableMesh is updated
+        /// </summary>
+        /// <param name="newValue"></param>
         private void SetMesh(Mesh newValue){
 
             // load mesh as unity mesh and add to MeshFilter
@@ -133,7 +137,7 @@ namespace Virgis {
         }
 
         public DMesh3 GetMesh() {
-            return Umesh.DMesh3;
+            return SerialMesh.DMesh3;
         }
 
         public void MakeConvex() {

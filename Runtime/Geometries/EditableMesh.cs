@@ -142,9 +142,9 @@ namespace Virgis
                 if (args.translate != Vector3.zero && _mSelectOn)
                 {
                     Vector3d target;
-                    if (Umesh.DMesh3.IsVertex(_mSelectedVertex))
+                    if (SerialMesh.DMesh3.IsVertex(_mSelectedVertex))
                     {
-                        target = Umesh.DMesh3.GetVertex(_mSelectedVertex) + localTranslate;
+                        target = SerialMesh.DMesh3.GetVertex(_mSelectedVertex) + localTranslate;
                     } else 
                     {
                         Debug.Log("Selected Vertex is not a Vertex");
@@ -159,45 +159,49 @@ namespace Virgis
                         //
                         // create an n-ring Sub Mesh
                         //
-                        Umesh.SubMesh = new(Umesh.DMesh3);
-                        Umesh.SubMesh.Compute(_mSelectedVertex, _n);
+                        SerialMesh.SubMesh = new(SerialMesh.DMesh3);
+                        SerialMesh.SubMesh.Compute(_mSelectedVertex, _n);
                     }
                     //
                     // create the deformer
                     // set the constraint that the selected vertex is moved to position
                     // set the contraint that the n-ring remains stationary
                     //
-                    LaplacianMeshDeformer deform = new LaplacianMeshDeformer(Umesh.SubMesh);
+                    LaplacianMeshDeformer deform = new LaplacianMeshDeformer(SerialMesh.SubMesh);
                     deform.SetConstraint(_mSelectedVertex, target, 1, true);
-                    foreach (int v in MeshIterators.BoundaryVertices(Umesh.SubMesh))
+                    foreach (int v in MeshIterators.BoundaryVertices(SerialMesh.SubMesh))
                     {
                         if (v == _mSelectedVertex) continue;
-                        if (Umesh.SubMesh.IsSubmeshInternalBoundaryVertex(v))
+                        if (SerialMesh.SubMesh.IsSubmeshInternalBoundaryVertex(v))
                         {
-                            deform.SetConstraint(v, Umesh.SubMesh.GetVertex(v), 1, true);
+                            deform.SetConstraint(v, SerialMesh.SubMesh.GetVertex(v), 1, true);
                         } else
                         {
-                            deform.SetConstraint(v, Umesh.SubMesh.GetVertex(v), 3);
+                            deform.SetConstraint(v, SerialMesh.SubMesh.GetVertex(v), 3);
                         }
                     }
                     deform.SolveAndUpdateMesh();
                     Mesh sm = meshFilter.sharedMesh;
                     Vector3[] vertices = sm.vertices;
 
-                    foreach (int vert in Umesh.SubMesh.VertexIndices())
+                    foreach (int vert in SerialMesh.SubMesh.VertexIndices())
                     {
                         int vID = MVertexMap[vert];
-                        vertices[vID] = (Vector3)Umesh.SubMesh.GetVertex(vert);
+                        vertices[vID] = (Vector3)SerialMesh.SubMesh.GetVertex(vert);
                     }
                     sm.vertices = vertices;
                     sm.UploadMeshData(false);
                     if (!NetworkManager.Singleton.IsHost)
                     {
                         MoveToRpc(
-                            Umesh.SubMesh.VertexIndices().ToArray(),
-                            Umesh.SubMesh.VertexValues().ToArray(),
-                            Umesh.SubMesh.axisOrder.ToArray()
+                            SerialMesh.SubMesh.VertexIndices().ToArray(),
+                            SerialMesh.SubMesh.VertexValues().ToArray(),
+                            SerialMesh.SubMesh.axisOrder.ToArray()
                             );
+                    }
+                    else
+                    {
+                        SerialMesh.MeshSerialize(false);
                     }
                 }
             }
@@ -208,12 +212,13 @@ namespace Virgis
         private void MoveToRpc(int[] vIDs, double[] values, byte[] axisOrder)
         {
             _mChanged = true;
+            int pointer = 0;
             foreach (int t in vIDs)
             {
-                int pointer = 0;
                 Vector3d val = new Vector3d(values[pointer++], values[pointer++], values[pointer++]) { axisOrder = new AxisOrder(axisOrder) };
-                Umesh.DMesh3.SetVertex(t, val);
+                SerialMesh.DMesh3.SetVertex(t, val);
             }
+            SerialMesh.MeshSerialize();
         }
 
         /// <summary>
@@ -283,11 +288,11 @@ namespace Virgis
 
             Spawn(transform.parent);
             SetMaterial(hash);
-            Umesh.SetMesh(dmeshin);
-            StartCoroutine(Umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
+            SerialMesh.SetMesh(dmeshin);
+            StartCoroutine(SerialMesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
-                Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);
-                Umesh.MeshSerialize();
+                SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
+                SerialMesh.UnityMeshDirty();
             }
             ));
             return transform;
@@ -301,7 +306,7 @@ namespace Virgis
                 meshRenderer.material.SetFloat(Wireframe, 1);
                 if (! _mChanged)
                 {
-                    _mOldDMesh = new (Umesh.DMesh3);
+                    _mOldDMesh = new (SerialMesh.DMesh3);
                     _mOldTransform = Matrix4x4.TRS(
                         transform.position,
                         transform.rotation,
@@ -321,7 +326,7 @@ namespace Virgis
         {
             if (! save && _mChanged )
             {
-                Umesh.SetMesh(_mOldDMesh);
+                SerialMesh.SetMesh(_mOldDMesh);
                 transform.position = _mOldTransform.GetColumn(3);
                 transform.rotation = Quaternion.LookRotation(
                     _mOldTransform.GetColumn(2),
@@ -332,10 +337,10 @@ namespace Virgis
                     _mOldTransform.GetColumn(1).magnitude,
                     _mOldTransform.GetColumn(2).magnitude
                 );
-                StartCoroutine(Umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
+                StartCoroutine(SerialMesh.DMesh3.ColorisationCoroutine(20, (colors) =>
                     {
-                        Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);
-                        Umesh.OnMeshChanged.Invoke(Umesh.Mesh);
+                        SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
+                        SerialMesh.OnMeshChanged.Invoke(SerialMesh.Mesh);
                         Debug.LogWarning($"Checkpoint restored for Object {GetId()}");
                     }
                 ));
@@ -347,7 +352,7 @@ namespace Virgis
         public override void AddVertex(Vector3 position)
         {
             Changed();
-            if (!Umesh.DMesh3.CheckValidity(out MeshResult res1))
+            if (!SerialMesh.DMesh3.CheckValidity(out MeshResult res1))
             {
                 Debug.Log("Add Vertex - Add Vertex given a defective mesh " + res1.ToString());
             }
@@ -366,16 +371,16 @@ namespace Virgis
             int vIDb = (int)uv[cmesh.triangles[3 * triangle + 1]].y;
             int vIDc = (int)uv[cmesh.triangles[3 * triangle + 2]].y;
 
-            int currentHitTri = Umesh.DMesh3.FindTriangle(vIDa, vIDb, vIDc);
-            if (!Umesh.DMesh3.IsTriangle(currentHitTri))
+            int currentHitTri = SerialMesh.DMesh3.FindTriangle(vIDa, vIDb, vIDc);
+            if (!SerialMesh.DMesh3.IsTriangle(currentHitTri))
             {
                 Debug.Log("Bad Triangle when adding vertex to mesh");
                 return;
             }
-            Index3i tri = Umesh.DMesh3.GetTriangle(currentHitTri);
-            Vector3d v0 = Umesh.DMesh3.GetVertex(vIDa);
-            Vector3d v1 = Umesh.DMesh3.GetVertex(vIDb);
-            Vector3d v2 = Umesh.DMesh3.GetVertex(vIDc);
+            Index3i tri = SerialMesh.DMesh3.GetTriangle(currentHitTri);
+            Vector3d v0 = SerialMesh.DMesh3.GetVertex(vIDa);
+            Vector3d v1 = SerialMesh.DMesh3.GetVertex(vIDb);
+            Vector3d v2 = SerialMesh.DMesh3.GetVertex(vIDc);
 
             Vector3d currentBari = MathUtil.BarycentricCoords(ref localPosition, ref v0 , ref v1, ref v2);
 
@@ -386,25 +391,25 @@ namespace Virgis
             }
             int edgeId = -1;
             if (currentBari.x > currentBari.y && currentBari.x > currentBari.z)
-                edgeId = Umesh.DMesh3.FindEdgeFromTri(tri.a, currentBari.y < currentBari.z ? tri.c : tri.b, currentHitTri);
+                edgeId = SerialMesh.DMesh3.FindEdgeFromTri(tri.a, currentBari.y < currentBari.z ? tri.c : tri.b, currentHitTri);
             if (currentBari.y > currentBari.x && currentBari.y > currentBari.z)
-                edgeId = Umesh.DMesh3.FindEdgeFromTri(tri.b, currentBari.x < currentBari.z ? tri.c : tri.a, currentHitTri);
+                edgeId = SerialMesh.DMesh3.FindEdgeFromTri(tri.b, currentBari.x < currentBari.z ? tri.c : tri.a, currentHitTri);
             if (currentBari.z > currentBari.y && currentBari.z > currentBari.x)
-                edgeId = Umesh.DMesh3.FindEdgeFromTri(tri.c, currentBari.y < currentBari.x ? tri.a : tri.b, currentHitTri);
-            if (!Umesh.DMesh3.IsEdge(edgeId))
+                edgeId = SerialMesh.DMesh3.FindEdgeFromTri(tri.c, currentBari.y < currentBari.x ? tri.a : tri.b, currentHitTri);
+            if (!SerialMesh.DMesh3.IsEdge(edgeId))
             {
                 Debug.Log("Could not find the edge when adding vertex to mesh");
                 return;
             }
-            Debug.Log($"Number of Verteces before edge split {Umesh.DMesh3.VertexCount} ");
-            Umesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
-            Debug.Log($"Number of Verteces after edge split {Umesh.DMesh3.VertexCount} ");
-            Umesh.DMesh3.SetVertex(result.vNew, localPosition);
-            Umesh.MeshSerialize();
-            StartCoroutine(Umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
+            Debug.Log($"Number of Verteces before edge split {SerialMesh.DMesh3.VertexCount} ");
+            SerialMesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
+            Debug.Log($"Number of Verteces after edge split {SerialMesh.DMesh3.VertexCount} ");
+            SerialMesh.DMesh3.SetVertex(result.vNew, localPosition);
+            SerialMesh.MeshSerialize();
+            StartCoroutine(SerialMesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
-                Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);
-                Umesh.OnMeshChanged.Invoke(Umesh.Mesh);
+                SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
+                SerialMesh.UnityMeshDirty();
             }
             ));
             UnSelected(SelectionType.SELECT);
@@ -428,9 +433,9 @@ namespace Virgis
             int v3 = (int)cmesh.uv4[cmesh.triangles[_mSelectedTriangle * 3 + 2]].y;
 
             // get the DMesh3 triangle
-            int triangle = Umesh.DMesh3.FindTriangle(v1, v2, v3);
+            int triangle = SerialMesh.DMesh3.FindTriangle(v1, v2, v3);
 
-            MeshResult res = Umesh.DMesh3.RemoveTriangle(triangle);
+            MeshResult res = SerialMesh.DMesh3.RemoveTriangle(triangle);
             if (res != MeshResult.Ok)
             {
                 Debug.Log(res.ToString());
@@ -456,11 +461,11 @@ namespace Virgis
             //{
             //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
             //}
-            Umesh.MeshSerialize();
-            StartCoroutine(Umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
+            SerialMesh.MeshSerialize();
+            StartCoroutine(SerialMesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
-                Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);
-                Umesh.OnMeshChanged.Invoke(Umesh.Mesh);
+                SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
+                SerialMesh.UnityMeshDirty();
             }
             ));
             UnSelected(SelectionType.SELECT);

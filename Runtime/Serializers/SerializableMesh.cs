@@ -18,7 +18,7 @@ namespace Virgis
 
         public DSubmesh3 SubMesh { get; set; }
 
-        private long _updateNumber;
+        public long UpdateNumber { get; private set; }
 
         /// <summary>
         /// Delegate type for Mesh changed event
@@ -42,20 +42,31 @@ namespace Virgis
         public void SetMesh(DMesh3 dmesh)
         {
             _mDmesh = dmesh;
-            MeshDeserialize();
+            MeshSerialize();
         }
 
 
-        public void MeshSerialize()
+        public void MeshSerialize(bool updateUnityMesh = true)
         {
             Debug.Log("Mesh Serialize");
-            _mMesh = (Mesh)_mDmesh;
-            _updateNumber = 0;
-            OnMeshChanged.Invoke(_mMesh);
+            UpdateNumber++;
+            
+            if (updateUnityMesh)
+            {
+                _mMesh =  (Mesh)_mDmesh;
+                UnityMeshDirty();
+            }
+            
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(_mMesh, Vector3.one, 0.01f);
             _mData = serResult[0].data.ToArray();
             Array.ForEach(serResult, res => res.Dispose());
+            
             SetDirty(true);
+        }
+
+        public void UnityMeshDirty()
+        {
+            OnMeshChanged.Invoke(_mMesh);
         }
 
         private async void MeshDeserialize()

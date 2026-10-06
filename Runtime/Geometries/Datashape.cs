@@ -88,7 +88,7 @@ namespace Virgis
 
             //Add DMesh to the component
             DataMesh mesh = Shape.GetComponent<DataMesh>();
-            mesh.Umesh.SetMesh(dmesh);
+            mesh.SerialMesh.SetMesh(dmesh);
         }
 
         public override void AddVertex(Vector3 position) {
