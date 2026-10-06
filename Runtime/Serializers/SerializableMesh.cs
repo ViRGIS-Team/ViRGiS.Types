@@ -11,10 +11,17 @@ namespace Virgis
 {
     public class SerializableMesh : NetworkVariableBase
     {
-        private DMesh3 _mDmesh;
+
+        public enum UpdateType
+        {
+            Full,
+            Partial
+        }
         private Mesh _mMesh;
 
         private byte[] _mData;
+
+        private byte[] _mSubdata;
 
         public DSubmesh3 SubMesh { get; set; }
 
@@ -31,7 +38,7 @@ namespace Virgis
         /// </summary>
         public OnMeshChangedDelegate OnMeshChanged;
 
-        public DMesh3 DMesh3 => _mDmesh;
+        public DMesh3 DMesh3 => SubMesh.BaseMesh;
 
         public Mesh Mesh => _mMesh;
         
@@ -39,9 +46,9 @@ namespace Virgis
         /// Set the DMesh
         /// </summary>
         /// <param name="dmesh"></param>
-        public void SetMesh(DMesh3 dmesh)
+        public void SetMesh(ref DMesh3 dmesh)
         {
-            _mDmesh = dmesh;
+            SubMesh = new(ref dmesh);
             MeshSerialize();
         }
 
@@ -53,7 +60,7 @@ namespace Virgis
             
             if (updateUnityMesh)
             {
-                _mMesh =  (Mesh)_mDmesh;
+                _mMesh =  (Mesh)DMesh3;
                 UnityMeshDirty();
             }
             
@@ -136,7 +143,7 @@ namespace Virgis
 
         protected void UpdateDMesh()
         {
-            if (_mDmesh == null) _mDmesh = new();
+            if (SubMesh == null) throw new Exception("UpdateDMesh called on uninitialised SerialMesh");
             using (Mesh.MeshDataArray mda = Mesh.AcquireReadOnlyMeshData(_mMesh))
             {
                 if (mda.Length > 1) throw new Exception("Too many submeshes");
@@ -186,7 +193,7 @@ namespace Virgis
                 }
 
                 int pointer;
-                _mDmesh.BeginUnsafeVerticesInsert();
+                DMesh3.BeginUnsafeVerticesInsert();
                 for (int i = 0; i < md.vertexCount; i++)
                 {
                     NewVertexInfo vertex = new();
@@ -231,16 +238,16 @@ namespace Virgis
                     }
                     pointer = i * strides[uv_buf];
                     int vID = (int)vertexBuffers[uv_buf] [pointer + uv / 4 + 1];
-                    if (_mDmesh.IsVertex(vID))
+                    if (DMesh3.IsVertex(vID))
                     {
-                        if (!_mDmesh.SetVertex(vID, vertex, true, true, true)) throw new Exception("DMesh SetVertex Failed");
+                        if (!DMesh3.SetVertex(vID, vertex, true, true, true)) throw new Exception("DMesh SetVertex Failed");
                     } else
                     {
-                        MeshResult mr = _mDmesh.InsertVertex(vID, ref vertex, true);
+                        MeshResult mr = DMesh3.InsertVertex(vID, ref vertex, true);
                         if (mr != MeshResult.Ok) throw new Exception($"DMesh InsertVertex Failed with : {mr.ToString()}");
                     }
                 };
-                _mDmesh.EndUnsafeVerticesInsert();
+                DMesh3.EndUnsafeVerticesInsert();
 
                 // Get Triangles and update DMesh
                 NativeArray<byte> triangles = mda[0].GetIndexData<byte>();
@@ -266,18 +273,18 @@ namespace Virgis
                         b = BitConverter.ToInt32(triangles.GetSubArray(pointer + 4, 4).AsReadOnlySpan());
                         c = BitConverter.ToInt32(triangles.GetSubArray(pointer + 8, 4).AsReadOnlySpan());
                     }
-                    int tID = _mDmesh.FindTriangle(a, b, c);
+                    int tID = DMesh3.FindTriangle(a, b, c);
                     if (tID == DMesh3.InvalidID)
                     {
-                        tID = _mDmesh.AppendTriangle(a, b, c);
+                        tID = DMesh3.AppendTriangle(a, b, c);
                     }
                     trimap[i] = tID;
                 }
-                foreach(int tri in _mDmesh.TriangleIndices())
+                foreach(int tri in DMesh3.TriangleIndices())
                 {
                     if (Array.Find(trimap, item => item == tri) == default)
                     {
-                        _mDmesh.RemoveTriangle(tri, true, true);
+                        DMesh3.RemoveTriangle(tri, true, true);
                     }
                 }
             }

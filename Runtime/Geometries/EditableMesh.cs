@@ -104,6 +104,17 @@ namespace Virgis
             UnSelectedRpc(button);
             Destroy(_marker);
             _n = -1;
+            if (!NetworkManager.Singleton.IsHost)
+            {
+                MoveToRpc(
+                    SerialMesh.SubMesh.VertexIndices().ToArray(),
+                    SerialMesh.SubMesh.VertexValues().ToArray(),
+                    SerialMesh.SubMesh.axisOrder.ToArray()
+                );
+            } else
+            {
+                SerialMesh.MeshSerialize(false);
+            }
         }
 
         [Rpc(SendTo.Server)]
@@ -159,7 +170,6 @@ namespace Virgis
                         //
                         // create an n-ring Sub Mesh
                         //
-                        SerialMesh.SubMesh = new(SerialMesh.DMesh3);
                         SerialMesh.SubMesh.Compute(_mSelectedVertex, _n);
                     }
                     //
@@ -191,18 +201,6 @@ namespace Virgis
                     }
                     sm.vertices = vertices;
                     sm.UploadMeshData(false);
-                    // if (!NetworkManager.Singleton.IsHost)
-                    // {
-                    //     MoveToRpc(
-                    //         SerialMesh.SubMesh.VertexIndices().ToArray(),
-                    //         SerialMesh.SubMesh.VertexValues().ToArray(),
-                    //         SerialMesh.SubMesh.axisOrder.ToArray()
-                    //         );
-                    // }
-                    //else
-                    //{
-                        SerialMesh.MeshSerialize(false);
-                    //}
                 }
             }
             UpdateUnityMesh();
@@ -288,7 +286,7 @@ namespace Virgis
 
             Spawn(transform.parent);
             SetMaterial(hash);
-            SerialMesh.SetMesh(dmeshin);
+            SerialMesh.SetMesh(ref dmeshin);
             StartCoroutine(SerialMesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
                 SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
@@ -326,7 +324,7 @@ namespace Virgis
         {
             if (! save && _mChanged )
             {
-                SerialMesh.SetMesh(_mOldDMesh);
+                SerialMesh.SetMesh(ref _mOldDMesh);
                 transform.position = _mOldTransform.GetColumn(3);
                 transform.rotation = Quaternion.LookRotation(
                     _mOldTransform.GetColumn(2),
