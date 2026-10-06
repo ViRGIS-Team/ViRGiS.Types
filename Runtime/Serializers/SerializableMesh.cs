@@ -86,7 +86,7 @@ namespace Virgis
 
         public override void WriteDelta(FastBufferWriter writer)
         {
-            Debug.Log("Read Delta");
+            Debug.Log("Write Delta");
             WriteField(writer);
         }
 
@@ -118,7 +118,7 @@ namespace Virgis
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
-            Debug.Log("Write Delta");
+            Debug.Log("Read Delta");
             ReadField(reader);
             if (keepDirtyDelta) return;
             ResetDirty();
