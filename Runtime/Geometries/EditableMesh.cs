@@ -47,11 +47,6 @@ namespace Virgis
         private int _n = -1; //indicator that the n-ring is built
         private bool _mSelectOn;
 
-        public override void OnNetworkSpawn(){
-            Umesh.KeepDmeshUpdatedOnClient = true;
-            base.OnNetworkSpawn();
-        }
-
         public override void Selected(SelectionType button){
             if (_mSelectOn)
             {
@@ -288,11 +283,11 @@ namespace Virgis
 
             Spawn(transform.parent);
             SetMaterial(hash);
-            Umesh.DMesh3 = dmeshin;
+            Umesh.SetMesh(dmeshin);
             StartCoroutine(Umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
                 Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);
-                Umesh.MeshFinalize();
+                Umesh.MeshSerialize();
             }
             ));
             return transform;
@@ -326,7 +321,7 @@ namespace Virgis
         {
             if (! save && _mChanged )
             {
-                Umesh.DMesh3 = _mOldDMesh;
+                Umesh.SetMesh(_mOldDMesh);
                 transform.position = _mOldTransform.GetColumn(3);
                 transform.rotation = Quaternion.LookRotation(
                     _mOldTransform.GetColumn(2),
@@ -405,11 +400,7 @@ namespace Virgis
             Umesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
             Debug.Log($"Number of Verteces after edge split {Umesh.DMesh3.VertexCount} ");
             Umesh.DMesh3.SetVertex(result.vNew, localPosition);
-            //if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
-            //{
-            //    UnityEngine.Debug.Log("Add Vertex - Add Vertex created a defective mesh " + res2.ToString());
-            //}
-            Umesh.RefreshUnityMesh();
+            Umesh.MeshSerialize();
             StartCoroutine(Umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
                 Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);
@@ -465,7 +456,7 @@ namespace Virgis
             //{
             //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
             //}
-            Umesh.RefreshUnityMesh();
+            Umesh.MeshSerialize();
             StartCoroutine(Umesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
                 Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);

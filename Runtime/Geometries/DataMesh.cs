@@ -31,7 +31,7 @@ namespace Virgis {
 
     public class DataMesh : VirgisFeature{
 
-        public readonly SerializableMesh Umesh = new();
+        public SerializableMesh Umesh = new();
         [FormerlySerializedAs("MeshFilter")] public MeshFilter meshFilter;
         [FormerlySerializedAs("MeshColliders")] public MeshCollider[] meshColliders;
 

@@ -16,10 +16,9 @@ namespace Virgis
 
         private byte[] _mData;
 
-        public DSubmesh3 SubMesh;
-        public bool KeepDmeshUpdatedOnClient = false;
+        public DSubmesh3 SubMesh { get; set; }
 
-        private long _updateNumber = 0;
+        private long _updateNumber;
 
         /// <summary>
         /// Delegate type for Mesh changed event
@@ -32,28 +31,26 @@ namespace Virgis
         /// </summary>
         public OnMeshChangedDelegate OnMeshChanged;
 
-        public DMesh3 DMesh3
+        public DMesh3 DMesh3 => _mDmesh;
+
+        public Mesh Mesh => _mMesh;
+        
+        /// <summary>
+        /// Set the DMesh
+        /// </summary>
+        /// <param name="dmesh"></param>
+        public void SetMesh(DMesh3 dmesh)
         {
-            get => _mDmesh;
-            set {
-                _mDmesh = value;
-                RefreshUnityMesh();
-                SetDirty(true);
-                _updateNumber++;
-            }
+            _mDmesh = dmesh;
+            MeshDeserialize();
         }
 
-        public void RefreshUnityMesh()
+
+        public void MeshSerialize()
         {
-            Debug.Log("Unity Mesh Refreshed");
+            Debug.Log("Mesh Serialize");
             _mMesh = (Mesh)_mDmesh;
-        }
-
-        public Mesh Mesh { get { return _mMesh; } }
-
-        public void MeshFinalize()
-        {
-            Debug.Log("Mesh Finalized");
+            _updateNumber = 0;
             OnMeshChanged.Invoke(_mMesh);
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(_mMesh, Vector3.one, 0.01f);
             _mData = serResult[0].data.ToArray();
@@ -81,7 +78,7 @@ namespace Virgis
             }
             _mMesh.RecalculateTangents();
             OnMeshChanged.Invoke(_mMesh);
-            if (KeepDmeshUpdatedOnClient) UpdateDMesh();
+            UpdateDMesh();
         }
 
         public override void WriteDelta(FastBufferWriter writer)
