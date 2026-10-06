@@ -24,7 +24,6 @@ using System;
 using UnityEngine;
 using VirgisGeometry;
 using System.Linq;
-using System.Diagnostics;
 using Unity.Netcode;
 using UnityEngine.Serialization;
 
@@ -62,7 +61,7 @@ namespace Virgis
             RaycastHit lastHit = State.Instance.LastHit;
             _mSelectedTriangle = lastHit.triangleIndex;
             Vector3 bary = lastHit.barycentricCoordinate;
-            int[] triangles = (lastHit.collider as MeshCollider).sharedMesh.triangles;
+            int[] triangles = ((MeshCollider)lastHit.collider).sharedMesh.triangles;
             int selectedUVertex = 0;
             if (bary.x >= bary.y && bary.x >= bary.z) selectedUVertex = triangles[_mSelectedTriangle * 3]; 
             else if (bary.y >= bary.x && bary.y >= bary.z) selectedUVertex = triangles[_mSelectedTriangle * 3 + 1];
@@ -70,7 +69,7 @@ namespace Virgis
             
             
             // get the collider mesh to get the verticesMesh and get the DMesh3 vertex id
-            Mesh cmesh = (State.Instance.LastHit.collider as MeshCollider).sharedMesh;
+            Mesh cmesh = ((MeshCollider)State.Instance.LastHit.collider).sharedMesh;
             Vector2 uv = cmesh.uv4[ selectedUVertex];
             _mSelectedVertex = (int)uv.y;
 
@@ -153,7 +152,7 @@ namespace Virgis
                         target = Umesh.DMesh3.GetVertex(_mSelectedVertex) + localTranslate;
                     } else 
                     {
-                        UnityEngine.Debug.Log("Selected Vertex is not a Vertex");
+                        Debug.Log("Selected Vertex is not a Vertex");
                         return;
                     }
 
@@ -183,7 +182,7 @@ namespace Virgis
                             deform.SetConstraint(v, Umesh.SubMesh.GetVertex(v), 1, true);
                         } else
                         {
-                            deform.SetConstraint(v, Umesh.SubMesh.GetVertex(v), 3, false);
+                            deform.SetConstraint(v, Umesh.SubMesh.GetVertex(v), 3);
                         }
                     }
                     deform.SolveAndUpdateMesh();
@@ -313,7 +312,7 @@ namespace Virgis
                         transform.rotation,
                         transform.localScale
                     );
-                    UnityEngine.Debug.LogWarning($"Checkpoint saved for Object {GetId()}");
+                    Debug.LogWarning($"Checkpoint saved for Object {GetId()}");
                 }
             }
             else
@@ -342,7 +341,7 @@ namespace Virgis
                     {
                         Umesh.Mesh.uv4 = DataMesh.ToUV(colors, Umesh.DMesh3.VertexMap);
                         Umesh.OnMeshChanged.Invoke(Umesh.Mesh);
-                        UnityEngine.Debug.LogWarning($"Checkpoint restored for Object {GetId()}");
+                        Debug.LogWarning($"Checkpoint restored for Object {GetId()}");
                     }
                 ));
 
@@ -355,7 +354,7 @@ namespace Virgis
             Changed();
             if (!Umesh.DMesh3.CheckValidity(out MeshResult res1))
             {
-                UnityEngine.Debug.Log("Add Vertex - Add Vertex given a defective mesh " + res1.ToString());
+                Debug.Log("Add Vertex - Add Vertex given a defective mesh " + res1.ToString());
             }
 
             Vector3d localPosition = transform.InverseTransformPoint(position);
@@ -375,7 +374,7 @@ namespace Virgis
             int currentHitTri = Umesh.DMesh3.FindTriangle(vIDa, vIDb, vIDc);
             if (!Umesh.DMesh3.IsTriangle(currentHitTri))
             {
-                UnityEngine.Debug.Log("Bad Triangle when adding vertex to mesh");
+                Debug.Log("Bad Triangle when adding vertex to mesh");
                 return;
             }
             Index3i tri = Umesh.DMesh3.GetTriangle(currentHitTri);
@@ -387,7 +386,7 @@ namespace Virgis
 
             if (Math.Abs((currentBari.x + currentBari.y + currentBari.z) - 1) > 0.0001)
             {
-                UnityEngine.Debug.Log("invalid barycentric coords" + currentBari.ToString());
+                Debug.Log("invalid barycentric coords" + currentBari.ToString());
                 return;
             }
             int edgeId = -1;
@@ -399,12 +398,12 @@ namespace Virgis
                 edgeId = Umesh.DMesh3.FindEdgeFromTri(tri.c, currentBari.y < currentBari.x ? tri.a : tri.b, currentHitTri);
             if (!Umesh.DMesh3.IsEdge(edgeId))
             {
-                UnityEngine.Debug.Log("Could not find the edge when adding vertex to mesh");
+                Debug.Log("Could not find the edge when adding vertex to mesh");
                 return;
             }
-            UnityEngine.Debug.Log($"Number of Verteces before edge split {Umesh.DMesh3.VertexCount} ");
+            Debug.Log($"Number of Verteces before edge split {Umesh.DMesh3.VertexCount} ");
             Umesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
-            UnityEngine.Debug.Log($"Number of Verteces after edge split {Umesh.DMesh3.VertexCount} ");
+            Debug.Log($"Number of Verteces after edge split {Umesh.DMesh3.VertexCount} ");
             Umesh.DMesh3.SetVertex(result.vNew, localPosition);
             //if (!umesh.DMesh3.CheckValidity(out MeshResult res2))
             //{
@@ -443,7 +442,7 @@ namespace Virgis
             MeshResult res = Umesh.DMesh3.RemoveTriangle(triangle);
             if (res != MeshResult.Ok)
             {
-                UnityEngine.Debug.Log(res.ToString());
+                Debug.Log(res.ToString());
                 return;
             }
 

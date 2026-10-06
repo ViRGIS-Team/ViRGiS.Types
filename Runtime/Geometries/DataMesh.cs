@@ -84,11 +84,6 @@ namespace Virgis {
             newValue.RecalculateBounds();
             meshFilter.mesh = newValue;
             UpdateUnityMesh();
-
-            //if (!umesh.DMesh3.CheckValidity(out MeshResult res1))
-            //{
-            //    UnityEngine.Debug.Log("Set Mesh -  a defective mesh " + res1.ToString());
-            //}
         }
 
         /// <summary>

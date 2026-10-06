@@ -11,19 +11,22 @@ namespace Virgis
 {
     public class SerializableMesh : NetworkVariableBase
     {
-        private DMesh3 m_Dmesh;
-        private Mesh m_Mesh;
+        private DMesh3 _mDmesh;
+        private Mesh _mMesh;
 
-        private byte[] m_Data;
+        private byte[] _mData;
 
         public DSubmesh3 SubMesh;
         public bool KeepDmeshUpdatedOnClient = false;
 
+        private long _updateNumber = 0;
+
         /// <summary>
         /// Delegate type for Mesh changed event
         /// </summary>
-        /// <param name="newValue">The new value</param>
+        /// <param name="newMesh">The new Unity mesh</param>
         public delegate void OnMeshChangedDelegate(Mesh newMesh);
+        
         /// <summary>
         /// The callback to be invoked when the value gets changed
         /// </summary>
@@ -31,99 +34,102 @@ namespace Virgis
 
         public DMesh3 DMesh3
         {
-            get { return m_Dmesh; }
+            get => _mDmesh;
             set {
-                m_Dmesh = value;
+                _mDmesh = value;
                 RefreshUnityMesh();
+                SetDirty(true);
+                _updateNumber++;
             }
         }
 
         public void RefreshUnityMesh()
         {
-            m_Mesh = (Mesh)m_Dmesh;
+            Debug.Log("Unity Mesh Refreshed");
+            _mMesh = (Mesh)_mDmesh;
         }
 
-        public void Reset(DMesh3 dmesh, Mesh umesh)
-        {
-            m_Mesh = umesh;
-            m_Dmesh = dmesh;
-        }
-
-        public Mesh Mesh { get { return m_Mesh; } }
+        public Mesh Mesh { get { return _mMesh; } }
 
         public void MeshFinalize()
         {
-            OnMeshChanged.Invoke(m_Mesh);
-            EncodeResult[] serResult = DracoEncoder.EncodeMesh(m_Mesh, Vector3.one, 0.01f);
-            m_Data = serResult[0].data.ToArray();
+            Debug.Log("Mesh Finalized");
+            OnMeshChanged.Invoke(_mMesh);
+            EncodeResult[] serResult = DracoEncoder.EncodeMesh(_mMesh, Vector3.one, 0.01f);
+            _mData = serResult[0].data.ToArray();
             Array.ForEach(serResult, res => res.Dispose());
             SetDirty(true);
         }
 
         private async void MeshDeserialize()
         {
+            Debug.Log("Mesh Deserialized");
             DracoMeshLoader decoder = new(false);
             Mesh.MeshDataArray meshDataArray = Mesh.AllocateWritableMeshData(1);
             Mesh.MeshData mesh = meshDataArray[0];
-            DracoMeshLoader.DecodeResult result = await decoder.ConvertDracoMeshToUnity(mesh, m_Data, true, true);
+            DracoMeshLoader.DecodeResult result = await decoder.ConvertDracoMeshToUnity(mesh, _mData, true, true);
             if (!result.success)
             {
                 throw new Exception("Mesh Deserialization failed");
             }
-            m_Mesh = new Mesh();
-            m_Mesh.MarkDynamic();
-            Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, m_Mesh, DracoMeshLoader.defaultMeshUpdateFlags);
+            _mMesh = new Mesh();
+            _mMesh.MarkDynamic();
+            Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, _mMesh, DracoMeshLoader.defaultMeshUpdateFlags);
             if (result.calculateNormals)
             {
-                m_Mesh.RecalculateNormals();
+                _mMesh.RecalculateNormals();
             }
-            m_Mesh.RecalculateTangents();
-            OnMeshChanged.Invoke(m_Mesh);
+            _mMesh.RecalculateTangents();
+            OnMeshChanged.Invoke(_mMesh);
             if (KeepDmeshUpdatedOnClient) UpdateDMesh();
         }
 
         public override void WriteDelta(FastBufferWriter writer)
         {
+            Debug.Log("Read Delta");
             WriteField(writer);
         }
 
         public override void WriteField(FastBufferWriter writer)
         {
-            Debug.Log("Serialize Mesh");
-            if (m_Data == null)
+            Debug.Log("Write Mesh");
+            if (_mData == null)
             {
                 writer.WriteValueSafe(0);
             } else 
             {
-                writer.WriteValueSafe(m_Data.Length);
-                writer.WriteValueSafe(m_Data);
+                writer.WriteValueSafe(_mData.Length);
+                writer.WriteValueSafe(_mData);
             }
         }
 
         public override void ReadField(FastBufferReader reader)
         {
             // De-Serialize the data being synchronized
-            Debug.Log("Deserialize Mesh");
+            Debug.Log("Read Mesh Mesh");
             reader.ReadValueSafe(out int size);
             if (size != 0) 
             {
-                m_Data = new byte[size];
-                reader.ReadValueSafe(out m_Data);
+                _mData = new byte[size];
+                reader.ReadValueSafe(out _mData);
                 MeshDeserialize();
             }
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
+            Debug.Log("Write Delta");
             ReadField(reader);
+            if (keepDirtyDelta) return;
+            ResetDirty();
         }
 
-        public bool IsMesh { get { return m_Mesh != null; } }
+        public bool IsMesh { get { return _mMesh; } }
 
         protected void UpdateDMesh()
         {
-            if (m_Dmesh == null) m_Dmesh = new();
-            using (Mesh.MeshDataArray mda = Mesh.AcquireReadOnlyMeshData(m_Mesh))
+            if (_mDmesh == null) _mDmesh = new();
+            using (Mesh.MeshDataArray mda = Mesh.AcquireReadOnlyMeshData(_mMesh))
             {
                 if (mda.Length > 1) throw new Exception("Too many submeshes");
                 Mesh.MeshData md = mda[0];
@@ -172,7 +178,7 @@ namespace Virgis
                 }
 
                 int pointer;
-                m_Dmesh.BeginUnsafeVerticesInsert();
+                _mDmesh.BeginUnsafeVerticesInsert();
                 for (int i = 0; i < md.vertexCount; i++)
                 {
                     NewVertexInfo vertex = new();
@@ -217,16 +223,16 @@ namespace Virgis
                     }
                     pointer = i * strides[uv_buf];
                     int vID = (int)vertexBuffers[uv_buf] [pointer + uv / 4 + 1];
-                    if (m_Dmesh.IsVertex(vID))
+                    if (_mDmesh.IsVertex(vID))
                     {
-                        if (!m_Dmesh.SetVertex(vID, vertex, true, true, true)) throw new Exception("DMesh SetVertex Failed");
+                        if (!_mDmesh.SetVertex(vID, vertex, true, true, true)) throw new Exception("DMesh SetVertex Failed");
                     } else
                     {
-                        MeshResult mr = m_Dmesh.InsertVertex(vID, ref vertex, true);
+                        MeshResult mr = _mDmesh.InsertVertex(vID, ref vertex, true);
                         if (mr != MeshResult.Ok) throw new Exception($"DMesh InsertVertex Failed with : {mr.ToString()}");
                     }
                 };
-                m_Dmesh.EndUnsafeVerticesInsert();
+                _mDmesh.EndUnsafeVerticesInsert();
 
                 // Get Triangles and update DMesh
                 NativeArray<byte> triangles = mda[0].GetIndexData<byte>();
@@ -252,18 +258,18 @@ namespace Virgis
                         b = BitConverter.ToInt32(triangles.GetSubArray(pointer + 4, 4).AsReadOnlySpan());
                         c = BitConverter.ToInt32(triangles.GetSubArray(pointer + 8, 4).AsReadOnlySpan());
                     }
-                    int tID = m_Dmesh.FindTriangle(a, b, c);
+                    int tID = _mDmesh.FindTriangle(a, b, c);
                     if (tID == DMesh3.InvalidID)
                     {
-                        tID = m_Dmesh.AppendTriangle(a, b, c);
+                        tID = _mDmesh.AppendTriangle(a, b, c);
                     }
                     trimap[i] = tID;
                 }
-                foreach(int tri in m_Dmesh.TriangleIndices())
+                foreach(int tri in _mDmesh.TriangleIndices())
                 {
                     if (Array.Find(trimap, item => item == tri) == default)
                     {
-                        m_Dmesh.RemoveTriangle(tri, true, true);
+                        _mDmesh.RemoveTriangle(tri, true, true);
                     }
                 }
             }
