@@ -191,18 +191,18 @@ namespace Virgis
                     }
                     sm.vertices = vertices;
                     sm.UploadMeshData(false);
-                    if (!NetworkManager.Singleton.IsHost)
-                    {
-                        MoveToRpc(
-                            SerialMesh.SubMesh.VertexIndices().ToArray(),
-                            SerialMesh.SubMesh.VertexValues().ToArray(),
-                            SerialMesh.SubMesh.axisOrder.ToArray()
-                            );
-                    }
-                    else
-                    {
+                    // if (!NetworkManager.Singleton.IsHost)
+                    // {
+                    //     MoveToRpc(
+                    //         SerialMesh.SubMesh.VertexIndices().ToArray(),
+                    //         SerialMesh.SubMesh.VertexValues().ToArray(),
+                    //         SerialMesh.SubMesh.axisOrder.ToArray()
+                    //         );
+                    // }
+                    //else
+                    //{
                         SerialMesh.MeshSerialize(false);
-                    }
+                    //}
                 }
             }
             UpdateUnityMesh();
