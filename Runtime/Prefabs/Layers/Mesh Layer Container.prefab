@@ -9,11 +9,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 103705025751674339}
-  - component: {fileID: 5070088139529842408}
-  - component: {fileID: 1824951206832780736}
-  - component: {fileID: -1874657965774625635}
+  - component: {fileID: 8214003711893909731}
+  - component: {fileID: 1529240364314137381}
+  - component: {fileID: -4987275589777180476}
   m_Layer: 0
-  m_Name: MDAL Layer
+  m_Name: Mesh Layer Container
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -34,7 +34,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5070088139529842408
+--- !u!114 &8214003711893909731
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -46,7 +46,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3467366478
+  GlobalObjectIdHash: 2200531959
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
@@ -54,25 +57,9 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &1824951206832780736
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 103705025751674337}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4efa3dd05cac1b440a66d0eb1a1fab9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  texture:
-    tex: {fileID: 0}
-  Mesh: {fileID: 6956378504070967302, guid: d15231c7492fcb34295475931d27da3c, type: 3}
-  MeshMaterial: {fileID: 2100000, guid: 6970656647e782d4b8df7b5128b92fba, type: 2}
-  WireframeMaterial: {fileID: 2100000, guid: e12795e638da343278da0871f4f80f35, type: 2}
-  ImageMaterial: {fileID: 2100000, guid: a3a71c26a238e46408a40be8807453a8, type: 2}
---- !u!114 &-1874657965774625635
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!114 &1529240364314137381
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -84,6 +71,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 0
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.1
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 0
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 0
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
@@ -100,5 +102,26 @@ MonoBehaviour:
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 0
   InLocalSpace: 1
+  SwitchTransformSpaceWhenParented: 0
   Interpolate: 0
   SlerpPosition: 0
+--- !u!114 &-4987275589777180476
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 103705025751674337}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0631875459421dd47980b1e804f95041, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: virgis.types::Virgis.MeshLayerContainer
+  ShowTopMostFoldoutHeaderGroup: 1
+  featureShape:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 0
+  _bChanged: 0
+  meshLayer: {fileID: 103705025751674337, guid: 7899972cde4ea4baea27a4eae07bf527, type: 3}

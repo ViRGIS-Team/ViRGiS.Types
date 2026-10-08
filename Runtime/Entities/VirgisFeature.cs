@@ -205,6 +205,29 @@ namespace Virgis {
         }
 
         /// <summary>
+        /// Called when a client Checks out the feature.
+        ///
+        /// </summary>
+        public virtual void CheckPoint()
+        {
+            foreach (Transform child in transform)
+            {
+                child.SendMessage("CheckPoint", SendMessageOptions.DontRequireReceiver);
+            }
+        }
+
+        /// <summary>
+        /// Called when a client checks this feature in without saving
+        /// </summary>
+        public virtual void UnCheckPoint()
+        {
+            foreach (Transform child in transform)
+            {
+                child.SendMessage("UnCheckPOint", SendMessageOptions.DontRequireReceiver);
+            }
+        }
+
+        /// <summary>
         /// Used to signal to the hierarchy that a substantive change has been made
         /// </summary>
         public virtual void Changed()

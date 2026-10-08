@@ -302,16 +302,6 @@ namespace Virgis
             if (inSession)
             {
                 meshRenderer.material.SetFloat(Wireframe, 1);
-                if (! _mChanged)
-                {
-                    _mOldDMesh = new (SerialMesh.DMesh3);
-                    _mOldTransform = Matrix4x4.TRS(
-                        transform.position,
-                        transform.rotation,
-                        transform.localScale
-                    );
-                    Debug.LogWarning($"Checkpoint saved for Object {GetId()}");
-                }
             }
             else
             {
@@ -319,10 +309,21 @@ namespace Virgis
             }
         }
 
-
-        public override void OnEditEnd(bool save)
+        public override void CheckPoint()
         {
-            if (! save && _mChanged )
+            base.CheckPoint();
+            _mOldDMesh = new (SerialMesh.DMesh3);
+            _mOldTransform = Matrix4x4.TRS(
+                transform.position,
+                transform.rotation,
+                transform.localScale
+            );
+        }
+
+
+        public override void UnCheckPoint()
+        {
+            if (_mChanged )
             {
                 SerialMesh.SetMesh(ref _mOldDMesh);
                 transform.position = _mOldTransform.GetColumn(3);
@@ -339,7 +340,6 @@ namespace Virgis
                     {
                         SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
                         SerialMesh.OnMeshChanged.Invoke(SerialMesh.Mesh);
-                        Debug.LogWarning($"Checkpoint restored for Object {GetId()}");
                     }
                 ));
 

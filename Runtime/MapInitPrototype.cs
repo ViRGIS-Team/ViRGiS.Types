@@ -282,6 +282,16 @@ namespace Virgis {
             throw new NotImplementedException();
         }
 
+        public void CheckPoint()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UnCheckPoint()
+        {
+            throw new NotImplementedException();
+        }
+
         public ulong GetId()
         {
             throw new NotImplementedException();

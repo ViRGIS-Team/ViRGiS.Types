@@ -24,7 +24,9 @@ using UnityEngine;
 
 namespace Virgis
 {
-    public class MeshLayer : MeshlayerPrototype
+    public class MeshLayerContainer : ContainerLayer
     {
+        public GameObject meshLayer;
+
     }
 }

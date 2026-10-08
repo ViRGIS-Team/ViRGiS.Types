@@ -291,6 +291,32 @@ namespace Virgis
             if (! IsContainer) Loaded(this);
         }
 
+
+        /// <summary>
+        /// Called when a client Checks out the layer.
+        ///
+        /// </summary>
+        public virtual void CheckPoint()
+        {
+            Debug.Log($"Checkpoint saved for Layer {GetId()}");
+            foreach (Transform child in transform)
+            {
+                child.SendMessage("CheckPoint", SendMessageOptions.DontRequireReceiver);
+            }
+        }
+
+        /// <summary>
+        /// Called when a client checks this layer in without saving
+        /// </summary>
+        public virtual void UnCheckPoint()
+        {
+            foreach (Transform child in transform)
+            {
+                child.SendMessage("UnCHeckPoint", SendMessageOptions.DontRequireReceiver);
+            }
+            Debug.Log($"Checkpoint restored for Layer {GetId()}");
+        }
+
         /// <summary>
         /// Called to save the current layer data to source
         /// </summary>
@@ -512,13 +538,14 @@ namespace Virgis
 
         [Rpc(SendTo.Server)]
         private void SetEditableRpc(bool checkout, ulong clientID) {
+            Debug.Log($"ENTER RPC {GetId()} checkout={checkout}");
             if (checkout)
             {
                 if (MCheckedOut.Value == 0)
                 {
                     MCheckedOut.Value = clientID;
                     _set_editable();
-                    MLoader.CheckpointSymbology();
+                    MLoader.CheckPoint();
                     State.Instance.networkState.LogMessageRpc($"Check-out layer {GetId()} by client {clientID}");
                 }
             }
@@ -527,10 +554,9 @@ namespace Virgis
                 if (MCheckedOut.Value == clientID)
                 {
                     MCheckedOut.Value = 0;
-                    MLoader.RevertSymbology();
                     State.Instance.networkState.LogMessageRpc($"Check-in layer {GetId()} by client {clientID}");
-                    RequestRedrawRpc();
-                    //_ = AsyncInit(GetMetadata());
+                    MLoader.UnCheckPoint();
+                    //RequestRedrawRpc();
                 }
             }
         }
@@ -673,7 +699,7 @@ namespace Virgis
         }
 
         [Rpc(SendTo.Server)]
-        public void RequestRedrawRpc()
+        public void ApplySymbologyRpc()
         {
             MLoader.ReadSymbology();
             _ = Draw();

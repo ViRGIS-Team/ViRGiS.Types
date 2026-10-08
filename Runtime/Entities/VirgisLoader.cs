@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using System.Collections;
+using System.Xml.Schema;
 using Mapbox.Json;
 using UnityEngine.Serialization;
 
@@ -187,6 +188,23 @@ namespace Virgis
         public virtual Task _draw()
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Called when a client Checks out the layer.
+        ///
+        /// </summary>
+        public virtual void CheckPoint()
+        {
+            CheckpointSymbology();
+        }
+
+        /// <summary>
+        /// Called when a client checks this layer in without saving
+        /// </summary>
+        public virtual void UnCheckPoint()
+        {
+            RevertSymbology();
         }
 
         public virtual Task _init()
