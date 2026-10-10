@@ -231,6 +231,34 @@ namespace Virgis {
         public static State Instance { get; protected set; }
 
         public RaycastHit LastHit = new();
+        
+        /// <summary>
+        /// Create custom ex ception handler
+        /// </summary>
+        private void Start()
+        {
+            AppDomain.CurrentDomain.UnhandledException +=
+                OnUnhandledException;
+
+            Application.logMessageReceived += OnLogMessageReceived;
+        }
+
+        private void OnDestroy()
+        {
+            AppDomain.CurrentDomain.UnhandledException -=
+                OnUnhandledException;
+
+            Application.logMessageReceived -= OnLogMessageReceived;
+        }
+
+        protected abstract void OnUnhandledException(
+            object sender,
+            UnhandledExceptionEventArgs args);
+
+        protected abstract void OnLogMessageReceived(
+            string condition,
+            string stackTrace,
+            LogType type);
 
         public int EditScale
         {

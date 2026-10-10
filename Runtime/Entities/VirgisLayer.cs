@@ -344,10 +344,10 @@ namespace Virgis
         [Rpc(SendTo.Server)]
         private void SaveRpc()
         {
-            State.Instance.networkState.LogMessageRpc($"Check-in layer {GetId()} by client {MCheckedOut.Value}");
+            State.Instance.networkState.NetworkLogMessageRpc($"Check-in layer {GetId()} by client {MCheckedOut.Value}");
             if (changed)
             {
-                State.Instance.networkState.LogMessageRpc(
+                State.Instance.networkState.NetworkLogMessageRpc(
                     $"Save requested on layer {GetId()} by client {MCheckedOut.Value}");
                 changed = false;
                 if (MLoader != null)
@@ -546,7 +546,7 @@ namespace Virgis
                     MCheckedOut.Value = clientID;
                     _set_editable();
                     MLoader.CheckPoint();
-                    State.Instance.networkState.LogMessageRpc($"Check-out layer {GetId()} by client {clientID}");
+                    State.Instance.networkState.NetworkLogMessageRpc($"Check-out layer {GetId()} by client {clientID}");
                 }
             }
             else
@@ -554,7 +554,7 @@ namespace Virgis
                 if (MCheckedOut.Value == clientID)
                 {
                     MCheckedOut.Value = 0;
-                    State.Instance.networkState.LogMessageRpc($"Check-in layer {GetId()} by client {clientID}");
+                    State.Instance.networkState.NetworkLogMessageRpc($"Check-in layer {GetId()} by client {clientID}");
                     MLoader.UnCheckPoint();
                     //RequestRedrawRpc();
                 }

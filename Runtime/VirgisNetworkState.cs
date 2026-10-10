@@ -19,15 +19,27 @@ namespace Virgis
         }
 
         [Rpc(SendTo.Everyone)]
-        public void LogMessageRpc(string message)
+        public void NetworkLogMessageRpc(string message)
         {
             Debug.Log(message);
         }
         
         [Rpc(SendTo.Everyone)]
-        public void LogErrorRpc(string message)
+        public void NetworkLogErrorRpc(string message)
         {
             Debug.LogError(message);
+        }
+        
+        [Rpc(SendTo.Server)]
+        public void ServerLogMessageRpc(string message, ulong clientId)
+        {
+            Debug.Log($"Client {clientId} : {message}");
+        }
+
+        [Rpc(SendTo.Server)]
+        public void ServerLogErrorRpc(string message, ulong clientId)
+        {
+            Debug.LogError($"Client {clientId} : {message}");
         }
     }
 }
