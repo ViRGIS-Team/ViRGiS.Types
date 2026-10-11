@@ -4,6 +4,7 @@ using UnityEngine;
 using Draco;
 using Draco.Encoder;
 using System;
+using System.Threading.Tasks;
 using Unity.Collections;
 
 
@@ -49,21 +50,21 @@ namespace Virgis
         public void SetMesh(ref DMesh3 dmesh)
         {
             SubMesh = new(ref dmesh);
-            MeshSerialize();
+            UpdateDmesh();
         }
 
 
-        public void MeshSerialize(bool updateUnityMesh = true)
+        public void UpdateDmesh()
         {
             Debug.Log("Mesh Serialize");
             UpdateNumber++;
-            
-            if (updateUnityMesh)
-            {
-                _mMesh =  (Mesh)DMesh3;
-                UnityMeshDirty();
-            }
-            
+
+            _mMesh = (Mesh)DMesh3;
+            OnMeshChanged.Invoke(_mMesh);
+            MeshSerialize();
+        }
+
+        public void MeshSerialize(){
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(_mMesh, Vector3.one, 0.01f);
             _mData = serResult[0].data.ToArray();
             Array.ForEach(serResult, res => res.Dispose());
@@ -73,10 +74,11 @@ namespace Virgis
 
         public void UnityMeshDirty()
         {
+            MeshSerialize();
             OnMeshChanged.Invoke(_mMesh);
         }
 
-        private async void MeshDeserialize()
+        private async Task MeshDeserialize()
         {
             Debug.Log("Mesh Deserialized");
             DracoMeshLoader decoder = new(false);
@@ -101,13 +103,11 @@ namespace Virgis
 
         public override void WriteDelta(FastBufferWriter writer)
         {
-            Debug.Log("Write Delta");
             WriteField(writer);
         }
 
         public override void WriteField(FastBufferWriter writer)
         {
-            Debug.Log("Write Mesh");
             if (_mData == null)
             {
                 writer.WriteValueSafe(0);
@@ -121,7 +121,6 @@ namespace Virgis
         public override void ReadField(FastBufferReader reader)
         {
             // De-Serialize the data being synchronized
-            Debug.Log("Read Mesh Mesh");
             reader.ReadValueSafe(out int size);
             if (size != 0) 
             {
@@ -133,21 +132,21 @@ namespace Virgis
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
-            Debug.Log("Read Delta");
             ReadField(reader);
             if (keepDirtyDelta) return;
             ResetDirty();
         }
 
-        public bool IsMesh { get { return _mMesh; } }
+        public bool IsMesh => _mMesh;
 
         protected void UpdateDMesh()
         {
-            if (SubMesh == null) throw new Exception("UpdateDMesh called on uninitialised SerialMesh");
             using (Mesh.MeshDataArray mda = Mesh.AcquireReadOnlyMeshData(_mMesh))
             {
                 if (mda.Length > 1) throw new Exception("Too many submeshes");
                 Mesh.MeshData md = mda[0];
+                
+                // Get the buffer offsets
                 int buffers = md.vertexBufferCount;
                 int position = md.GetVertexAttributeOffset(UnityEngine.Rendering.VertexAttribute.Position);
                 int pos_buf = md.GetVertexAttributeStream(UnityEngine.Rendering.VertexAttribute.Position);
@@ -192,7 +191,11 @@ namespace Virgis
                     strides[i] = md.GetVertexBufferStride(i) / 4;
                 }
 
+                DMesh3 dMesh3 = new();
+                SubMesh = new(ref dMesh3);
                 int pointer;
+
+                int[] vertexMap = new int[md.vertexCount];
                 DMesh3.BeginUnsafeVerticesInsert();
                 for (int i = 0; i < md.vertexCount; i++)
                 {
@@ -214,7 +217,7 @@ namespace Virgis
                             vertexBuffers[col_buf][pointer + color + 2]
                             );
                         vertex.bHaveC = true;
-                    };
+                    }
                     if (normal != 0)
                     {
                         normal /= 4;
@@ -238,6 +241,7 @@ namespace Virgis
                     }
                     pointer = i * strides[uv_buf];
                     int vID = (int)vertexBuffers[uv_buf] [pointer + uv / 4 + 1];
+                    vertexMap[i] = vID;
                     if (DMesh3.IsVertex(vID))
                     {
                         if (!DMesh3.SetVertex(vID, vertex, true, true, true)) throw new Exception("DMesh SetVertex Failed");
@@ -246,7 +250,7 @@ namespace Virgis
                         MeshResult mr = DMesh3.InsertVertex(vID, ref vertex, true);
                         if (mr != MeshResult.Ok) throw new Exception($"DMesh InsertVertex Failed with : {mr.ToString()}");
                     }
-                };
+                }
                 DMesh3.EndUnsafeVerticesInsert();
 
                 // Get Triangles and update DMesh
@@ -264,14 +268,14 @@ namespace Virgis
                     int a, b, c;
                     if (md.indexFormat == UnityEngine.Rendering.IndexFormat.UInt16)
                     {
-                        a = BitConverter.ToInt16(triangles.GetSubArray(pointer, 2).AsReadOnlySpan());
-                        b = BitConverter.ToInt16(triangles.GetSubArray(pointer + 2, 2).AsReadOnlySpan());
-                        c = BitConverter.ToInt16(triangles.GetSubArray(pointer + 4, 2).AsReadOnlySpan());
+                        a = vertexMap[BitConverter.ToInt16(triangles.GetSubArray(pointer, 2).AsReadOnlySpan())];
+                        b = vertexMap[BitConverter.ToInt16(triangles.GetSubArray(pointer + 2, 2).AsReadOnlySpan())];
+                        c = vertexMap[BitConverter.ToInt16(triangles.GetSubArray(pointer + 4, 2).AsReadOnlySpan())];
                     } else
                     {
-                        a = BitConverter.ToInt32(triangles.GetSubArray(pointer, 4).AsReadOnlySpan());
-                        b = BitConverter.ToInt32(triangles.GetSubArray(pointer + 4, 4).AsReadOnlySpan());
-                        c = BitConverter.ToInt32(triangles.GetSubArray(pointer + 8, 4).AsReadOnlySpan());
+                        a = vertexMap[BitConverter.ToInt32(triangles.GetSubArray(pointer, 4).AsReadOnlySpan())];
+                        b = vertexMap[BitConverter.ToInt32(triangles.GetSubArray(pointer + 4, 4).AsReadOnlySpan())];
+                        c = vertexMap[BitConverter.ToInt32(triangles.GetSubArray(pointer + 8, 4).AsReadOnlySpan())];
                     }
                     int tID = DMesh3.FindTriangle(a, b, c);
                     if (tID == DMesh3.InvalidID)

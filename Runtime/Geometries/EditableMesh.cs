@@ -113,7 +113,7 @@ namespace Virgis
                 );
             } else
             {
-                SerialMesh.MeshSerialize(false);
+                SerialMesh.MeshSerialize();
             }
         }
 
@@ -216,7 +216,7 @@ namespace Virgis
                 Vector3d val = new Vector3d(values[pointer++], values[pointer++], values[pointer++]) { axisOrder = new AxisOrder(axisOrder) };
                 SerialMesh.DMesh3.SetVertex(t, val);
             }
-            SerialMesh.MeshSerialize();
+            SerialMesh.UpdateDmesh();
         }
 
         /// <summary>
@@ -403,7 +403,7 @@ namespace Virgis
             SerialMesh.DMesh3.SplitEdge(edgeId, out DMesh3.EdgeSplitInfo result);
             Debug.Log($"Number of Verteces after edge split {SerialMesh.DMesh3.VertexCount} ");
             SerialMesh.DMesh3.SetVertex(result.vNew, localPosition);
-            SerialMesh.MeshSerialize();
+            SerialMesh.UpdateDmesh();
             StartCoroutine(SerialMesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
                 SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
@@ -459,7 +459,7 @@ namespace Virgis
             //{
             //    UnityEngine.Debug.Log("Remove Vertex - Remove Vertex created a defective mesh " + res2.ToString());
             //}
-            SerialMesh.MeshSerialize();
+            SerialMesh.UpdateDmesh();
             StartCoroutine(SerialMesh.DMesh3.ColorisationCoroutine(20, (colors) =>
             {
                 SerialMesh.Mesh.uv4 = DataMesh.ToUV(colors, SerialMesh.DMesh3.VertexMap);
