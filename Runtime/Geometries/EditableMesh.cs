@@ -56,15 +56,14 @@ namespace Virgis
             RaycastHit lastHit = State.Instance.LastHit;
             _mSelectedTriangle = lastHit.triangleIndex;
             Vector3 bary = lastHit.barycentricCoordinate;
-            int[] triangles = ((MeshCollider)lastHit.collider).sharedMesh.triangles;
+            Mesh cmesh  = ((MeshCollider)lastHit.collider).sharedMesh;
+            int[] triangles = cmesh.triangles;
             int selectedUVertex = 0;
             if (bary.x >= bary.y && bary.x >= bary.z) selectedUVertex = triangles[_mSelectedTriangle * 3]; 
             else if (bary.y >= bary.x && bary.y >= bary.z) selectedUVertex = triangles[_mSelectedTriangle * 3 + 1];
             else if (bary.z >= bary.x && bary.z >= bary.y) selectedUVertex = triangles[_mSelectedTriangle * 3 + 2];
             
             
-            // get the collider mesh to get the verticesMesh and get the DMesh3 vertex id
-            Mesh cmesh = ((MeshCollider)State.Instance.LastHit.collider).sharedMesh;
             Vector2 uv = cmesh.uv4[ selectedUVertex];
             _mSelectedVertex = (int)uv.y;
 
@@ -104,16 +103,20 @@ namespace Virgis
             UnSelectedRpc(button);
             Destroy(_marker);
             _n = -1;
-            if (!NetworkManager.Singleton.IsHost)
+            if (!NetworkManager.Singleton.IsServer)
             {
-                MoveToRpc(
-                    SerialMesh.SubMesh.VertexIndices().ToArray(),
-                    SerialMesh.SubMesh.VertexValues().ToArray(),
-                    SerialMesh.SubMesh.axisOrder.ToArray()
-                );
+                if (SerialMesh.SubMesh.VertexIndices().ToArray().Length > 0)
+                {
+                    MoveToRpc(
+                        SerialMesh.SubMesh.VertexIndices().ToArray(),
+                        SerialMesh.SubMesh.VertexValues().ToArray(),
+                        SerialMesh.SubMesh.axisOrder.ToArray(),
+                        SerialMesh.Timestamp
+                    );
+                }
             } else
             {
-                SerialMesh.MeshSerialize();
+                SerialMesh.MeshSerialize(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             }
         }
 
@@ -207,16 +210,29 @@ namespace Virgis
         }
 
         [Rpc(SendTo.Server)]
-        private void MoveToRpc(int[] vIDs, double[] values, byte[] axisOrder)
+        private void MoveToRpc(int[] vIDs, double[] values, byte[] axisOrder, long timeStamp)
         {
             _mChanged = true;
             int pointer = 0;
+            Mesh uMesh = meshFilter.mesh;
+            Vector2[] uvs = uMesh.uv4;
+            Vector3[] vertices = uMesh.vertices;
             foreach (int t in vIDs)
             {
                 Vector3d val = new Vector3d(values[pointer++], values[pointer++], values[pointer++]) { axisOrder = new AxisOrder(axisOrder) };
                 SerialMesh.DMesh3.SetVertex(t, val);
+                for(int i =0; i < uMesh.vertexCount; i++)
+                {
+                    Vector2 uv = uvs[i];
+                    if (uv.y == t)
+                    {
+                        vertices[i] = (Vector3)val;
+                    }
+                }
             }
-            SerialMesh.UpdateDmesh();
+            uMesh.SetVertices(vertices);
+            uMesh.UploadMeshData(false);
+            SerialMesh.MeshSerialize(timeStamp);
         }
 
         /// <summary>

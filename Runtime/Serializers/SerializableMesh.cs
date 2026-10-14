@@ -6,6 +6,7 @@ using Draco.Encoder;
 using System;
 using System.Threading.Tasks;
 using Unity.Collections;
+using UnityEngine.AI;
 
 
 namespace Virgis
@@ -26,7 +27,7 @@ namespace Virgis
 
         public DSubmesh3 SubMesh { get; set; }
 
-        public long UpdateNumber { get; private set; }
+        public long Timestamp { get; private set; }
 
         /// <summary>
         /// Delegate type for Mesh changed event
@@ -54,17 +55,21 @@ namespace Virgis
         }
 
 
-        public void UpdateDmesh()
+        public void UpdateDmesh(long timestamp = 0)
         {
             Debug.Log("Mesh Serialize");
-            UpdateNumber++;
+            if (timestamp == 0)
+            {
+                timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
 
             _mMesh = (Mesh)DMesh3;
             OnMeshChanged.Invoke(_mMesh);
-            MeshSerialize();
+            MeshSerialize(timestamp);
         }
 
-        public void MeshSerialize(){
+        public void MeshSerialize(long timeStamp){
+            Timestamp = timeStamp;
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(_mMesh, Vector3.one, 0.01f);
             _mData = serResult[0].data.ToArray();
             Array.ForEach(serResult, res => res.Dispose());
@@ -74,7 +79,7 @@ namespace Virgis
 
         public void UnityMeshDirty()
         {
-            MeshSerialize();
+            MeshSerialize(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             OnMeshChanged.Invoke(_mMesh);
         }
 
@@ -98,7 +103,7 @@ namespace Virgis
             }
             _mMesh.RecalculateTangents();
             OnMeshChanged.Invoke(_mMesh);
-            UpdateDMesh();
+            DmeshFromMesh();
         }
 
         public override void WriteDelta(FastBufferWriter writer)
@@ -108,6 +113,7 @@ namespace Virgis
 
         public override void WriteField(FastBufferWriter writer)
         {
+            writer.WriteValueSafe(Timestamp);
             if (_mData == null)
             {
                 writer.WriteValueSafe(0);
@@ -120,13 +126,19 @@ namespace Virgis
 
         public override void ReadField(FastBufferReader reader)
         {
-            // De-Serialize the data being synchronized
-            reader.ReadValueSafe(out int size);
-            if (size != 0) 
-            {
-                _mData = new byte[size];
-                reader.ReadValueSafe(out _mData);
-                MeshDeserialize();
+            if (! NetworkManager.Singleton.IsServer) {
+                // De-Serialize the data being synchronized
+                reader.ReadValueSafe(out long timeStamp);
+                reader.ReadValueSafe(out int size);
+                if (size != 0) 
+                {
+                    _mData = new byte[size];
+                    reader.ReadValueSafe(out _mData);
+                    if (timeStamp != Timestamp) {
+                        Timestamp = timeStamp;
+                        _ = MeshDeserialize();
+                    }
+                }
             }
         }
 
@@ -139,7 +151,7 @@ namespace Virgis
 
         public bool IsMesh => _mMesh;
 
-        protected void UpdateDMesh()
+        protected void DmeshFromMesh()
         {
             using (Mesh.MeshDataArray mda = Mesh.AcquireReadOnlyMeshData(_mMesh))
             {
@@ -191,7 +203,7 @@ namespace Virgis
                     strides[i] = md.GetVertexBufferStride(i) / 4;
                 }
 
-                DMesh3 dMesh3 = new();
+                DMesh3 dMesh3 = new() {axisOrder = AxisOrder.EUN};
                 SubMesh = new(ref dMesh3);
                 int pointer;
 
@@ -206,7 +218,7 @@ namespace Virgis
                         vertexBuffers[pos_buf][pointer + position],
                         vertexBuffers[pos_buf][pointer + position + 1],
                         vertexBuffers[pos_buf][pointer + position + 2]
-                        );
+                        ) {axisOrder = AxisOrder.ENU};
                     if (color != -1)
                     {
                         color /= 4;
@@ -226,7 +238,7 @@ namespace Virgis
                             vertexBuffers[nor_buf][pointer + normal],
                             vertexBuffers[nor_buf][pointer + normal + 1],
                             vertexBuffers[nor_buf][pointer + normal + 2]
-                            );
+                            ) {axisOrder=AxisOrder.EUN};
                         vertex.bHaveN = true;
                     }
                     if (uv1 != -1)
