@@ -116,7 +116,7 @@ namespace Virgis
                 }
             } else
             {
-                SerialMesh.MeshSerialize(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                _ = SerialMesh.MeshSerialize(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             }
         }
 
@@ -185,7 +185,7 @@ namespace Virgis
                     foreach (int v in MeshIterators.BoundaryVertices(SerialMesh.SubMesh))
                     {
                         if (v == _mSelectedVertex) continue;
-                        if (SerialMesh.SubMesh.IsSubmeshInternalBoundaryVertex(v))
+                        if (! SerialMesh.SubMesh.BaseMesh.IsBoundaryVertex(v))
                         {
                             deform.SetConstraint(v, SerialMesh.SubMesh.GetVertex(v), 1, true);
                         } else
@@ -214,7 +214,7 @@ namespace Virgis
         {
             _mChanged = true;
             int pointer = 0;
-            Mesh uMesh = meshFilter.mesh;
+            Mesh uMesh = SerialMesh.Mesh;
             Vector2[] uvs = uMesh.uv4;
             Vector3[] vertices = uMesh.vertices;
             foreach (int t in vIDs)
@@ -231,8 +231,7 @@ namespace Virgis
                 }
             }
             uMesh.SetVertices(vertices);
-            uMesh.UploadMeshData(false);
-            SerialMesh.MeshSerialize(timeStamp);
+            _ = SerialMesh.UnityMeshDirty(timeStamp);
         }
 
         /// <summary>

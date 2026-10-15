@@ -65,10 +65,11 @@ namespace Virgis
 
             _mMesh = (Mesh)DMesh3;
             OnMeshChanged.Invoke(_mMesh);
-            MeshSerialize(timestamp);
+            _ = MeshSerialize(timestamp);
         }
 
-        public void MeshSerialize(long timeStamp){
+        public async Task MeshSerialize(long timeStamp){
+            Debug.Log("Mesh Serialize");
             Timestamp = timeStamp;
             EncodeResult[] serResult = DracoEncoder.EncodeMesh(_mMesh, Vector3.one, 0.01f);
             _mData = serResult[0].data.ToArray();
@@ -77,10 +78,14 @@ namespace Virgis
             SetDirty(true);
         }
 
-        public void UnityMeshDirty()
+        public async Task UnityMeshDirty(long timeStamp = 0)
         {
-            MeshSerialize(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            if (timeStamp == 0)
+            {
+                timeStamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
             OnMeshChanged.Invoke(_mMesh);
+            await MeshSerialize(timeStamp);
         }
 
         private async Task MeshDeserialize()
